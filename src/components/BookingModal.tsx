@@ -140,4 +140,177 @@ const BookingModal: React.FC<BookingModalProps> = ({
     }
   };
 
-  const handleDelet
+  const handleDelete = async () => {
+    if (!window.confirm('Are you sure you want to delete this booking?')) return;
+    
+    setLoading(true);
+    try {
+      await onSubmit({ delete: true });
+      onClose();
+    } catch (err: any) {
+      setError(err.message || 'Failed to delete booking');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+      <div className="bg-dark-lighter rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between p-6 border-b border-gray-700 sticky top-0 bg-dark-lighter">
+          <h2 className="text-xl font-semibold text-white">
+            {isBlocked
+              ? t('blockSlot')
+              : isEditMode
+              ? t('editBooking')
+              : isAdmin
+              ? t('createBooking')
+              : t('bookSlot')}
+          </h2>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-white transition-colors"
+          >
+            <X size={24} />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          {error && (
+            <div className="p-3 bg-red-500 bg-opacity-10 border border-red-500 rounded text-red-400 text-sm">
+              {error}
+            </div>
+          )}
+
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            <div>
+              <span className="text-gray-400">Pitch:</span>
+              <span className="ml-2 text-white">{selectedSlot.pitch}</span>
+            </div>
+            <div>
+              <span className="text-gray-400">Date:</span>
+              <span className="ml-2 text-white">{selectedSlot.date}</span>
+            </div>
+            <div>
+              <span className="text-gray-400">Time:</span>
+              <span className="ml-2 text-white">{selectedSlot.time}</span>
+            </div>
+          </div>
+
+          {!isBlocked && (
+            <>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  {t('selectDuration')}
+                </label>
+                <select
+                  value={duration}
+                  onChange={(e) => setDuration(Number(e.target.value))}
+                  className="w-full px-4 py-2 bg-dark border border-gray-600 rounded-lg text-white focus:outline-none focus:border-primary"
+                  disabled={isEditMode && isAdmin === false}
+                >
+                  {availableDurations.map((d) => (
+                    <option key={d} value={d}>
+                      {d} {d === 1 ? t('hour') : t('hours')}
+                    </option>
+                  ))}
+                </select>
+                {!isEditMode && availableDurations.length < durationOptions.length && (
+                  <p className="mt-1 text-xs text-amber-400">
+                    Some durations are unavailable due to conflicts
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  {t('phoneNumber')} *
+                </label>
+                <input
+                  type="tel"
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  required={!isAdmin}
+                  className="w-full px-4 py-2 bg-dark border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-primary"
+                  placeholder="69XXXXXXXX"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  {t('teamName')}
+                </label>
+                <input
+                  type="text"
+                  value={teamName}
+                  onChange={(e) => setTeamName(e.target.value)}
+                  className="w-full px-4 py-2 bg-dark border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-primary"
+                  placeholder="Team name (optional)"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  {t('notes')}
+                </label>
+                <textarea
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  rows={3}
+                  className="w-full px-4 py-2 bg-dark border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-primary resize-none"
+                  placeholder="Additional notes (optional)"
+                />
+              </div>
+
+              {isAdmin && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    {t('status')}
+                  </label>
+                  <select
+                    value={status}
+                    onChange={(e) => setStatus(e.target.value as any)}
+                    className="w-full px-4 py-2 bg-dark border border-gray-600 rounded-lg text-white focus:outline-none focus:border-primary"
+                  >
+                    <option value="pending">{t('pending')}</option>
+                    <option value="booked">{t('booked')}</option>
+                    <option value="blocked">{t('blocked')}</option>
+                  </select>
+                </div>
+              )}
+            </>
+          )}
+
+          <div className="flex space-x-3 pt-4">
+            <button
+              type="submit"
+              disabled={loading || (!isEditMode && availableDurations.length === 0)}
+              className="flex-1 py-3 bg-primary hover:bg-primary-dark text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? '...' : isEditMode ? t('save') : t('submit')}
+            </button>
+            {isEditMode && isAdmin && (
+              <button
+                type="button"
+                onClick={handleDelete}
+                disabled={loading}
+                className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {t('delete')}
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-medium transition-colors"
+            >
+              {t('cancel')}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+export default BookingModal;
