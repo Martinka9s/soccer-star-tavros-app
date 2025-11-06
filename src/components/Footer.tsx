@@ -13,27 +13,32 @@ const Footer: React.FC = () => {
           <div>
             <h3 className="text-lg font-semibold text-white mb-4">{t('contact')}</h3>
             <div className="space-y-3">
-              
+              <a
                 href="tel:6984478517"
                 className="flex items-center space-x-2 text-gray-300 hover:text-primary transition-colors"
+                aria-label="Phone"
               >
                 <Phone size={18} />
                 <span>6984478517</span>
               </a>
-              
+
+              <a
                 href="https://www.google.com/maps?q=Alekou+Panagouli+1,+Tavros+177+78"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center space-x-2 text-gray-300 hover:text-primary transition-colors"
+                aria-label="Address"
               >
                 <MapPin size={18} />
                 <span>Alekou Panagouli 1, Tavros 177 78</span>
               </a>
-              
+
+              <a
                 href="https://soccerstartavros.gr/"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center space-x-2 text-gray-300 hover:text-primary transition-colors"
+                aria-label="Website"
               >
                 <Globe size={18} />
                 <span>soccerstartavros.gr</span>
@@ -45,27 +50,32 @@ const Footer: React.FC = () => {
           <div>
             <h3 className="text-lg font-semibold text-white mb-4">{t('followUs')}</h3>
             <div className="flex space-x-4">
-              
+              <a
                 href="https://instagram.com"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="p-2 bg-dark hover:bg-primary text-gray-300 hover:text-white rounded-lg transition-colors"
+                aria-label="Instagram"
               >
                 <Instagram size={24} />
               </a>
-              
+
+              <a
                 href="https://facebook.com"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="p-2 bg-dark hover:bg-primary text-gray-300 hover:text-white rounded-lg transition-colors"
+                aria-label="Facebook"
               >
                 <Facebook size={24} />
               </a>
-              
+
+              <a
                 href="https://youtube.com"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="p-2 bg-dark hover:bg-primary text-gray-300 hover:text-white rounded-lg transition-colors"
+                aria-label="YouTube"
               >
                 <Youtube size={24} />
               </a>
@@ -75,9 +85,7 @@ const Footer: React.FC = () => {
           {/* Additional Info */}
           <div>
             <h3 className="text-lg font-semibold text-white mb-4">{t('appName')}</h3>
-            <p className="text-gray-400 text-sm">
-              5x5 Football Pitch Booking System
-            </p>
+            <p className="text-gray-400 text-sm">5x5 Football Pitch Booking System</p>
           </div>
         </div>
 
