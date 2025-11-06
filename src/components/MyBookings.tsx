@@ -35,8 +35,12 @@ const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
     return isFuture(bookingDateTime);
   };
 
-  const upcomingBookings = bookings.filter((b) => isBookingFuture(b) && b.status !== 'blocked');
-  const pastBookings = bookings.filter((b) => !isBookingFuture(b) && b.status !== 'blocked');
+  const upcomingBookings = bookings.filter(
+    (b) => isBookingFuture(b) && b.status !== 'blocked'
+  );
+  const pastBookings = bookings.filter(
+    (b) => !isBookingFuture(b) && b.status !== 'blocked'
+  );
 
   const getStatusColor = (status: string): string => {
     switch (status) {
@@ -115,4 +119,33 @@ const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
     <div className="space-y-8">
       {/* Upcoming Bookings */}
       <div>
-        <h2 className="text-2xl font-bold text-white mb-4">{t
+        <h2 className="text-2xl font-bold text-white mb-4">{t('upcomingBookings')}</h2>
+        {upcomingBookings.length === 0 ? (
+          <div className="bg-dark-lighter border border-gray-700 rounded-lg p-8 text-center text-gray-400">
+            {t('noBookings')}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {upcomingBookings.map(renderBookingCard)}
+          </div>
+        )}
+      </div>
+
+      {/* Past Bookings */}
+      <div>
+        <h2 className="text-2xl font-bold text-white mb-4">{t('pastBookings')}</h2>
+        {pastBookings.length === 0 ? (
+          <div className="bg-dark-lighter border border-gray-700 rounded-lg p-8 text-center text-gray-400">
+            {t('noBookings')}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {pastBookings.map(renderBookingCard)}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default MyBookings;
