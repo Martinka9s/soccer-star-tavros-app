@@ -127,11 +127,68 @@ const PendingRequests: React.FC = () => {
                     <CalendarIcon size={16} className="text-gray-400" />
                     <span>{format(parseISO(booking.date), 'EEEE, MMM d, yyyy')}</span>
                   </div>
+
                   <div className="flex items-center space-x-2 text-gray-300">
                     <Clock size={16} className="text-gray-400" />
                     <span>
-                      {booking.startTime} ({booking.duration} {booking.duration === 1 ? t('hour') : t('hours')})
+                      {booking.startTime} ({booking.duration}{' '}
+                      {booking.duration === 1 ? t('hour') : t('hours')})
                     </span>
                   </div>
+
                   {booking.userEmail && (
                     <div className="flex items-center space-x-2 text-gray-300">
+                      <User size={16} className="text-gray-400" />
+                      <span>{booking.userEmail}</span>
+                    </div>
+                  )}
+
+                  {booking.phoneNumber && (
+                    <div className="flex items-center space-x-2 text-gray-300">
+                      <span className="text-gray-400">📞</span>
+                      <span>{booking.phoneNumber}</span>
+                    </div>
+                  )}
+                </div>
+
+                {booking.teamName && (
+                  <div className="text-sm">
+                    <span className="text-gray-400">Team: </span>
+                    <span className="text-white font-medium">{booking.teamName}</span>
+                  </div>
+                )}
+
+                {booking.notes && (
+                  <div className="p-3 bg-dark rounded text-sm text-gray-300">
+                    <span className="text-gray-400">Notes: </span>
+                    {booking.notes}
+                  </div>
+                )}
+              </div>
+
+              <div className="flex lg:flex-col gap-3">
+                <button
+                  onClick={() => handleApprove(booking)}
+                  className="flex-1 lg:flex-none flex items-center justify-center space-x-2 px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors"
+                >
+                  <Check size={20} />
+                  <span>{t('approve')}</span>
+                </button>
+
+                <button
+                  onClick={() => handleReject(booking)}
+                  className="flex-1 lg:flex-none flex items-center justify-center space-x-2 px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors"
+                >
+                  <X size={20} />
+                  <span>{t('reject')}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+export default PendingRequests;
