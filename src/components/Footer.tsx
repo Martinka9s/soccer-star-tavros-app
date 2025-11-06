@@ -9,18 +9,17 @@ const Footer: React.FC = () => {
     <footer className="bg-dark-lighter border-t border-gray-700 mt-auto">
       <div className="container mx-auto px-4 py-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {/* Contact Info */}
           <div>
             <h3 className="text-lg font-semibold text-white mb-4">{t('contact')}</h3>
             <div className="space-y-3">
-              
+              <a
                 href="tel:6984478517"
                 className="flex items-center space-x-2 text-gray-300 hover:text-primary transition-colors"
               >
                 <Phone size={18} />
                 <span>6984478517</span>
               </a>
-              
+              <a
                 href="https://www.google.com/maps?q=Alekou+Panagouli+1,+Tavros+177+78"
                 target="_blank"
                 rel="noopener noreferrer"
@@ -29,7 +28,7 @@ const Footer: React.FC = () => {
                 <MapPin size={18} />
                 <span>Alekou Panagouli 1, Tavros 177 78</span>
               </a>
-              
+              <a
                 href="https://soccerstartavros.gr/"
                 target="_blank"
                 rel="noopener noreferrer"
@@ -41,11 +40,10 @@ const Footer: React.FC = () => {
             </div>
           </div>
 
-          {/* Social Media */}
           <div>
             <h3 className="text-lg font-semibold text-white mb-4">{t('followUs')}</h3>
             <div className="flex space-x-4">
-              
+              <a
                 href="https://instagram.com"
                 target="_blank"
                 rel="noopener noreferrer"
@@ -53,7 +51,7 @@ const Footer: React.FC = () => {
               >
                 <Instagram size={24} />
               </a>
-              
+              <a
                 href="https://facebook.com"
                 target="_blank"
                 rel="noopener noreferrer"
@@ -61,7 +59,7 @@ const Footer: React.FC = () => {
               >
                 <Facebook size={24} />
               </a>
-              
+              <a
                 href="https://youtube.com"
                 target="_blank"
                 rel="noopener noreferrer"
@@ -72,7 +70,6 @@ const Footer: React.FC = () => {
             </div>
           </div>
 
-          {/* Additional Info */}
           <div>
             <h3 className="text-lg font-semibold text-white mb-4">{t('appName')}</h3>
             <p className="text-gray-400 text-sm">
