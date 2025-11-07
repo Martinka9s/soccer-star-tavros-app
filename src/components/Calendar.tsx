@@ -203,57 +203,113 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
         </div>
       </div>
 
-      {/* Banner bar: date centered with arrows; pitch pills below on mobile */}
+      {/* Banner bar */}
       <div className="bg-dark-lighter rounded-xl px-4 py-3">
-        {/* Row 1: arrows + centered date (mobile); side-by-side on sm+ */}
-        <div className="grid grid-cols-[auto,1fr,auto] items-center sm:flex sm:items-center sm:justify-between">
-          {/* Left arrow */}
-          <button
-            onClick={goToPrevious}
-            className="h-9 w-9 flex items-center justify-center rounded-lg bg-dark text-gray-300 hover:text-white justify-self-start"
-            aria-label="Previous day"
-          >
-            <ChevronLeft size={18} />
-          </button>
+        {/* Mobile (app) layout: centered date with arrows; pills below */}
+        <div className="sm:hidden">
+          {/* Row 1: arrows + centered date */}
+          <div className="grid grid-cols-[auto,1fr,auto] items-center">
+            <button
+              onClick={goToPrevious}
+              className="h-9 w-9 flex items-center justify-center rounded-lg bg-dark text-gray-300 hover:text-white justify-self-start"
+              aria-label="Previous day"
+            >
+              <ChevronLeft size={18} />
+            </button>
 
-          {/* Centered date */}
-          <div className="text-center sm:text-left">
-            <div className="text-xl font-semibold text-white">{format(currentDate, 'EEEE, MMM d')}</div>
+            <div className="text-center">
+              <div className="text-xl font-semibold text-white">
+                {format(currentDate, 'EEEE, MMM d')}
+              </div>
+            </div>
+
+            <button
+              onClick={goToNext}
+              className="h-9 w-9 flex items-center justify-center rounded-lg bg-dark text-gray-300 hover:text-white justify-self-end"
+              aria-label="Next day"
+            >
+              <ChevronRight size={18} />
+            </button>
           </div>
 
-          {/* Right arrow */}
-          <button
-            onClick={goToNext}
-            className="h-9 w-9 flex items-center justify-center rounded-lg bg-dark text-gray-300 hover:text-white justify-self-end"
-            aria-label="Next day"
-          >
-            <ChevronRight size={18} />
-          </button>
+          {/* Row 2: Pitch A / Pitch B under the date */}
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            <button
+              onClick={() => setActivePitch('Pitch A')}
+              className={`h-9 px-5 w-full rounded-lg text-sm font-medium transition-colors border ${
+                activePitch === 'Pitch A'
+                  ? 'bg-primary text-white border-transparent'
+                  : 'bg-dark text-gray-200 border-gray-700 hover:text-white'
+              }`}
+            >
+              {t('pitchA')}
+            </button>
+            <button
+              onClick={() => setActivePitch('Pitch B')}
+              className={`h-9 px-5 w-full rounded-lg text-sm font-medium transition-colors border ${
+                activePitch === 'Pitch B'
+                  ? 'bg-primary text-white border-transparent'
+                  : 'bg-dark text-gray-200 border-gray-700 hover:text-white'
+              }`}
+            >
+              {t('pitchB')}
+            </button>
+          </div>
         </div>
 
-        {/* Row 2 on mobile: Pitch A / Pitch B */}
-        <div className="mt-3 grid grid-cols-2 gap-2 sm:mt-0 sm:flex sm:items-center sm:justify-end sm:gap-2">
-          <button
-            onClick={() => setActivePitch('Pitch A')}
-            className={`h-9 px-5 w-full rounded-lg text-sm font-medium transition-colors border whitespace-nowrap flex-shrink-0 sm:w-auto ${
-              activePitch === 'Pitch A'
-                ? 'bg-primary text-white border-transparent'
-                : 'bg-dark text-gray-200 border-gray-700 hover:text-white'
-            }`}
-          >
-            {t('pitchA')}
-          </button>
+        {/* Desktop/Web layout: arrows+date left, pills right (original behavior) */}
+        <div className="hidden sm:flex items-center justify-between">
+          {/* Left: arrows tight to date */}
+          <div className="flex items-center gap-4">
+            <button
+              onClick={goToPrevious}
+              className="h-9 w-9 flex items-center justify-center rounded-lg bg-dark text-gray-300 hover:text-white"
+              aria-label="Previous day"
+            >
+              <ChevronLeft size={18} />
+            </button>
 
-          <button
-            onClick={() => setActivePitch('Pitch B')}
-            className={`h-9 px-5 w-full rounded-lg text-sm font-medium transition-colors border whitespace-nowrap flex-shrink-0 sm:w-auto ${
-              activePitch === 'Pitch B'
-                ? 'bg-primary text-white border-transparent'
-                : 'bg-dark text-gray-200 border-gray-700 hover:text-white'
-            }`}
-          >
-            {t('pitchB')}
-          </button>
+            <div className="leading-tight">
+              <div className="text-xl font-semibold text-white">
+                {format(currentDate, 'EEEE')}
+              </div>
+              <div className="text-sm text-gray-300">
+                {format(currentDate, 'MMMM d')}
+              </div>
+            </div>
+
+            <button
+              onClick={goToNext}
+              className="h-9 w-9 flex items-center justify-center rounded-lg bg-dark text-gray-300 hover:text-white"
+              aria-label="Next day"
+            >
+              <ChevronRight size={18} />
+            </button>
+          </div>
+
+          {/* Right: pitch pills */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setActivePitch('Pitch A')}
+              className={`h-9 px-5 rounded-lg text-sm font-medium transition-colors border ${
+                activePitch === 'Pitch A'
+                  ? 'bg-primary text-white border-transparent'
+                  : 'bg-dark text-gray-200 border-gray-700 hover:text-white'
+              }`}
+            >
+              {t('pitchA')}
+            </button>
+            <button
+              onClick={() => setActivePitch('Pitch B')}
+              className={`h-9 px-5 rounded-lg text-sm font-medium transition-colors border ${
+                activePitch === 'Pitch B'
+                  ? 'bg-primary text-white border-transparent'
+                  : 'bg-dark text-gray-200 border-gray-700 hover:text-white'
+              }`}
+            >
+              {t('pitchB')}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -261,7 +317,7 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
         <div className="text-center py-12 text-gray-400">Loading...</div>
       ) : (
         <>
-          {/* Grid of cards for the selected pitch - 2 per row on mobile */}
+          {/* Grid of cards for the selected pitch - 2 per row on mobile, 2 on md, 4 on xl */}
           <div className="grid grid-cols-2 md:grid-cols-2 xl:grid-cols-4 gap-4">
             {timeSlots.map((slot) => {
               const { status, booking } = getSlotStatus(activePitch, slot.time);
