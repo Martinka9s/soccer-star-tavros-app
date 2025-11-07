@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Check, X, Calendar as CalendarIcon, Clock, User } from 'lucide-react';
+import { Check, X, Calendar as CalendarIcon, Clock, User as UserIcon } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { Booking } from '../types';
 import { bookingService, notificationService } from '../services/firebaseService';
@@ -11,16 +11,17 @@ const PendingRequests: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadPendingBookings();
+    void loadPendingBookings();
   }, []);
 
   const loadPendingBookings = async () => {
     setLoading(true);
     try {
       const bookings = await bookingService.getPendingBookings();
-      setPendingBookings(bookings);
+      setPendingBookings(bookings ?? []);
     } catch (error) {
       console.error('Error loading pending bookings:', error);
+      setPendingBookings([]);
     } finally {
       setLoading(false);
     }
@@ -108,84 +109,88 @@ const PendingRequests: React.FC = () => {
       </h2>
 
       <div className="grid grid-cols-1 gap-4">
-        {pendingBookings.map((booking) => (
-          <div
-            key={booking.id}
-            className="bg-dark-lighter border border-amber-600 rounded-lg p-6 hover:border-amber-500 transition-colors"
-          >
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-              <div className="flex-1 space-y-3">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-xl font-semibold text-white">{booking.pitchType}</h3>
-                  <span className="px-3 py-1 bg-amber-500 text-white rounded-full text-xs font-medium">
-                    {t('pending')}
-                  </span>
-                </div>
+        {pendingBookings.map((booking) => {
+          const dateLabel = format(parseISO(booking.date), 'EEEE, MMM d, yyyy');
+          const durationLabel = `${booking.duration} ${booking.duration === 1 ? t('hour') : t('hours')}`;
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-                  <div className="flex items-center space-x-2 text-gray-300">
-                    <CalendarIcon size={16} className="text-gray-400" />
-                    <span>{format(parseISO(booking.date), 'EEEE, MMM d, yyyy')}</span>
-                  </div>
-
-                  <div className="flex items-center space-x-2 text-gray-300">
-                    <Clock size={16} className="text-gray-400" />
-                    <span>
-                      {booking.startTime} ({booking.duration}{' '}
-                      {booking.duration === 1 ? t('hour') : t('hours')})
+          return (
+            <div
+              key={booking.id}
+              className="bg-dark-lighter border border-amber-600 rounded-lg p-6 hover:border-amber-500 transition-colors"
+            >
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                <div className="flex-1 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-xl font-semibold text-white">{booking.pitchType}</h3>
+                    <span className="px-3 py-1 bg-amber-500 text-white rounded-full text-xs font-medium">
+                      {t('pending')}
                     </span>
                   </div>
 
-                  {booking.userEmail && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                     <div className="flex items-center space-x-2 text-gray-300">
-                      <User size={16} className="text-gray-400" />
-                      <span>{booking.userEmail}</span>
+                      <CalendarIcon size={16} className="text-gray-400" />
+                      <span>{dateLabel}</span>
                     </div>
-                  )}
 
-                  {booking.phoneNumber && (
                     <div className="flex items-center space-x-2 text-gray-300">
-                      <span className="text-gray-400">📞</span>
-                      <span>{booking.phoneNumber}</span>
+                      <Clock size={16} className="text-gray-400" />
+                      <span>
+                        {booking.startTime} ({durationLabel})
+                      </span>
                     </div>
-                  )}
+
+                    {booking.userEmail ? (
+                      <div className="flex items-center space-x-2 text-gray-300">
+                        <UserIcon size={16} className="text-gray-400" />
+                        <span>{booking.userEmail}</span>
+                      </div>
+                    ) : null}
+
+                    {booking.phoneNumber ? (
+                      <div className="flex items-center space-x-2 text-gray-300">
+                        <span className="text-gray-400">📞</span>
+                        <span>{booking.phoneNumber}</span>
+                      </div>
+                    ) : null}
+                  </div>
+
+                  {booking.teamName ? (
+                    <div className="text-sm">
+                      <span className="text-gray-400">Team: </span>
+                      <span className="text-white font-medium">{booking.teamName}</span>
+                    </div>
+                  ) : null}
+
+                  {booking.notes ? (
+                    <div className="p-3 bg-dark rounded text-sm text-gray-300">
+                      <span className="text-gray-400">Notes: </span>
+                      {booking.notes}
+                    </div>
+                  ) : null}
                 </div>
 
-                {booking.teamName && (
-                  <div className="text-sm">
-                    <span className="text-gray-400">Team: </span>
-                    <span className="text-white font-medium">{booking.teamName}</span>
-                  </div>
-                )}
+                <div className="flex lg:flex-col gap-3">
+                  <button
+                    onClick={() => handleApprove(booking)}
+                    className="flex-1 lg:flex-none flex items-center justify-center space-x-2 px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors"
+                  >
+                    <Check size={20} />
+                    <span>{t('approve')}</span>
+                  </button>
 
-                {booking.notes && (
-                  <div className="p-3 bg-dark rounded text-sm text-gray-300">
-                    <span className="text-gray-400">Notes: </span>
-                    {booking.notes}
-                  </div>
-                )}
-              </div>
-
-              <div className="flex lg:flex-col gap-3">
-                <button
-                  onClick={() => handleApprove(booking)}
-                  className="flex-1 lg:flex-none flex items-center justify-center space-x-2 px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors"
-                >
-                  <Check size={20} />
-                  <span>{t('approve')}</span>
-                </button>
-
-                <button
-                  onClick={() => handleReject(booking)}
-                  className="flex-1 lg:flex-none flex items-center justify-center space-x-2 px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors"
-                >
-                  <X size={20} />
-                  <span>{t('reject')}</span>
-                </button>
+                  <button
+                    onClick={() => handleReject(booking)}
+                    className="flex-1 lg:flex-none flex items-center justify-center space-x-2 px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors"
+                  >
+                    <X size={20} />
+                    <span>{t('reject')}</span>
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
