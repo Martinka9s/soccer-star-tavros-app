@@ -54,30 +54,30 @@ const resources = {
       // Auth
       email: 'Email',
       password: 'Password',
-      loginTitle: 'Login to Your Account',
-      registerTitle: 'Create an Account',
+      loginTitle: 'Login to your account',
+      registerTitle: 'Create an account',
       noAccount: "Don't have an account?",
       hasAccount: 'Already have an account?',
-      signUp: 'Sign Up',
-      signIn: 'Sign In',
+      signUp: 'Sign up',
+      signIn: 'Sign in',
       loginRequired: 'Please login to book a slot',
 
       // My Bookings
-      upcomingBookings: 'Upcoming Bookings',
-      pastBookings: 'Past Bookings',
+      upcomingBookings: 'Upcoming bookings',
+      pastBookings: 'Past bookings',
       noBookings: 'No bookings found',
 
       // Notifications
       notifications: 'Notifications',
-      markAllRead: 'Mark All as Read',
+      markAllRead: 'Mark all as read',
       noNotifications: 'No notifications',
       bookingApproved: 'Your booking for {{pitch}} on {{date}} at {{time}} has been approved.',
       bookingRejected: 'Your booking for {{pitch}} on {{date}} at {{time}} has been rejected.',
       bookingCancelled: 'Your booking for {{pitch}} on {{date}} at {{time}} has been cancelled by admin.',
 
       // Admin
-      adminPanel: 'Admin Panel',
-      userEmail: 'User Email',
+      adminPanel: 'Admin panel',
+      userEmail: 'User email',
       status: 'Status',
       actions: 'Actions',
 
@@ -113,7 +113,7 @@ const resources = {
       // Navigation
       calendar: 'Ημερολόγιο',
       myBookings: 'Οι Κρατήσεις μου',
-      pendingRequests: 'Αιτήματα σε Εκκρεμότητα',
+      pendingRequests: 'Αιτήματα σε εκκρεμότητα',
 
       // Calendar
       today: 'Σήμερα',
@@ -128,20 +128,20 @@ const resources = {
 
       // Booking Status
       available: 'Διαθέσιμο',
-      pending: 'Σε Εκκρεμότητα',
+      pending: 'Σε εκκρεμότητα',
       booked: 'Κρατημένο',
       blocked: 'Μπλοκαρισμένο',
 
       // Booking Modal
-      bookSlot: 'Κράτηση Ώρας',
-      createBooking: 'Δημιουργία Κράτησης',
-      editBooking: 'Επεξεργασία Κράτησης',
-      blockSlot: 'Μπλοκάρισμα Ώρας',
-      selectDuration: 'Επιλογή Διάρκειας',
+      bookSlot: 'Κράτηση ώρας',
+      createBooking: 'Δημιουργία κράτησης',
+      editBooking: 'Επεξεργασία κράτησης',
+      blockSlot: 'Μπλοκάρισμα ώρας',
+      selectDuration: 'Επιλογή διάρκειας',
       hours: 'ώρες',
       hour: 'ώρα',
       phoneNumber: 'Τηλέφωνο',
-      teamName: 'Όνομα Ομάδας',
+      teamName: 'Όνομα ομάδας',
       notes: 'Σημειώσεις',
       submit: 'Υποβολή',
       cancel: 'Ακύρωση',
@@ -154,8 +154,8 @@ const resources = {
       // Auth
       email: 'Email',
       password: 'Κωδικός',
-      loginTitle: 'Σύνδεση στο Λογαριασμό σας',
-      registerTitle: 'Δημιουργία Λογαριασμού',
+      loginTitle: 'Σύνδεση στο λογαριασμό σας',
+      registerTitle: 'Δημιουργία λογαριασμού',
       noAccount: 'Δεν έχετε λογαριασμό;',
       hasAccount: 'Έχετε ήδη λογαριασμό;',
       signUp: 'Εγγραφή',
@@ -163,21 +163,21 @@ const resources = {
       loginRequired: 'Παρακαλώ συνδεθείτε για να κάνετε κράτηση',
 
       // My Bookings
-      upcomingBookings: 'Επερχόμενες Κρατήσεις',
-      pastBookings: 'Προηγούμενες Κρατήσεις',
+      upcomingBookings: 'Επερχόμενες κρατήσεις',
+      pastBookings: 'Προηγούμενες κρατήσεις',
       noBookings: 'Δεν βρέθηκαν κρατήσεις',
 
       // Notifications
       notifications: 'Ειδοποιήσεις',
-      markAllRead: 'Σήμανση Όλων ως Αναγνωσμένα',
+      markAllRead: 'Σήμανση ώλων ως αναγνωσμένα',
       noNotifications: 'Δεν υπάρχουν ειδοποιήσεις',
       bookingApproved: 'Η κράτησή σας για το {{pitch}} στις {{date}} στις {{time}} εγκρίθηκε.',
       bookingRejected: 'Η κράτησή σας για το {{pitch}} στις {{date}} στις {{time}} απορρίφθηκε.',
       bookingCancelled: 'Η κράτησή σας για το {{pitch}} στις {{date}} στις {{time}} ακυρώθηκε από τον διαχειριστή.',
 
       // Admin
-      adminPanel: 'Πίνακας Διαχειριστή',
-      userEmail: 'Email Χρήστη',
+      adminPanel: 'Πίνακας διαχειριστή',
+      userEmail: 'Email χρήστη',
       status: 'Κατάσταση',
       actions: 'Ενέργειες',
 
