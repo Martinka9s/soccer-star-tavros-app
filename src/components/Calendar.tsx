@@ -245,4 +245,97 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
             </button>
 
             <div className="text-center px-3">
-              <div className="text-lg font-semibold text-white">{dayLabel.dow
+              <div className="text-lg font-semibold text-white">{dayLabel.dow}</div>
+              <div className="text-sm text-gray-400">{dayLabel.date}</div>
+            </div>
+
+            <button
+              onClick={goToNext}
+              className="p-2 hover:bg-dark rounded-lg transition-colors text-gray-300 hover:text-white"
+              aria-label="Next day"
+            >
+              <ChevronRight size={22} />
+            </button>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={goToToday}
+              className="px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg transition-colors text-sm"
+            >
+              {t('today')}
+            </button>
+            <button
+              onClick={() => setActivePitch(PITCH_A)}
+              className={`px-4 py-2 rounded-lg border ${
+                activePitch === PITCH_A
+                  ? 'bg-primary text-white border-primary'
+                  : 'bg-dark text-gray-200 border-gray-700 hover:bg-primary/20'
+              }`}
+            >
+              {t('pitchA')}
+            </button>
+            <button
+              onClick={() => setActivePitch(PITCH_B)}
+              className={`px-4 py-2 rounded-lg border ${
+                activePitch === PITCH_B
+                  ? 'bg-primary text-white border-primary'
+                  : 'bg-dark text-gray-200 border-gray-700 hover:bg-primary/20'
+              }`}
+            >
+              {t('pitchB')}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Slots grid (cards) */}
+      {loading ? (
+        <div className="text-center py-10 text-gray-400">{t('loading') || 'Loading...'}</div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-4 gap-4">
+          {HOURS_SEQUENCE.map((h) => {
+            const info = getSlotInfo(activePitch, h);
+            const labelBelow =
+              info.booking?.teamName ||
+              (info.status !== 'available' ? t(info.status) : t('available'));
+
+            return (
+              <button
+                key={h}
+                onClick={() => handleSlotClick(activePitch, asTime(h))}
+                disabled={info.status !== 'available' && user?.role !== 'admin'}
+                className={`text-left rounded-xl p-5 transition-colors ${
+                  tileClasses[info.status]
+                } ${info.status === 'available' ? 'hover:shadow-md' : 'cursor-not-allowed'}`}
+                title={`${timeLabel(h)} • ${labelBelow}`}
+              >
+                <div className="text-lg font-bold">{timeLabel(h)}</div>
+                <div className="text-sm mt-1 opacity-90">{labelBelow}</div>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Booking modal (same behavior as your original) */}
+      {showModal && user && selectedSlot && (
+        <BookingModal
+          isOpen={showModal}
+          onClose={() => {
+            setShowModal(false);
+            setSelectedSlot(null);
+            setSelectedBooking(null);
+          }}
+          onSubmit={handleBookingSubmit}
+          selectedSlot={selectedSlot}
+          existingBooking={selectedBooking}
+          user={user}
+          existingBookings={bookings}
+        />
+      )}
+    </div>
+  );
+};
+
+export default Calendar;
