@@ -18,7 +18,7 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, onAuthClick, activeTab,
   const [showNotifications, setShowNotifications] = useState(false);
   const { notifications, unreadCount, markAllAsRead, refresh } = useNotifications(user?.id);
 
-  // Ensure Greek (el) is the default on first load if no language has been chosen yet
+  // Ensure Greek (el) is default if nothing chosen yet
   useEffect(() => {
     const lng = i18n.language;
     if (!lng || (!lng.startsWith('el') && !lng.startsWith('en'))) {
@@ -41,8 +41,10 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, onAuthClick, activeTab,
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center space-x-4">
-            {/* Brand: make it white (not purple) */}
-            <h1 className="text-2xl font-bold text-white">{t('appName')}</h1>
+            {/* Brand: white (clickable) */}
+            <a href="/" className="text-2xl font-bold text-white hover:opacity-90" aria-label={t('appName') as string}>
+              {t('appName')}
+            </a>
           </div>
 
           {user && (
@@ -54,6 +56,7 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, onAuthClick, activeTab,
                     ? 'bg-primary text-white'
                     : 'text-gray-300 hover:bg-dark-lighter hover:text-white'
                 }`}
+                aria-current={activeTab === 'calendar' ? 'page' : undefined}
               >
                 {t('calendar')}
               </button>
@@ -64,6 +67,7 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, onAuthClick, activeTab,
                     ? 'bg-primary text-white'
                     : 'text-gray-300 hover:bg-dark-lighter hover:text-white'
                 }`}
+                aria-current={activeTab === 'myBookings' ? 'page' : undefined}
               >
                 {t('myBookings')}
               </button>
@@ -75,6 +79,7 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, onAuthClick, activeTab,
                       ? 'bg-primary text-white'
                       : 'text-gray-300 hover:bg-dark-lighter hover:text-white'
                   }`}
+                  aria-current={activeTab === 'pendingRequests' ? 'page' : undefined}
                 >
                   {t('pendingRequests')}
                 </button>
@@ -86,7 +91,7 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, onAuthClick, activeTab,
             {/* Language toggle: EL | EN, Greek first and preselected */}
             <button
               onClick={toggleLanguage}
-              aria-label="Language toggle"
+              aria-label="Language toggle EL/EN"
               className="relative h-9 w-24 rounded-lg bg-dark border border-gray-700 flex items-center justify-between px-3 text-sm font-medium"
             >
               {/* slider */}
@@ -106,10 +111,14 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, onAuthClick, activeTab,
                   <button
                     onClick={() => setShowNotifications(!showNotifications)}
                     className="relative p-2 text-gray-300 hover:text-white transition-colors"
+                    aria-label={t('notifications') as string}
                   >
                     <Bell size={24} />
                     {unreadCount > 0 && (
-                      <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                      <span
+                        className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center"
+                        aria-label={`${unreadCount} unread notifications`}
+                      >
                         {unreadCount}
                       </span>
                     )}
@@ -135,7 +144,8 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, onAuthClick, activeTab,
                   <button
                     onClick={onLogout}
                     className="p-2 text-gray-300 hover:text-white transition-colors"
-                    title={t('logout')}
+                    title={t('logout') as string}
+                    aria-label={t('logout') as string}
                   >
                     <LogOut size={20} />
                   </button>
@@ -161,6 +171,7 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, onAuthClick, activeTab,
                   ? 'bg-primary text-white'
                   : 'text-gray-300 hover:bg-dark-lighter hover:text-white'
               }`}
+              aria-current={activeTab === 'calendar' ? 'page' : undefined}
             >
               {t('calendar')}
             </button>
@@ -171,6 +182,7 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, onAuthClick, activeTab,
                   ? 'bg-primary text-white'
                   : 'text-gray-300 hover:bg-dark-lighter hover:text-white'
               }`}
+              aria-current={activeTab === 'myBookings' ? 'page' : undefined}
             >
               {t('myBookings')}
             </button>
@@ -182,6 +194,7 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, onAuthClick, activeTab,
                     ? 'bg-primary text-white'
                     : 'text-gray-300 hover:bg-dark-lighter hover:text-white'
                 }`}
+                aria-current={activeTab === 'pendingRequests' ? 'page' : undefined}
               >
                 {t('pendingRequests')}
               </button>
