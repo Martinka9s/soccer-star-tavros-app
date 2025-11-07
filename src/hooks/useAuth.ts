@@ -8,18 +8,31 @@ export const useAuth = () => {
 
   useEffect(() => {
     const unsubscribe = authService.onAuthStateChange(async (firebaseUser) => {
-      if (firebaseUser) {
-        try {
+      try {
+        if (firebaseUser) {
+          // Try to load Firestore profile first
           const userData = await authService.getCurrentUser();
-          setUser(userData);
-        } catch (error) {
-          console.error('Error fetching user data:', error);
+
+          if (userData) {
+            setUser(userData);
+          } else {
+            // Fallback: user doc doesn't exist yet — use Firebase auth info
+            setUser({
+              id: firebaseUser.uid,
+              email: firebaseUser.email || '',
+              role: 'user',          // safe default so UI updates immediately
+              createdAt: new Date(), // placeholder; real value comes from Firestore when available
+            });
+          }
+        } else {
           setUser(null);
         }
-      } else {
+      } catch (err) {
+        console.error('Error fetching user data:', err);
         setUser(null);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     });
 
     return () => unsubscribe();
