@@ -171,7 +171,6 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
     }
   };
 
-  const goToToday = () => setCurrentDate(new Date());
   const goToPrevious = () => setCurrentDate(subDays(currentDate, 1));
   const goToNext = () => setCurrentDate(addDays(currentDate, 1));
 
