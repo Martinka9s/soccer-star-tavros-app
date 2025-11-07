@@ -131,7 +131,9 @@ export const authService = {
 
   /** Login + ensure/fetch profile from `users/{uid}` */
   async login(email: string, password: string): Promise<User> {
+    console.log('TRY LOGIN', email);
     const cred = await signInWithEmailAndPassword(auth, email, password);
+    console.log('LOGIN OK', cred.user.uid);
     const uid = cred.user.uid;
     return ensureUserDoc(uid, cred.user.email || email);
   },
