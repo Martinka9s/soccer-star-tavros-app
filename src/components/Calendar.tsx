@@ -58,7 +58,6 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
 
     const start = `${actualHour.toString().padStart(2, '0')}:00`;
     const endHour24 = (actualHour + 1) % 24;
-    const end = `${endHour24.toString().padStart(2, '0')}:00`;
 
     // For the label we keep simple “HH:00 - HH:00”
     const labelStart = `${displayStartHour.toString().padStart(2, '0')}:00`;
