@@ -105,7 +105,7 @@ const resources = {
   el: {
     translation: {
       // Header
-      appName: 'Soccer Star Ταύρος',
+      appName: 'Soccer Star Tavros',
       login: 'Σύνδεση',
       logout: 'Αποσύνδεση',
       register: 'Εγγραφή',
