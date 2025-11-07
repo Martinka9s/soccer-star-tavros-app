@@ -27,7 +27,7 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [showModal, setShowModal] = useState(false);
 
-  // visual pitch toggle (matches the pills in the toolbar)
+  // visual pitch toggle (pill buttons on the right)
   const [activePitch, setActivePitch] = useState<PitchType>('Pitch A');
 
   const dateString = format(currentDate, 'yyyy-MM-dd');
@@ -49,15 +49,24 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
     }
   };
 
-  // 09:00 → 01:00 (next day) = 17 slots
+  // 09:00 → 01:00 (next day) = 17 one-hour slots
   const timeSlots = Array.from({ length: 17 }, (_, i) => {
     const hour = i + 9; // 9..25
-    const displayHour = hour > 12 ? hour - 12 : hour; // 1..12
     const period = hour >= 12 ? t('pm') : t('am');
+    const displayStartHour = hour > 12 ? hour - 12 : hour; // 1..12
     const actualHour = hour >= 24 ? hour - 24 : hour; // 0..23
+
+    const start = `${actualHour.toString().padStart(2, '0')}:00`;
+
+    // For the label we keep simple “HH:00 - HH:00”
+    const labelStart = `${displayStartHour.toString().padStart(2, '0')}:00`;
+    const displayEndHour = displayStartHour === 12 ? 1 : displayStartHour + 1;
+    const labelEnd = `${displayEndHour.toString().padStart(2, '0')}:00`;
+
     return {
-      time: `${actualHour.toString().padStart(2, '0')}:00`,
-      display: `${displayHour}:00 ${period}`,
+      time: start,
+      display: `${labelStart} - ${labelEnd}`,
+      period, // not shown in the range line; you already show 24h-like ranges in your mock
     };
   });
 
@@ -83,18 +92,19 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
     return { status: 'available' };
   };
 
-  const getSlotColor = (status: string): string => {
+  const getCardClasses = (status: string): string => {
+    // Neutral cards with subtle tints like in your screenshot
     switch (status) {
       case 'available':
-        return 'bg-gray-700 hover:bg-gray-600';
+        return 'bg-[#2C3144] hover:bg-[#343a52]'; // slate-ish
       case 'pending':
-        return 'bg-amber-600 hover:bg-amber-700';
+        return 'bg-amber-600/30 hover:bg-amber-600/40 border border-amber-500/40';
       case 'booked':
-        return 'bg-red-600 hover:bg-red-700';
+        return 'bg-red-600/30 hover:bg-red-600/40 border border-red-500/40';
       case 'blocked':
-        return 'bg-slate-800 hover:bg-slate-700';
+        return 'bg-slate-700/60 hover:bg-slate-700/70';
       default:
-        return 'bg-gray-700';
+        return 'bg-[#2C3144] hover:bg-[#343a52]';
     }
   };
 
@@ -127,7 +137,6 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
     }
   };
 
-  // >>> This is required by BookingModal (fixes "Cannot find name 'handleBookingSubmit'")
   const handleBookingSubmit = async (bookingData: any) => {
     if (!selectedSlot) return;
 
@@ -172,22 +181,43 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
     }
   };
 
+  const goToToday = () => setCurrentDate(new Date());
   const goToPrevious = () => setCurrentDate(subDays(currentDate, 1));
   const goToNext = () => setCurrentDate(addDays(currentDate, 1));
 
   return (
-    <div className="space-y-4">
-      {/* Hero: Title + Subtitle */}
-      <div className="space-y-1 text-center">
-        <h1 className="text-3xl font-bold text-white">{t('livePitchAvailability')}</h1>
-        <p className="text-sm text-gray-400">{t('selectDateAndPitch')}</p>
+    <div className="space-y-6">
+      {/* Title + Subtitle centered */}
+      <div className="text-center">
+        <h1 className="text-4xl font-extrabold text-white">{t('livePitchAvailability')}</h1>
+        <p className="mt-2 text-base text-gray-300">{t('selectDateAndPitch')}</p>
       </div>
 
-      {/* Toolbar: arrows + centered date + pitch pills */}
-      <div className="mt-1 bg-dark-lighter rounded-lg p-4">
+      {/* Legend centered */}
+      <div className="flex items-center justify-center gap-6 text-sm">
+        <div className="flex items-center gap-2">
+          <span className="inline-block h-3 w-3 rounded-full bg-[#2C3144]" />
+          <span className="text-gray-300">{t('available')}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="inline-block h-3 w-3 rounded-full bg-amber-500" />
+          <span className="text-gray-300">{t('pending')}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="inline-block h-3 w-3 rounded-full bg-red-500" />
+          <span className="text-gray-300">{t('booked')}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="inline-block h-3 w-3 rounded-full bg-slate-600" />
+          <span className="text-gray-300">{t('blocked')}</span>
+        </div>
+      </div>
+
+      {/* Banner bar: date+arrows (left) | actions (right) */}
+      <div className="bg-dark-lighter rounded-xl px-4 py-3">
         <div className="flex items-center justify-between">
-          {/* Left: Prev */}
-          <div className="w-24 flex items-center justify-start">
+          {/* Left: arrows tight to date */}
+          <div className="flex items-center gap-4">
             <button
               onClick={goToPrevious}
               className="h-9 w-9 flex items-center justify-center rounded-lg bg-dark text-gray-300 hover:text-white"
@@ -195,18 +225,14 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
             >
               <ChevronLeft size={18} />
             </button>
-          </div>
 
-          {/* Center: Date */}
-          <div className="text-center">
-            <div className="text-lg font-semibold text-white leading-tight">
-              {format(currentDate, 'EEEE')}
+            <div className="leading-tight">
+              <div className="text-xl font-semibold text-white">
+                {format(currentDate, 'EEEE')}
+              </div>
+              <div className="text-sm text-gray-300">{format(currentDate, 'MMMM d')}</div>
             </div>
-            <div className="text-sm text-gray-300">{format(currentDate, 'MMMM d')}</div>
-          </div>
 
-          {/* Right: Next */}
-          <div className="w-24 flex items-center justify-end">
             <button
               onClick={goToNext}
               className="h-9 w-9 flex items-center justify-center rounded-lg bg-dark text-gray-300 hover:text-white"
@@ -215,116 +241,84 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
               <ChevronRight size={18} />
             </button>
           </div>
-        </div>
 
-        {/* Pitch toggle row */}
-        <div className="mt-3 flex items-center justify-center gap-2">
-          <button
-            onClick={() => setActivePitch('Pitch A')}
-            className={`h-9 px-5 rounded-lg text-sm font-medium transition-colors border ${
-              activePitch === 'Pitch A'
-                ? 'bg-primary text-white border-transparent'
-                : 'bg-dark text-gray-200 border-gray-700 hover:text-white'
-            }`}
-          >
-            {t('pitchA')}
-          </button>
+          {/* Right: Today + pitch pills */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={goToToday}
+              className="h-9 px-4 rounded-lg bg-primary text-white hover:bg-primary-dark text-sm font-medium transition-colors"
+            >
+              {t('today')}
+            </button>
 
-        <button
-            onClick={() => setActivePitch('Pitch B')}
-            className={`h-9 px-5 rounded-lg text-sm font-medium transition-colors border ${
-              activePitch === 'Pitch B'
-                ? 'bg-primary text-white border-transparent'
-                : 'bg-dark text-gray-200 border-gray-700 hover:text-white'
-            }`}
-          >
-            {t('pitchB')}
-          </button>
-        </div>
-      </div>
+            <button
+              onClick={() => setActivePitch('Pitch A')}
+              className={`h-9 px-5 rounded-lg text-sm font-medium transition-colors border ${
+                activePitch === 'Pitch A'
+                  ? 'bg-primary text-white border-transparent'
+                  : 'bg-dark text-gray-200 border-gray-700 hover:text-white'
+              }`}
+            >
+              {t('pitchA')}
+            </button>
 
-      {/* Legend */}
-      <div className="flex flex-wrap gap-4 text-sm justify-center">
-        <div className="flex items-center space-x-2">
-          <div className="w-3 h-3 bg-gray-700 rounded-full" />
-          <span className="text-gray-300">{t('available')}</span>
-        </div>
-        <div className="flex items-center space-x-2">
-          <div className="w-3 h-3 bg-amber-600 rounded-full" />
-          <span className="text-gray-300">{t('pending')}</span>
-        </div>
-        <div className="flex items-center space-x-2">
-          <div className="w-3 h-3 bg-red-600 rounded-full" />
-          <span className="text-gray-300">{t('booked')}</span>
-        </div>
-        <div className="flex items-center space-x-2">
-          <div className="w-3 h-3 bg-slate-800 rounded-full" />
-          <span className="text-gray-300">{t('blocked')}</span>
+            <button
+              onClick={() => setActivePitch('Pitch B')}
+              className={`h-9 px-5 rounded-lg text-sm font-medium transition-colors border ${
+                activePitch === 'Pitch B'
+                  ? 'bg-primary text-white border-transparent'
+                  : 'bg-dark text-gray-200 border-gray-700 hover:text-white'
+              }`}
+            >
+              {t('pitchB')}
+            </button>
+          </div>
         </div>
       </div>
 
       {loading ? (
         <div className="text-center py-12 text-gray-400">Loading...</div>
       ) : (
-        <div className="bg-dark-lighter rounded-lg overflow-x-auto">
-          <table className="w-full min-w-[600px]">
-            <thead>
-              <tr className="border-b border-gray-700">
-                <th className="p-4 text-left text-gray-300 font-semibold">Time</th>
-                <th className="p-4 text-center text-gray-300 font-semibold">{t('pitchA')}</th>
-                <th className="p-4 text-center text-gray-300 font-semibold">{t('pitchB')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {timeSlots.map((slot) => {
-                const pitchAStatus = getSlotStatus('Pitch A', slot.time);
-                const pitchBStatus = getSlotStatus('Pitch B', slot.time);
+        <>
+          {/* Grid of cards for the selected pitch */}
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+            {timeSlots.map((slot) => {
+              const { status, booking } = getSlotStatus(activePitch, slot.time);
 
-                return (
-                  <tr key={slot.time} className="border-b border-gray-700 last:border-b-0">
-                    <td className="p-4 text-gray-400 font-medium">{slot.display}</td>
-
-                    <td className="p-2">
-                      <button
-                        onClick={() => handleSlotClick('Pitch A', slot.time)}
-                        className={`w-full h-16 rounded-lg transition-colors cursor-pointer ${getSlotColor(
-                          pitchAStatus.status
-                        )}`}
-                        title={`${t('pitchA')} - ${slot.display} - ${t(pitchAStatus.status)}`}
-                      >
-                        {pitchAStatus.booking && (
-                          <div className="text-white text-xs p-2">
-                            {pitchAStatus.booking.teamName || pitchAStatus.booking.userEmail}
-                            <br />
-                            {pitchAStatus.booking.duration}h
-                          </div>
+              return (
+                <button
+                  key={`${activePitch}-${slot.time}`}
+                  onClick={() => handleSlotClick(activePitch, slot.time)}
+                  className={`text-left rounded-xl p-5 transition-colors ${getCardClasses(
+                    status
+                  )}`}
+                  title={`${activePitch} - ${slot.display} - ${t(status)}`}
+                >
+                  <div className="text-lg font-semibold text-white">
+                    {slot.display}
+                  </div>
+                  <div className="mt-2 text-sm text-gray-300">
+                    {status === 'available' ? (
+                      <span>{t('available')}</span>
+                    ) : (
+                      <>
+                        <span className="capitalize">{t(status)}</span>
+                        {booking && (
+                          <>
+                            <span className="mx-2">·</span>
+                            <span className="text-white">
+                              {booking.teamName || booking.userEmail}
+                            </span>
+                          </>
                         )}
-                      </button>
-                    </td>
-
-                    <td className="p-2">
-                      <button
-                        onClick={() => handleSlotClick('Pitch B', slot.time)}
-                        className={`w-full h-16 rounded-lg transition-colors cursor-pointer ${getSlotColor(
-                          pitchBStatus.status
-                        )}`}
-                        title={`${t('pitchB')} - ${slot.display} - ${t(pitchBStatus.status)}`}
-                      >
-                        {pitchBStatus.booking && (
-                          <div className="text-white text-xs p-2">
-                            {pitchBStatus.booking.teamName || pitchBStatus.booking.userEmail}
-                            <br />
-                            {pitchBStatus.booking.duration}h
-                          </div>
-                        )}
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+                      </>
+                    )}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </>
       )}
 
       {showModal && user && selectedSlot && (
@@ -347,3 +341,4 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
 };
 
 export default Calendar;
+
