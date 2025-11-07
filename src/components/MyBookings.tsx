@@ -15,16 +15,18 @@ const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadBookings();
+    void loadBookings();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user.id]);
 
   const loadBookings = async () => {
     setLoading(true);
     try {
       const userBookings = await bookingService.getBookingsByUser(user.id);
-      setBookings(userBookings);
+      setBookings(userBookings ?? []);
     } catch (error) {
       console.error('Error loading bookings:', error);
+      setBookings([]);
     } finally {
       setLoading(false);
     }
@@ -55,63 +57,63 @@ const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
     }
   };
 
-  const renderBookingCard = (booking: Booking) => (
-    <div
-      key={booking.id}
-      className="bg-dark-lighter border border-gray-700 rounded-lg p-4 hover:border-primary transition-colors"
-    >
-      <div className="flex items-start justify-between mb-3">
-        <div>
-          <h3 className="text-lg font-semibold text-white">{booking.pitchType}</h3>
-          <div className="flex items-center space-x-4 mt-2 text-sm text-gray-400">
-            <div className="flex items-center space-x-1">
-              <CalendarIcon size={16} />
-              <span>{format(parseISO(booking.date), 'MMM d, yyyy')}</span>
-            </div>
-            <div className="flex items-center space-x-1">
-              <Clock size={16} />
-              <span>
-                {booking.startTime} ({booking.duration}h)
-              </span>
+  const renderBookingCard = (booking: Booking) => {
+    return (
+      <div
+        key={booking.id}
+        className="bg-dark-lighter border border-gray-700 rounded-lg p-4 hover:border-primary transition-colors"
+      >
+        <div className="flex items-start justify-between mb-3">
+          <div>
+            <h3 className="text-lg font-semibold text-white">{booking.pitchType}</h3>
+            <div className="flex items-center space-x-4 mt-2 text-sm text-gray-400">
+              <div className="flex items-center space-x-1">
+                <CalendarIcon size={16} />
+                <span>{format(parseISO(booking.date), 'MMM d, yyyy')}</span>
+              </div>
+              <div className="flex items-center space-x-1">
+                <Clock size={16} />
+                <span>
+                  {booking.startTime} ({booking.duration}h)
+                </span>
+              </div>
             </div>
           </div>
+          <span
+            className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(
+              booking.status
+            )}`}
+          >
+            {t(booking.status)}
+          </span>
         </div>
-        <span
-          className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(
-            booking.status
-          )}`}
-        >
-          {t(booking.status)}
-        </span>
+
+        {booking.teamName ? (
+          <div className="mt-2">
+            <span className="text-sm text-gray-400">Team: </span>
+            <span className="text-sm text-white">{booking.teamName}</span>
+          </div>
+        ) : null}
+
+        {booking.phoneNumber ? (
+          <div className="mt-1">
+            <span className="text-sm text-gray-400">Phone: </span>
+            <span className="text-sm text-white">{booking.phoneNumber}</span>
+          </div>
+        ) : null}
+
+        {booking.notes ? (
+          <div className="mt-2 p-2 bg-dark rounded text-sm text-gray-300">
+            {booking.notes}
+          </div>
+        ) : null}
       </div>
-
-      {booking.teamName && (
-        <div className="mt-2">
-          <span className="text-sm text-gray-400">Team: </span>
-          <span className="text-sm text-white">{booking.teamName}</span>
-        </div>
-      )}
-
-      {booking.phoneNumber && (
-        <div className="mt-1">
-          <span className="text-sm text-gray-400">Phone: </span>
-          <span className="text-sm text-white">{booking.phoneNumber}</span>
-        </div>
-      )}
-
-      {booking.notes && (
-        <div className="mt-2 p-2 bg-dark rounded text-sm text-gray-300">
-          {booking.notes}
-        </div>
-      )}
-    </div>
-  );
+    );
+  };
 
   if (loading) {
     return (
-      <div className="text-center py-12 text-gray-400">
-        Loading your bookings...
-      </div>
+      <div className="text-center py-12 text-gray-400">Loading your bookings...</div>
     );
   }
 
@@ -126,7 +128,7 @@ const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {upcomingBookings.map(renderBookingCard)}
+            {upcomingBookings.map((b) => renderBookingCard(b))}
           </div>
         )}
       </div>
@@ -140,7 +142,7 @@ const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {pastBookings.map(renderBookingCard)}
+            {pastBookings.map((b) => renderBookingCard(b))}
           </div>
         )}
       </div>
