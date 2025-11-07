@@ -41,7 +41,6 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
-// Use device/browser language for Firebase emails (reset, etc.)
 auth.useDeviceLanguage();
 
 // ✅ Firestore with persistent local cache
@@ -61,16 +60,6 @@ const convertTimestamp = (timestamp: any): Date => {
   if (timestamp instanceof Timestamp) return timestamp.toDate();
   return new Date(timestamp);
 };
-
-// --- AUTH HELPERS ------------------------------------------------------------
-
-/** Reads role for a uid; returns 'user' if not found */
-async function getUserRole(uid: string): Promise<UserRole> {
-  const ref = doc(db, 'users', uid);
-  const snap = await getDoc(ref);
-  const role = (snap.exists() ? snap.data()?.role : 'user') as UserRole | undefined;
-  return role || 'user';
-}
 
 /** Ensures users/{uid} exists; returns normalized User */
 async function ensureUserDoc(uid: string, email: string | null | undefined): Promise<User> {
@@ -121,7 +110,6 @@ export const authService = {
     const usersSnapshot = await getDocs(usersCollection);
     const role: UserRole = usersSnapshot.empty ? 'admin' : 'user';
 
-    // Use deterministic doc id: users/{uid}
     await setDoc(
       doc(db, 'users', uid),
       {
@@ -145,7 +133,6 @@ export const authService = {
   async login(email: string, password: string): Promise<User> {
     const cred = await signInWithEmailAndPassword(auth, email, password);
     const uid = cred.user.uid;
-    // 🔧 Ensure profile exists, then return it
     return ensureUserDoc(uid, cred.user.email || email);
   },
 
@@ -157,7 +144,6 @@ export const authService = {
   async getCurrentUser(): Promise<User | null> {
     const firebaseUser = auth.currentUser;
     if (!firebaseUser) return null;
-    // 🔧 Ensure profile exists so UI can rely on it
     return ensureUserDoc(firebaseUser.uid, firebaseUser.email);
   },
 
