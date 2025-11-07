@@ -1,11 +1,10 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { format, addDays, subDays, startOfDay, isBefore, parseISO } from 'date-fns';
 import { Booking, PitchType, User } from '../types';
-import { bookingService, db } from '../services/firebaseService';
+import { bookingService } from '../services/firebaseService';
 import BookingModal from './BookingModal';
-import { collection, onSnapshot, query, where } from 'firebase/firestore';
 
 interface CalendarProps {
   user: User | null;
@@ -28,59 +27,39 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [showModal, setShowModal] = useState(false);
 
-  // visual pitch toggle (we keep it, but table shows both columns as before)
+  // visual pitch toggle (matches the pills in the toolbar)
   const [activePitch, setActivePitch] = useState<PitchType>('Pitch A');
 
   const dateString = format(currentDate, 'yyyy-MM-dd');
 
-  // --- FAST: live query using cache-first onSnapshot ---
   useEffect(() => {
-    setLoading(true);
-
-    const q = query(collection(db, 'bookings'), where('date', '==', dateString));
-    const unsubscribe = onSnapshot(
-      q,
-      (snap) => {
-        const data = snap.docs.map((doc) => {
-          const d = doc.data() as any;
-          return {
-            id: doc.id,
-            ...d,
-            // Firestore timestamps become JS Date via our service when writing; here ensure Date objects:
-            createdAt: d.createdAt?.toDate ? d.createdAt.toDate() : new Date(d.createdAt),
-            updatedAt: d.updatedAt?.toDate ? d.updatedAt.toDate() : new Date(d.updatedAt),
-          } as Booking;
-        });
-        setBookings(data);
-        setLoading(false);
-      },
-      (err) => {
-        console.error('onSnapshot error:', err);
-        setLoading(false);
-      }
-    );
-
-    return () => unsubscribe();
+    loadBookings();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dateString]);
 
+  const loadBookings = async () => {
+    setLoading(true);
+    try {
+      const data = await bookingService.getBookingsByDate(dateString);
+      setBookings(data);
+    } catch (error) {
+      console.error('Error loading bookings:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // 09:00 → 01:00 (next day) = 17 slots
-  const timeSlots = useMemo(
-    () =>
-      Array.from({ length: 17 }, (_, i) => {
-        const hour = i + 9; // 9..25
-        const displayStartHour = hour > 12 ? hour - 12 : hour; // 1..12
-        const period = hour >= 12 ? t('pm') : t('am');
-        const actualHour = hour >= 24 ? hour - 24 : hour; // 0..23
-
-        const start = `${actualHour.toString().padStart(2, '0')}:00`;
-        const labelStart = `${displayStartHour.toString().padStart(2, '0')}:00`;
-        const displayEndHour = displayStartHour === 12 ? 1 : displayStartHour + 1;
-        const labelEnd = `${displayEndHour.toString().padStart(2, '0')}:00`;
-
-        return { time: start, display: `${labelStart} - ${labelEnd}`, period };
-      }),
-    [t]
-  );
+  const timeSlots = Array.from({ length: 17 }, (_, i) => {
+    const hour = i + 9; // 9..25
+    const displayHour = hour > 12 ? hour - 12 : hour; // 1..12
+    const period = hour >= 12 ? t('pm') : t('am');
+    const actualHour = hour >= 24 ? hour - 24 : hour; // 0..23
+    return {
+      time: `${actualHour.toString().padStart(2, '0')}:00`,
+      display: `${displayHour}:00 ${period}`,
+    };
+  });
 
   const getSlotStatus = (
     pitch: PitchType,
@@ -148,37 +127,67 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
     }
   };
 
+  // >>> This is required by BookingModal (fixes "Cannot find name 'handleBookingSubmit'")
+  const handleBookingSubmit = async (bookingData: any) => {
+    if (!selectedSlot) return;
+
+    try {
+      if (bookingData.delete && selectedBooking) {
+        await bookingService.deleteBooking(selectedBooking.id);
+
+        if (selectedBooking.userId && user?.role === 'admin') {
+          const { notificationService } = await import('../services/firebaseService');
+          await notificationService.createNotification(
+            selectedBooking.userId,
+            'cancelled',
+            selectedBooking.id,
+            selectedBooking.pitchType,
+            selectedBooking.date,
+            selectedBooking.startTime,
+            t('bookingCancelled', {
+              pitch: selectedBooking.pitchType,
+              date: selectedBooking.date,
+              time: selectedBooking.startTime,
+            })
+          );
+        }
+      } else if (selectedBooking) {
+        await bookingService.updateBooking(selectedBooking.id, bookingData);
+      } else {
+        await bookingService.createBooking({
+          ...bookingData,
+          pitchType: selectedSlot.pitch,
+          date: selectedSlot.date,
+          startTime: selectedSlot.time,
+        });
+      }
+
+      await loadBookings();
+      setShowModal(false);
+      setSelectedSlot(null);
+      setSelectedBooking(null);
+    } catch (error) {
+      console.error('Error submitting booking:', error);
+      throw error;
+    }
+  };
+
   const goToPrevious = () => setCurrentDate(subDays(currentDate, 1));
   const goToNext = () => setCurrentDate(addDays(currentDate, 1));
-
-  // --- Simple skeleton row for perceived speed ---
-  const SkeletonRow = () => (
-    <tr className="border-b border-gray-700 last:border-b-0">
-      <td className="p-4">
-        <div className="h-4 w-24 bg-gray-700 rounded animate-pulse" />
-      </td>
-      <td className="p-2">
-        <div className="h-16 w-full rounded-lg bg-gray-700 animate-pulse" />
-      </td>
-      <td className="p-2">
-        <div className="h-16 w-full rounded-lg bg-gray-700 animate-pulse" />
-      </td>
-    </tr>
-  );
 
   return (
     <div className="space-y-4">
       {/* Hero: Title + Subtitle */}
-      <div className="space-y-1">
+      <div className="space-y-1 text-center">
         <h1 className="text-3xl font-bold text-white">{t('livePitchAvailability')}</h1>
         <p className="text-sm text-gray-400">{t('selectDateAndPitch')}</p>
       </div>
 
-      {/* Toolbar: arrows + centered date; pills on the right like your screenshot */}
-      <div className="bg-dark-lighter rounded-lg p-4">
-        <div className="flex items-center justify-between gap-3">
+      {/* Toolbar: arrows + centered date + pitch pills */}
+      <div className="mt-1 bg-dark-lighter rounded-lg p-4">
+        <div className="flex items-center justify-between">
           {/* Left: Prev */}
-          <div className="flex items-center gap-2">
+          <div className="w-24 flex items-center justify-start">
             <button
               onClick={goToPrevious}
               className="h-9 w-9 flex items-center justify-center rounded-lg bg-dark text-gray-300 hover:text-white"
@@ -196,75 +205,76 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
             <div className="text-sm text-gray-300">{format(currentDate, 'MMMM d')}</div>
           </div>
 
-          {/* Right: Today + pitch pills */}
-          <div className="flex items-center gap-2">
+          {/* Right: Next */}
+          <div className="w-24 flex items-center justify-end">
             <button
-              onClick={() => setCurrentDate(new Date())}
-              className="h-9 px-4 rounded-lg text-sm font-medium transition-colors bg-primary text-white"
+              onClick={goToNext}
+              className="h-9 w-9 flex items-center justify-center rounded-lg bg-dark text-gray-300 hover:text-white"
+              aria-label="Next day"
             >
-              {t('today')}
-            </button>
-            <button
-              onClick={() => setActivePitch('Pitch A')}
-              className={`h-9 px-5 rounded-lg text-sm font-medium transition-colors border ${
-                activePitch === 'Pitch A'
-                  ? 'bg-primary text-white border-transparent'
-                  : 'bg-dark text-gray-200 border-gray-700 hover:text-white'
-              }`}
-            >
-              {t('pitchA')}
-            </button>
-            <button
-              onClick={() => setActivePitch('Pitch B')}
-              className={`h-9 px-5 rounded-lg text-sm font-medium transition-colors border ${
-                activePitch === 'Pitch B'
-                  ? 'bg-primary text-white border-transparent'
-                  : 'bg-dark text-gray-200 border-gray-700 hover:text-white'
-              }`}
-            >
-              {t('pitchB')}
+              <ChevronRight size={18} />
             </button>
           </div>
+        </div>
+
+        {/* Pitch toggle row */}
+        <div className="mt-3 flex items-center justify-center gap-2">
+          <button
+            onClick={() => setActivePitch('Pitch A')}
+            className={`h-9 px-5 rounded-lg text-sm font-medium transition-colors border ${
+              activePitch === 'Pitch A'
+                ? 'bg-primary text-white border-transparent'
+                : 'bg-dark text-gray-200 border-gray-700 hover:text-white'
+            }`}
+          >
+            {t('pitchA')}
+          </button>
+
+        <button
+            onClick={() => setActivePitch('Pitch B')}
+            className={`h-9 px-5 rounded-lg text-sm font-medium transition-colors border ${
+              activePitch === 'Pitch B'
+                ? 'bg-primary text-white border-transparent'
+                : 'bg-dark text-gray-200 border-gray-700 hover:text-white'
+            }`}
+          >
+            {t('pitchB')}
+          </button>
         </div>
       </div>
 
       {/* Legend */}
-      <div className="flex flex-wrap gap-4 text-sm">
+      <div className="flex flex-wrap gap-4 text-sm justify-center">
         <div className="flex items-center space-x-2">
-          <div className="w-4 h-4 bg-gray-700 rounded" />
+          <div className="w-3 h-3 bg-gray-700 rounded-full" />
           <span className="text-gray-300">{t('available')}</span>
         </div>
         <div className="flex items-center space-x-2">
-          <div className="w-4 h-4 bg-amber-600 rounded" />
+          <div className="w-3 h-3 bg-amber-600 rounded-full" />
           <span className="text-gray-300">{t('pending')}</span>
         </div>
         <div className="flex items-center space-x-2">
-          <div className="w-4 h-4 bg-red-600 rounded" />
+          <div className="w-3 h-3 bg-red-600 rounded-full" />
           <span className="text-gray-300">{t('booked')}</span>
         </div>
         <div className="flex items-center space-x-2">
-          <div className="w-4 h-4 bg-slate-800 rounded" />
+          <div className="w-3 h-3 bg-slate-800 rounded-full" />
           <span className="text-gray-300">{t('blocked')}</span>
         </div>
       </div>
 
-      <div className="bg-dark-lighter rounded-lg overflow-x-auto">
-        <table className="w-full min-w-[600px]">
-          <thead>
-            <tr className="border-b border-gray-700">
-              <th className="p-4 text-left text-gray-300 font-semibold">Time</th>
-              <th className="p-4 text-center text-gray-300 font-semibold">{t('pitchA')}</th>
-              <th className="p-4 text-center text-gray-300 font-semibold">{t('pitchB')}</th>
-            </tr>
-          </thead>
-
-          {loading ? (
-            <tbody>
-              {Array.from({ length: 8 }).map((_, i) => (
-                <SkeletonRow key={i} />
-              ))}
-            </tbody>
-          ) : (
+      {loading ? (
+        <div className="text-center py-12 text-gray-400">Loading...</div>
+      ) : (
+        <div className="bg-dark-lighter rounded-lg overflow-x-auto">
+          <table className="w-full min-w-[600px]">
+            <thead>
+              <tr className="border-b border-gray-700">
+                <th className="p-4 text-left text-gray-300 font-semibold">Time</th>
+                <th className="p-4 text-center text-gray-300 font-semibold">{t('pitchA')}</th>
+                <th className="p-4 text-center text-gray-300 font-semibold">{t('pitchB')}</th>
+              </tr>
+            </thead>
             <tbody>
               {timeSlots.map((slot) => {
                 const pitchAStatus = getSlotStatus('Pitch A', slot.time);
@@ -272,9 +282,7 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
 
                 return (
                   <tr key={slot.time} className="border-b border-gray-700 last:border-b-0">
-                    <td className="p-4 text-gray-400 font-medium">
-                      <div>{slot.display}</div>
-                    </td>
+                    <td className="p-4 text-gray-400 font-medium">{slot.display}</td>
 
                     <td className="p-2">
                       <button
@@ -315,9 +323,9 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
                 );
               })}
             </tbody>
-          )}
-        </table>
-      </div>
+          </table>
+        </div>
+      )}
 
       {showModal && user && selectedSlot && (
         <BookingModal
@@ -327,9 +335,7 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
             setSelectedSlot(null);
             setSelectedBooking(null);
           }}
-          onSubmit={async (bookingData: any) => {
-            await handleBookingSubmit(bookingData);
-          }}
+          onSubmit={handleBookingSubmit}
           selectedSlot={selectedSlot}
           existingBooking={selectedBooking}
           user={user}
