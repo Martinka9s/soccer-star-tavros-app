@@ -41,6 +41,8 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
+// Use device/browser language for Firebase emails (reset, etc.)
+auth.useDeviceLanguage();
 
 // ✅ Firestore with persistent local cache
 export const db = initializeFirestore(app, {
@@ -81,12 +83,16 @@ export const authService = {
     const role: UserRole = usersSnapshot.empty ? 'admin' : 'user';
 
     // Use deterministic doc id: users/{uid}
-    await setDoc(doc(db, 'users', uid), {
-      id: uid,
-      email,
-      role,
-      createdAt: serverTimestamp(),
-    }, { merge: true });
+    await setDoc(
+      doc(db, 'users', uid),
+      {
+        id: uid,
+        email,
+        role,
+        createdAt: serverTimestamp(),
+      },
+      { merge: true }
+    );
 
     return {
       id: uid,
