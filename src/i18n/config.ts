@@ -128,7 +128,7 @@ const resources = {
 
       // Booking Status
       available: 'Διαθέσιμο',
-      pending: 'Σε εκκρεμότητα',
+      pending: 'Σε αναμονή',
       booked: 'Κρατημένο',
       blocked: 'Μπλοκαρισμένο',
 
