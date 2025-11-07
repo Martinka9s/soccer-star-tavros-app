@@ -72,6 +72,45 @@ async function getUserRole(uid: string): Promise<UserRole> {
   return role || 'user';
 }
 
+/** Ensures users/{uid} exists; returns normalized User */
+async function ensureUserDoc(uid: string, email: string | null | undefined): Promise<User> {
+  const ref = doc(db, 'users', uid);
+  const snap = await getDoc(ref);
+
+  if (!snap.exists()) {
+    // Default role (first user becomes admin)
+    const usersSnapshot = await getDocs(usersCollection);
+    const role: UserRole = usersSnapshot.empty ? 'admin' : 'user';
+
+    await setDoc(
+      ref,
+      {
+        id: uid,
+        email: email || '',
+        role,
+        createdAt: serverTimestamp(),
+      },
+      { merge: true }
+    );
+
+    return {
+      id: uid,
+      email: email || '',
+      role,
+      createdAt: new Date(),
+    };
+  }
+
+  const data = snap.data();
+  return {
+    id: data.id,
+    email: data.email,
+    role: data.role,
+    createdAt: convertTimestamp(data.createdAt),
+    phoneNumber: data.phoneNumber,
+  };
+}
+
 export const authService = {
   /** Register + create `users/{uid}`; first user becomes admin */
   async register(email: string, password: string): Promise<User> {
@@ -102,48 +141,24 @@ export const authService = {
     };
   },
 
-  /** Login + fetch role from `users/{uid}` */
+  /** Login + ensure/fetch profile from `users/{uid}` */
   async login(email: string, password: string): Promise<User> {
     const cred = await signInWithEmailAndPassword(auth, email, password);
     const uid = cred.user.uid;
-
-    const userSnap = await getDoc(doc(db, 'users', uid));
-    if (!userSnap.exists()) {
-      // If doc missing, fall back to default role
-      const role = await getUserRole(uid);
-      return { id: uid, email: cred.user.email || email, role, createdAt: new Date() };
-    }
-
-    const data = userSnap.data();
-    return {
-      id: data.id,
-      email: data.email,
-      role: data.role,
-      createdAt: convertTimestamp(data.createdAt),
-      phoneNumber: data.phoneNumber,
-    };
+    // 🔧 Ensure profile exists, then return it
+    return ensureUserDoc(uid, cred.user.email || email);
   },
 
   async logout(): Promise<void> {
     await signOut(auth);
   },
 
+  /** Current user from auth + ensure/fetch profile; returns null if signed out */
   async getCurrentUser(): Promise<User | null> {
     const firebaseUser = auth.currentUser;
     if (!firebaseUser) return null;
-
-    const snap = await getDoc(doc(db, 'users', firebaseUser.uid));
-    if (snap.exists()) {
-      const data = snap.data();
-      return {
-        id: data.id,
-        email: data.email,
-        role: data.role,
-        createdAt: convertTimestamp(data.createdAt),
-        phoneNumber: data.phoneNumber,
-      };
-    }
-    return null;
+    // 🔧 Ensure profile exists so UI can rely on it
+    return ensureUserDoc(firebaseUser.uid, firebaseUser.email);
   },
 
   onAuthStateChange(callback: (user: FirebaseUser | null) => void) {
