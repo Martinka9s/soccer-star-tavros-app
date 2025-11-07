@@ -8,7 +8,10 @@ import {
   User as FirebaseUser,
 } from 'firebase/auth';
 import {
-  getFirestore,
+  // 🔄 use initializeFirestore + persistent cache (instead of getFirestore)
+  initializeFirestore,
+  persistentLocalCache,
+  persistentMultipleTabManager,
   collection,
   addDoc,
   updateDoc,
@@ -37,7 +40,13 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
-export const db = getFirestore(app);
+
+// ✅ Firestore with persistent local cache for instant reads after first load
+export const db = initializeFirestore(app, {
+  localCache: persistentLocalCache({
+    tabManager: persistentMultipleTabManager(),
+  }),
+});
 
 // Collections
 const usersCollection = collection(db, 'users');
@@ -55,16 +64,14 @@ const convertTimestamp = (timestamp: any): Date => {
 // Auth Service
 export const authService = {
   async register(email: string, password: string): Promise<User> {
-    // Create auth user
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     const firebaseUser = userCredential.user;
 
-    // Check if this is the first user (admin)
+    // First user becomes admin
     const usersSnapshot = await getDocs(usersCollection);
     const isFirstUser = usersSnapshot.empty;
     const role: UserRole = isFirstUser ? 'admin' : 'user';
 
-    // Create user document
     const userData = {
       email,
       role,
@@ -88,7 +95,6 @@ export const authService = {
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
     const firebaseUser = userCredential.user;
 
-    // Get user data from Firestore
     const q = query(usersCollection, where('id', '==', firebaseUser.uid));
     const snapshot = await getDocs(q);
 
@@ -153,36 +159,45 @@ export const bookingService = {
     const q = query(bookingsCollection, where('date', '==', date));
     const snapshot = await getDocs(q);
 
-    return snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-      createdAt: convertTimestamp(doc.data().createdAt),
-      updatedAt: convertTimestamp(doc.data().updatedAt),
-    } as Booking));
+    return snapshot.docs.map(
+      (doc) =>
+        ({
+          id: doc.id,
+          ...doc.data(),
+          createdAt: convertTimestamp(doc.data().createdAt),
+          updatedAt: convertTimestamp(doc.data().updatedAt),
+        } as Booking)
+    );
   },
 
   async getBookingsByUser(userId: string): Promise<Booking[]> {
     const q = query(bookingsCollection, where('userId', '==', userId), orderBy('date', 'desc'));
     const snapshot = await getDocs(q);
 
-    return snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-      createdAt: convertTimestamp(doc.data().createdAt),
-      updatedAt: convertTimestamp(doc.data().updatedAt),
-    } as Booking));
+    return snapshot.docs.map(
+      (doc) =>
+        ({
+          id: doc.id,
+          ...doc.data(),
+          createdAt: convertTimestamp(doc.data().createdAt),
+          updatedAt: convertTimestamp(doc.data().updatedAt),
+        } as Booking)
+    );
   },
 
   async getPendingBookings(): Promise<Booking[]> {
     const q = query(bookingsCollection, where('status', '==', 'pending'), orderBy('createdAt', 'desc'));
     const snapshot = await getDocs(q);
 
-    return snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-      createdAt: convertTimestamp(doc.data().createdAt),
-      updatedAt: convertTimestamp(doc.data().updatedAt),
-    } as Booking));
+    return snapshot.docs.map(
+      (doc) =>
+        ({
+          id: doc.id,
+          ...doc.data(),
+          createdAt: convertTimestamp(doc.data().createdAt),
+          updatedAt: convertTimestamp(doc.data().updatedAt),
+        } as Booking)
+    );
   },
 
   async updateBooking(bookingId: string, updates: Partial<Booking>): Promise<void> {
@@ -243,11 +258,14 @@ export const notificationService = {
     const q = query(notificationsCollection, where('userId', '==', userId), orderBy('createdAt', 'desc'));
     const snapshot = await getDocs(q);
 
-    return snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-      createdAt: convertTimestamp(doc.data().createdAt),
-    } as Notification));
+    return snapshot.docs.map(
+      (doc) =>
+        ({
+          id: doc.id,
+          ...doc.data(),
+          createdAt: convertTimestamp(doc.data().createdAt),
+        } as Notification)
+    );
   },
 
   async markAsRead(notificationId: string): Promise<void> {
@@ -259,7 +277,7 @@ export const notificationService = {
     const q = query(notificationsCollection, where('userId', '==', userId), where('read', '==', false));
     const snapshot = await getDocs(q);
 
-    const updatePromises = snapshot.docs.map((doc) => updateDoc(doc.ref, { read: true }));
+    const updatePromises = snapshot.docs.map((docRef) => updateDoc(docRef.ref, { read: true }));
     await Promise.all(updatePromises);
   },
 
