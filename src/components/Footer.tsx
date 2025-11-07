@@ -85,7 +85,7 @@ const Footer: React.FC = () => {
           {/* Additional Info */}
           <div>
             <h3 className="text-lg font-semibold text-white mb-4">{t('appName')}</h3>
-            <p className="text-gray-400 text-sm">5x5 Football Pitch Booking System</p>
+            <p className="text-gray-400 text-sm">5x5 Football pitch booking system</p>
           </div>
         </div>
 
