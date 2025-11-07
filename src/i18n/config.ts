@@ -9,25 +9,29 @@ const resources = {
       login: 'Login',
       logout: 'Logout',
       register: 'Register',
-      
+
       // Navigation
       calendar: 'Calendar',
       myBookings: 'My Bookings',
       pendingRequests: 'Pending Requests',
-      
+
       // Calendar
       today: 'Today',
       previous: 'Previous',
       next: 'Next',
       pitchA: 'Pitch A',
       pitchB: 'Pitch B',
-      
+
+      // 👇 NEW: Title & Subtitle
+      livePitchAvailability: 'Live pitch availability',
+      selectDateAndPitch: 'Check available slots & book easily',
+
       // Booking Status
       available: 'Available',
       pending: 'Pending',
       booked: 'Booked',
       blocked: 'Blocked',
-      
+
       // Booking Modal
       bookSlot: 'Book Slot',
       createBooking: 'Create Booking',
@@ -46,7 +50,7 @@ const resources = {
       approve: 'Approve',
       reject: 'Reject',
       close: 'Close',
-      
+
       // Auth
       email: 'Email',
       password: 'Password',
@@ -57,12 +61,12 @@ const resources = {
       signUp: 'Sign Up',
       signIn: 'Sign In',
       loginRequired: 'Please login to book a slot',
-      
+
       // My Bookings
       upcomingBookings: 'Upcoming Bookings',
       pastBookings: 'Past Bookings',
       noBookings: 'No bookings found',
-      
+
       // Notifications
       notifications: 'Notifications',
       markAllRead: 'Mark All as Read',
@@ -70,18 +74,18 @@ const resources = {
       bookingApproved: 'Your booking for {{pitch}} on {{date}} at {{time}} has been approved.',
       bookingRejected: 'Your booking for {{pitch}} on {{date}} at {{time}} has been rejected.',
       bookingCancelled: 'Your booking for {{pitch}} on {{date}} at {{time}} has been cancelled by admin.',
-      
+
       // Admin
       adminPanel: 'Admin Panel',
       userEmail: 'User Email',
       status: 'Status',
       actions: 'Actions',
-      
+
       // Footer
       contact: 'Contact',
       location: 'Location',
       followUs: 'Follow Us',
-      
+
       // Messages
       bookingSuccess: 'Booking request submitted successfully!',
       bookingError: 'Failed to create booking. Please try again.',
@@ -92,7 +96,7 @@ const resources = {
       conflictError: 'This time slot conflicts with an existing booking.',
       selectSlot: 'Please select an available time slot to book.',
       pastDateError: 'Cannot book slots in the past.',
-      
+
       // Time
       am: 'AM',
       pm: 'PM',
@@ -105,25 +109,29 @@ const resources = {
       login: 'Σύνδεση',
       logout: 'Αποσύνδεση',
       register: 'Εγγραφή',
-      
+
       // Navigation
       calendar: 'Ημερολόγιο',
       myBookings: 'Οι Κρατήσεις μου',
       pendingRequests: 'Αιτήματα σε Εκκρεμότητα',
-      
+
       // Calendar
       today: 'Σήμερα',
       previous: 'Προηγούμενη',
       next: 'Επόμενη',
       pitchA: 'Γήπεδο A',
       pitchB: 'Γήπεδο B',
-      
+
+      // 👇 ΝΕΟ: Τίτλος & Υπότιτλος
+      livePitchAvailability: 'Live διαθεσιμότητα γηπέδων',
+      selectDateAndPitch: 'Δες διαθέσιμες ώρες & κάνε κράτηση εύκολα',
+
       // Booking Status
       available: 'Διαθέσιμο',
       pending: 'Σε Εκκρεμότητα',
       booked: 'Κρατημένο',
       blocked: 'Μπλοκαρισμένο',
-      
+
       // Booking Modal
       bookSlot: 'Κράτηση Ώρας',
       createBooking: 'Δημιουργία Κράτησης',
@@ -142,7 +150,7 @@ const resources = {
       approve: 'Έγκριση',
       reject: 'Απόρριψη',
       close: 'Κλείσιμο',
-      
+
       // Auth
       email: 'Email',
       password: 'Κωδικός',
@@ -153,12 +161,12 @@ const resources = {
       signUp: 'Εγγραφή',
       signIn: 'Σύνδεση',
       loginRequired: 'Παρακαλώ συνδεθείτε για να κάνετε κράτηση',
-      
+
       // My Bookings
       upcomingBookings: 'Επερχόμενες Κρατήσεις',
       pastBookings: 'Προηγούμενες Κρατήσεις',
       noBookings: 'Δεν βρέθηκαν κρατήσεις',
-      
+
       // Notifications
       notifications: 'Ειδοποιήσεις',
       markAllRead: 'Σήμανση Όλων ως Αναγνωσμένα',
@@ -166,18 +174,18 @@ const resources = {
       bookingApproved: 'Η κράτησή σας για το {{pitch}} στις {{date}} στις {{time}} εγκρίθηκε.',
       bookingRejected: 'Η κράτησή σας για το {{pitch}} στις {{date}} στις {{time}} απορρίφθηκε.',
       bookingCancelled: 'Η κράτησή σας για το {{pitch}} στις {{date}} στις {{time}} ακυρώθηκε από τον διαχειριστή.',
-      
+
       // Admin
       adminPanel: 'Πίνακας Διαχειριστή',
       userEmail: 'Email Χρήστη',
       status: 'Κατάσταση',
       actions: 'Ενέργειες',
-      
+
       // Footer
       contact: 'Επικοινωνία',
       location: 'Τοποθεσία',
       followUs: 'Ακολουθήστε μας',
-      
+
       // Messages
       bookingSuccess: 'Το αίτημα κράτησης υποβλήθηκε επιτυχώς!',
       bookingError: 'Αποτυχία δημιουργίας κράτησης. Παρακαλώ δοκιμάστε ξανά.',
@@ -188,7 +196,7 @@ const resources = {
       conflictError: 'Αυτή η ώρα συγκρούεται με μια υπάρχουσα κράτηση.',
       selectSlot: 'Παρακαλώ επιλέξτε μια διαθέσιμη ώρα για κράτηση.',
       pastDateError: 'Δεν μπορείτε να κάνετε κράτηση σε παρελθοντικές ώρες.',
-      
+
       // Time
       am: 'ΠΜ',
       pm: 'ΜΜ',
