@@ -49,16 +49,16 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
     }
   };
 
-  // Slots from 09:00 up to 23:00–00:00 (last slot ends at midnight)
-  const timeSlots = Array.from({ length: 15 }, (_, i) => {
-    const startHour24 = 9 + i;            // 9..23
-    const endHour24 = (startHour24 + 1) % 24; // 10..00
-    const start = `${startHour24.toString().padStart(2, '0')}:00`;
+  // Slots from 09:00 up to 00:00–01:00 (last slot starts at midnight)
+  const timeSlots = Array.from({ length: 16 }, (_, i) => {
+    const startHour24 = 9 + i;                 // 9..24
+    const endHour24 = (startHour24 + 1) % 24;  // 10..01
+    const start = `${(startHour24 % 24).toString().padStart(2, '0')}:00`;
     const labelStart = start;
     const labelEnd = `${endHour24.toString().padStart(2, '0')}:00`;
     return {
-      time: start,                  // start time in 24h
-      display: `${labelStart} - ${labelEnd}`, // 24h label e.g. 23:00 - 00:00
+      time: start,                      // start time in 24h
+      display: `${labelStart} - ${labelEnd}`, // e.g., 23:00 - 00:00, 00:00 - 01:00
     };
   });
 
