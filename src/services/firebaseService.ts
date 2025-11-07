@@ -5,10 +5,10 @@ import {
   signInWithEmailAndPassword,
   signOut,
   onAuthStateChanged,
+  sendPasswordResetEmail,
   User as FirebaseUser,
 } from 'firebase/auth';
 import {
-  // 🔄 use initializeFirestore + persistent cache (instead of getFirestore)
   initializeFirestore,
   persistentLocalCache,
   persistentMultipleTabManager,
@@ -17,6 +17,7 @@ import {
   updateDoc,
   deleteDoc,
   doc,
+  setDoc,
   getDocs,
   getDoc,
   query,
@@ -27,7 +28,7 @@ import {
 } from 'firebase/firestore';
 import { User, Booking, Notification, UserRole, PitchType } from '../types';
 
-// Firebase configuration from environment variables (Vite: must be VITE_*)
+// Firebase configuration
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY as string,
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN as string,
@@ -41,7 +42,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 
-// ✅ Firestore with persistent local cache for instant reads after first load
+// ✅ Firestore with persistent local cache
 export const db = initializeFirestore(app, {
   localCache: persistentLocalCache({
     tabManager: persistentMultipleTabManager(),
@@ -53,64 +54,68 @@ const usersCollection = collection(db, 'users');
 const bookingsCollection = collection(db, 'bookings');
 const notificationsCollection = collection(db, 'notifications');
 
-// Helper function to convert Firestore timestamp to Date
+// Helper: Firestore timestamp → Date
 const convertTimestamp = (timestamp: any): Date => {
-  if (timestamp instanceof Timestamp) {
-    return timestamp.toDate();
-  }
+  if (timestamp instanceof Timestamp) return timestamp.toDate();
   return new Date(timestamp);
 };
 
-// Auth Service
+// --- AUTH HELPERS ------------------------------------------------------------
+
+/** Reads role for a uid; returns 'user' if not found */
+async function getUserRole(uid: string): Promise<UserRole> {
+  const ref = doc(db, 'users', uid);
+  const snap = await getDoc(ref);
+  const role = (snap.exists() ? snap.data()?.role : 'user') as UserRole | undefined;
+  return role || 'user';
+}
+
 export const authService = {
+  /** Register + create `users/{uid}`; first user becomes admin */
   async register(email: string, password: string): Promise<User> {
-    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-    const firebaseUser = userCredential.user;
+    const cred = await createUserWithEmailAndPassword(auth, email, password);
+    const uid = cred.user.uid;
 
     // First user becomes admin
     const usersSnapshot = await getDocs(usersCollection);
-    const isFirstUser = usersSnapshot.empty;
-    const role: UserRole = isFirstUser ? 'admin' : 'user';
+    const role: UserRole = usersSnapshot.empty ? 'admin' : 'user';
 
-    const userData = {
+    // Use deterministic doc id: users/{uid}
+    await setDoc(doc(db, 'users', uid), {
+      id: uid,
       email,
       role,
       createdAt: serverTimestamp(),
-    };
-
-    await addDoc(usersCollection, {
-      ...userData,
-      id: firebaseUser.uid,
-    });
+    }, { merge: true });
 
     return {
-      id: firebaseUser.uid,
+      id: uid,
       email,
       role,
       createdAt: new Date(),
     };
   },
 
+  /** Login + fetch role from `users/{uid}` */
   async login(email: string, password: string): Promise<User> {
-    const userCredential = await signInWithEmailAndPassword(auth, email, password);
-    const firebaseUser = userCredential.user;
+    const cred = await signInWithEmailAndPassword(auth, email, password);
+    const uid = cred.user.uid;
 
-    const q = query(usersCollection, where('id', '==', firebaseUser.uid));
-    const snapshot = await getDocs(q);
-
-    if (!snapshot.empty) {
-      const userDoc = snapshot.docs[0];
-      const userData = userDoc.data();
-      return {
-        id: userData.id,
-        email: userData.email,
-        role: userData.role,
-        createdAt: convertTimestamp(userData.createdAt),
-        phoneNumber: userData.phoneNumber,
-      };
+    const userSnap = await getDoc(doc(db, 'users', uid));
+    if (!userSnap.exists()) {
+      // If doc missing, fall back to default role
+      const role = await getUserRole(uid);
+      return { id: uid, email: cred.user.email || email, role, createdAt: new Date() };
     }
 
-    throw new Error('User data not found');
+    const data = userSnap.data();
+    return {
+      id: data.id,
+      email: data.email,
+      role: data.role,
+      createdAt: convertTimestamp(data.createdAt),
+      phoneNumber: data.phoneNumber,
+    };
   },
 
   async logout(): Promise<void> {
@@ -121,30 +126,32 @@ export const authService = {
     const firebaseUser = auth.currentUser;
     if (!firebaseUser) return null;
 
-    const q = query(usersCollection, where('id', '==', firebaseUser.uid));
-    const snapshot = await getDocs(q);
-
-    if (!snapshot.empty) {
-      const userDoc = snapshot.docs[0];
-      const userData = userDoc.data();
+    const snap = await getDoc(doc(db, 'users', firebaseUser.uid));
+    if (snap.exists()) {
+      const data = snap.data();
       return {
-        id: userData.id,
-        email: userData.email,
-        role: userData.role,
-        createdAt: convertTimestamp(userData.createdAt),
-        phoneNumber: userData.phoneNumber,
+        id: data.id,
+        email: data.email,
+        role: data.role,
+        createdAt: convertTimestamp(data.createdAt),
+        phoneNumber: data.phoneNumber,
       };
     }
-
     return null;
   },
 
   onAuthStateChange(callback: (user: FirebaseUser | null) => void) {
     return onAuthStateChanged(auth, callback);
   },
+
+  /** Forgot password */
+  async sendReset(email: string) {
+    await sendPasswordResetEmail(auth, email);
+  },
 };
 
-// Booking Service
+// --- BOOKINGS ----------------------------------------------------------------
+
 export const bookingService = {
   async createBooking(bookingData: Omit<Booking, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
     const docRef = await addDoc(bookingsCollection, {
@@ -156,46 +163,46 @@ export const bookingService = {
   },
 
   async getBookingsByDate(date: string): Promise<Booking[]> {
-    const q = query(bookingsCollection, where('date', '==', date));
-    const snapshot = await getDocs(q);
+    const qy = query(bookingsCollection, where('date', '==', date));
+    const snapshot = await getDocs(qy);
 
     return snapshot.docs.map(
-      (doc) =>
+      (d) =>
         ({
-          id: doc.id,
-          ...doc.data(),
-          createdAt: convertTimestamp(doc.data().createdAt),
-          updatedAt: convertTimestamp(doc.data().updatedAt),
+          id: d.id,
+          ...d.data(),
+          createdAt: convertTimestamp(d.data().createdAt),
+          updatedAt: convertTimestamp(d.data().updatedAt),
         } as Booking)
     );
   },
 
   async getBookingsByUser(userId: string): Promise<Booking[]> {
-    const q = query(bookingsCollection, where('userId', '==', userId), orderBy('date', 'desc'));
-    const snapshot = await getDocs(q);
+    const qy = query(bookingsCollection, where('userId', '==', userId), orderBy('date', 'desc'));
+    const snapshot = await getDocs(qy);
 
     return snapshot.docs.map(
-      (doc) =>
+      (d) =>
         ({
-          id: doc.id,
-          ...doc.data(),
-          createdAt: convertTimestamp(doc.data().createdAt),
-          updatedAt: convertTimestamp(doc.data().updatedAt),
+          id: d.id,
+          ...d.data(),
+          createdAt: convertTimestamp(d.data().createdAt),
+          updatedAt: convertTimestamp(d.data().updatedAt),
         } as Booking)
     );
   },
 
   async getPendingBookings(): Promise<Booking[]> {
-    const q = query(bookingsCollection, where('status', '==', 'pending'), orderBy('createdAt', 'desc'));
-    const snapshot = await getDocs(q);
+    const qy = query(bookingsCollection, where('status', '==', 'pending'), orderBy('createdAt', 'desc'));
+    const snapshot = await getDocs(qy);
 
     return snapshot.docs.map(
-      (doc) =>
+      (d) =>
         ({
-          id: doc.id,
-          ...doc.data(),
-          createdAt: convertTimestamp(doc.data().createdAt),
-          updatedAt: convertTimestamp(doc.data().updatedAt),
+          id: d.id,
+          ...d.data(),
+          createdAt: convertTimestamp(d.data().createdAt),
+          updatedAt: convertTimestamp(d.data().updatedAt),
         } as Booking)
     );
   },
@@ -230,7 +237,8 @@ export const bookingService = {
   },
 };
 
-// Notification Service
+// --- NOTIFICATIONS -----------------------------------------------------------
+
 export const notificationService = {
   async createNotification(
     userId: string,
@@ -255,15 +263,15 @@ export const notificationService = {
   },
 
   async getNotificationsByUser(userId: string): Promise<Notification[]> {
-    const q = query(notificationsCollection, where('userId', '==', userId), orderBy('createdAt', 'desc'));
-    const snapshot = await getDocs(q);
+    const qy = query(notificationsCollection, where('userId', '==', userId), orderBy('createdAt', 'desc'));
+    const snapshot = await getDocs(qy);
 
     return snapshot.docs.map(
-      (doc) =>
+      (d) =>
         ({
-          id: doc.id,
-          ...doc.data(),
-          createdAt: convertTimestamp(doc.data().createdAt),
+          id: d.id,
+          ...d.data(),
+          createdAt: convertTimestamp(d.data().createdAt),
         } as Notification)
     );
   },
@@ -274,10 +282,9 @@ export const notificationService = {
   },
 
   async markAllAsRead(userId: string): Promise<void> {
-    const q = query(notificationsCollection, where('userId', '==', userId), where('read', '==', false));
-    const snapshot = await getDocs(q);
-
-    const updatePromises = snapshot.docs.map((docRef) => updateDoc(docRef.ref, { read: true }));
+    const qy = query(notificationsCollection, where('userId', '==', userId), where('read', '==', false));
+    const snapshot = await getDocs(qy);
+    const updatePromises = snapshot.docs.map((d) => updateDoc(d.ref, { read: true }));
     await Promise.all(updatePromises);
   },
 
