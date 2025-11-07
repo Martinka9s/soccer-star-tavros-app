@@ -23,11 +23,10 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
     date: string;
     time: string;
   } | null>(null);
-
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [showModal, setShowModal] = useState(false);
 
-  // visual pitch toggle (matches the pills in the toolbar)
+  // purely for UI highlight of the pills; table still shows both columns
   const [activePitch, setActivePitch] = useState<PitchType>('Pitch A');
 
   const dateString = format(currentDate, 'yyyy-MM-dd');
@@ -52,9 +51,9 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
   // 09:00 → 01:00 (next day) = 17 slots
   const timeSlots = Array.from({ length: 17 }, (_, i) => {
     const hour = i + 9; // 9..25
-    const displayHour = hour > 12 ? hour - 12 : hour; // 1..12
+    const displayHour = hour > 12 ? hour - 12 : hour;
     const period = hour >= 12 ? t('pm') : t('am');
-    const actualHour = hour >= 24 ? hour - 24 : hour; // 0..23
+    const actualHour = hour >= 24 ? hour - 24 : hour;
     return {
       time: `${actualHour.toString().padStart(2, '0')}:00`,
       display: `${displayHour}:00 ${period}`,
@@ -79,7 +78,6 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
         return { status: booking.status, booking };
       }
     }
-
     return { status: 'available' };
   };
 
@@ -175,18 +173,21 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
   const goToNext = () => setCurrentDate(addDays(currentDate, 1));
 
   return (
-    <div className="space-y-4">
-      {/* Hero: Title + Subtitle */}
-      <div className="space-y-1">
-        <h1 className="text-3xl font-bold text-white">{t('livePitchAvailability')}</h1>
-        <p className="text-sm text-gray-400">{t('selectDateAndPitch')}</p>
+    <div className="space-y-6">
+      {/* Title & subtitle */}
+      <div>
+        <h2 className="text-3xl font-bold text-white">{t('headerTitle')}</h2>
+        <p className="mt-1 text-gray-300">{t('headerSubtitle')}</p>
       </div>
 
-      {/* Toolbar: arrows + centered date + pitch pills */}
-      <div className="mt-1 bg-dark-lighter rounded-lg p-4">
-        <div className="flex items-center justify-between">
-          {/* Left: Prev */}
-          <div className="w-24 flex items-center justify-start">
+      {/* Toolbar: centered date with arrows + pitch pills on the right */}
+      <div className="bg-dark-lighter rounded-lg p-4">
+        <div className="flex items-center">
+          {/* Left spacer keeps the date group visually centered */}
+          <div className="w-24" />
+
+          {/* Center: arrows tight to the date */}
+          <div className="mx-auto flex items-center gap-2">
             <button
               onClick={goToPrevious}
               className="h-9 w-9 flex items-center justify-center rounded-lg bg-dark text-gray-300 hover:text-white"
@@ -194,18 +195,14 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
             >
               <ChevronLeft size={18} />
             </button>
-          </div>
 
-          {/* Center: Date */}
-          <div className="text-center">
-            <div className="text-lg font-semibold text-white leading-tight">
-              {format(currentDate, 'EEEE')}
+            <div className="text-center px-2">
+              <div className="text-lg font-semibold text-white leading-tight">
+                {format(currentDate, 'EEEE')}
+              </div>
+              <div className="text-sm text-gray-300">{format(currentDate, 'MMMM d')}</div>
             </div>
-            <div className="text-sm text-gray-300">{format(currentDate, 'MMMM d')}</div>
-          </div>
 
-          {/* Right: Next + (pills live below) */}
-          <div className="w-24 flex items-center justify-end">
             <button
               onClick={goToNext}
               className="h-9 w-9 flex items-center justify-center rounded-lg bg-dark text-gray-300 hover:text-white"
@@ -214,31 +211,32 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
               <ChevronRight size={18} />
             </button>
           </div>
-        </div>
 
-        {/* Pitch toggle row */}
-        <div className="mt-3 flex items-center justify-center gap-2">
-          <button
-            onClick={() => setActivePitch('Pitch A')}
-            className={`h-9 px-5 rounded-lg text-sm font-medium transition-colors border ${
-              activePitch === 'Pitch A'
-                ? 'bg-primary text-white border-transparent'
-                : 'bg-dark text-gray-200 border-gray-700 hover:text-white'
-            }`}
-          >
-            {t('pitchA')}
-          </button>
-
-          <button
-            onClick={() => setActivePitch('Pitch B')}
-            className={`h-9 px-5 rounded-lg text-sm font-medium transition-colors border ${
-              activePitch === 'Pitch B'
-                ? 'bg-primary text-white border-transparent'
-                : 'bg-dark text-gray-200 border-gray-700 hover:text-white'
-            }`}
-          >
-            {t('pitchB')}
-          </button>
+          {/* Right: pitch pills */}
+          <div className="w-24 flex items-center justify-end">
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setActivePitch('Pitch A')}
+                className={`h-9 px-5 rounded-lg text-sm font-medium transition-colors border ${
+                  activePitch === 'Pitch A'
+                    ? 'bg-primary text-white border-transparent'
+                    : 'bg-dark text-gray-200 border-gray-700 hover:text-white'
+                }`}
+              >
+                {t('pitchA')}
+              </button>
+              <button
+                onClick={() => setActivePitch('Pitch B')}
+                className={`h-9 px-5 rounded-lg text-sm font-medium transition-colors border ${
+                  activePitch === 'Pitch B'
+                    ? 'bg-primary text-white border-transparent'
+                    : 'bg-dark text-gray-200 border-gray-700 hover:text-white'
+                }`}
+              >
+                {t('pitchB')}
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
