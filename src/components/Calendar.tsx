@@ -49,24 +49,16 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
     }
   };
 
-  // 09:00 → 01:00 (next day) = 17 one-hour slots
-  const timeSlots = Array.from({ length: 17 }, (_, i) => {
-    const hour = i + 9; // 9..25
-    const period = hour >= 12 ? t('pm') : t('am');
-    const displayStartHour = hour > 12 ? hour - 12 : hour; // 1..12
-    const actualHour = hour >= 24 ? hour - 24 : hour; // 0..23
-
-    const start = `${actualHour.toString().padStart(2, '0')}:00`;
-
-    // For the label we keep simple “HH:00 - HH:00”
-    const labelStart = `${displayStartHour.toString().padStart(2, '0')}:00`;
-    const displayEndHour = displayStartHour === 12 ? 1 : displayStartHour + 1;
-    const labelEnd = `${displayEndHour.toString().padStart(2, '0')}:00`;
-
+  // Slots from 09:00 up to 23:00–00:00 (last slot ends at midnight)
+  const timeSlots = Array.from({ length: 15 }, (_, i) => {
+    const startHour24 = 9 + i;            // 9..23
+    const endHour24 = (startHour24 + 1) % 24; // 10..00
+    const start = `${startHour24.toString().padStart(2, '0')}:00`;
+    const labelStart = start;
+    const labelEnd = `${endHour24.toString().padStart(2, '0')}:00`;
     return {
-      time: start,
-      display: `${labelStart} - ${labelEnd}`,
-      period, // not shown in the range line; you already show 24h-like ranges in your mock
+      time: start,                  // start time in 24h
+      display: `${labelStart} - ${labelEnd}`, // 24h label e.g. 23:00 - 00:00
     };
   });
 
@@ -93,10 +85,9 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
   };
 
   const getCardClasses = (status: string): string => {
-    // Neutral cards with subtle tints like in your screenshot
     switch (status) {
       case 'available':
-        return 'bg-[#2C3144] hover:bg-[#343a52]'; // slate-ish
+        return 'bg-[#2C3144] hover:bg-[#343a52]';
       case 'pending':
         return 'bg-amber-600/30 hover:bg-amber-600/40 border border-amber-500/40';
       case 'booked':
@@ -181,7 +172,6 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
     }
   };
 
-  const goToToday = () => setCurrentDate(new Date());
   const goToPrevious = () => setCurrentDate(subDays(currentDate, 1));
   const goToNext = () => setCurrentDate(addDays(currentDate, 1));
 
@@ -193,8 +183,8 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
         <p className="mt-2 text-base text-gray-300">{t('selectDateAndPitch')}</p>
       </div>
 
-      {/* Legend centered */}
-      <div className="flex items-center justify-center gap-6 text-sm">
+      {/* Legend: 3 on first row, 1 centered below (mobile); single row on sm+ */}
+      <div className="grid grid-cols-3 gap-x-4 gap-y-2 sm:flex sm:flex-nowrap sm:items-center sm:justify-center sm:gap-6 text-sm">
         <div className="flex items-center gap-2">
           <span className="inline-block h-3 w-3 rounded-full bg-[#2C3144]" />
           <span className="text-gray-300">{t('available')}</span>
@@ -207,17 +197,17 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
           <span className="inline-block h-3 w-3 rounded-full bg-red-500" />
           <span className="text-gray-300">{t('booked')}</span>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 col-span-3 justify-center sm:col-span-1 sm:justify-start">
           <span className="inline-block h-3 w-3 rounded-full bg-slate-600" />
           <span className="text-gray-300">{t('blocked')}</span>
         </div>
       </div>
 
-      {/* Banner bar: date+arrows (left) | actions (right) */}
+      {/* Banner bar: date+arrows (top) | pitch pills (below on mobile, right on sm+) */}
       <div className="bg-dark-lighter rounded-xl px-4 py-3">
-        <div className="flex items-center justify-between">
-          {/* Left: arrows tight to date */}
-          <div className="flex items-center gap-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          {/* Top: arrows + date */}
+          <div className="flex items-center gap-3 sm:gap-4">
             <button
               onClick={goToPrevious}
               className="h-9 w-9 flex items-center justify-center rounded-lg bg-dark text-gray-300 hover:text-white"
@@ -226,7 +216,7 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
               <ChevronLeft size={18} />
             </button>
 
-            <div className="leading-tight">
+            <div className="leading-tight whitespace-nowrap">
               <div className="text-xl font-semibold text-white">
                 {format(currentDate, 'EEEE')}
               </div>
@@ -242,18 +232,11 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
             </button>
           </div>
 
-          {/* Right: Today + pitch pills */}
-          <div className="flex items-center gap-2">
-            <button
-              onClick={goToToday}
-              className="h-9 px-4 rounded-lg bg-primary text-white hover:bg-primary-dark text-sm font-medium transition-colors"
-            >
-              {t('today')}
-            </button>
-
+          {/* Bottom on mobile: pitch pills */}
+          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar -mx-1 px-1 sm:mx-0 sm:px-0">
             <button
               onClick={() => setActivePitch('Pitch A')}
-              className={`h-9 px-5 rounded-lg text-sm font-medium transition-colors border ${
+              className={`h-9 px-5 rounded-lg text-sm font-medium transition-colors border whitespace-nowrap flex-shrink-0 ${
                 activePitch === 'Pitch A'
                   ? 'bg-primary text-white border-transparent'
                   : 'bg-dark text-gray-200 border-gray-700 hover:text-white'
@@ -264,7 +247,7 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
 
             <button
               onClick={() => setActivePitch('Pitch B')}
-              className={`h-9 px-5 rounded-lg text-sm font-medium transition-colors border ${
+              className={`h-9 px-5 rounded-lg text-sm font-medium transition-colors border whitespace-nowrap flex-shrink-0 ${
                 activePitch === 'Pitch B'
                   ? 'bg-primary text-white border-transparent'
                   : 'bg-dark text-gray-200 border-gray-700 hover:text-white'
@@ -289,9 +272,7 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
                 <button
                   key={`${activePitch}-${slot.time}`}
                   onClick={() => handleSlotClick(activePitch, slot.time)}
-                  className={`text-left rounded-xl p-5 transition-colors ${getCardClasses(
-                    status
-                  )}`}
+                  className={`text-left rounded-xl p-5 transition-colors ${getCardClasses(status)}`}
                   title={`${activePitch} - ${slot.display} - ${t(status)}`}
                 >
                   <div className="text-lg font-semibold text-white">
@@ -341,4 +322,3 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
 };
 
 export default Calendar;
-
