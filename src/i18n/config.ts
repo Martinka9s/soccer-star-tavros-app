@@ -22,7 +22,7 @@ const resources = {
       pitchA: 'Pitch A',
       pitchB: 'Pitch B',
 
-      // 👇 NEW: Title & Subtitle
+      // Title & Subtitle
       livePitchAvailability: 'Live pitch availability',
       selectDateAndPitch: 'Check available slots & book easily',
 
@@ -122,7 +122,7 @@ const resources = {
       pitchA: 'Γήπεδο A',
       pitchB: 'Γήπεδο B',
 
-      // 👇 ΝΕΟ: Τίτλος & Υπότιτλος
+      // Τίτλος & Υπότιτλος
       livePitchAvailability: 'Live διαθεσιμότητα γηπέδων',
       selectDateAndPitch: 'Δες διαθέσιμες ώρες & κάνε κράτηση εύκολα',
 
@@ -169,7 +169,7 @@ const resources = {
 
       // Notifications
       notifications: 'Ειδοποιήσεις',
-      markAllRead: 'Σήμανση ώλων ως αναγνωσμένα',
+      markAllRead: 'Σήμανση όλων ως αναγνωσμένα',
       noNotifications: 'Δεν υπάρχουν ειδοποιήσεις',
       bookingApproved: 'Η κράτησή σας για το {{pitch}} στις {{date}} στις {{time}} εγκρίθηκε.',
       bookingRejected: 'Η κράτησή σας για το {{pitch}} στις {{date}} στις {{time}} απορρίφθηκε.',
@@ -204,15 +204,22 @@ const resources = {
   }
 };
 
+// Read saved language if present; otherwise default to Greek ('el')
+const getInitialLang = (): 'el' | 'en' => {
+  try {
+    const saved = typeof window !== 'undefined' ? localStorage.getItem('i18nextLng') : null;
+    if (saved === 'el' || saved === 'en') return saved;
+  } catch {}
+  return 'el';
+};
+
 i18n
   .use(initReactI18next)
   .init({
     resources,
-    lng: 'en',
-    fallbackLng: 'en',
-    interpolation: {
-      escapeValue: false
-    }
+    lng: getInitialLang(),   // preselect Greek on first load, or saved choice
+    fallbackLng: 'el',       // fall back to Greek
+    interpolation: { escapeValue: false },
   });
 
 export default i18n;
