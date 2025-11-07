@@ -62,6 +62,13 @@ const resources = {
       signIn: 'Sign in',
       loginRequired: 'Please login to book a slot',
 
+      // NEW: Auth error/help texts
+      auth_email_in_use: 'Email already in use. Try logging in or reset your password.',
+      auth_invalid_email: 'Invalid email address.',
+      auth_weak_password: 'Password should be at least 6 characters.',
+      send_reset_link: 'Send reset link',
+      reset_sent: 'Password reset email sent.',
+
       // My Bookings
       upcomingBookings: 'Upcoming bookings',
       pastBookings: 'Past bookings',
@@ -161,6 +168,13 @@ const resources = {
       signUp: 'Εγγραφή',
       signIn: 'Σύνδεση',
       loginRequired: 'Παρακαλώ συνδεθείτε για να κάνετε κράτηση',
+
+      // NEW: Auth error/help texts (EL)
+      auth_email_in_use: 'Το email χρησιμοποιείται ήδη. Δοκιμάστε σύνδεση ή επαναφορά κωδικού.',
+      auth_invalid_email: 'Μη έγκυρο email.',
+      auth_weak_password: 'Ο κωδικός πρέπει να έχει τουλάχιστον 6 χαρακτήρες.',
+      send_reset_link: 'Αποστολή συνδέσμου επαναφοράς',
+      reset_sent: 'Στάλθηκε email για επαναφορά κωδικού.',
 
       // My Bookings
       upcomingBookings: 'Επερχόμενες κρατήσεις',
