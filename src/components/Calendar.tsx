@@ -177,85 +177,72 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
 
   return (
     <div className="space-y-6">
-      {/* Title + Subtitle centered */}
-      <div className="text-center">
-        <h1 className="text-4xl font-extrabold text-white">{t('livePitchAvailability')}</h1>
-        <p className="mt-2 text-base text-gray-300">{t('selectDateAndPitch')}</p>
+      {/* Date Navigation - Clean and minimal */}
+      <div className="flex items-center justify-between">
+        <button
+          onClick={goToPrevious}
+          className="p-2 hover:bg-dark-lighter rounded-lg transition-colors text-gray-300 hover:text-white"
+          aria-label="Previous day"
+        >
+          <ChevronLeft size={24} />
+        </button>
+
+        <div className="text-center">
+          <h2 className="text-xl font-semibold text-white">
+            {format(currentDate, 'EEEE, MMMM d, yyyy')}
+          </h2>
+        </div>
+
+        <button
+          onClick={goToNext}
+          className="p-2 hover:bg-dark-lighter rounded-lg transition-colors text-gray-300 hover:text-white"
+          aria-label="Next day"
+        >
+          <ChevronRight size={24} />
+        </button>
       </div>
 
-      {/* Legend: 3 on first row, 1 centered below (mobile); single row on sm+ */}
-      <div className="grid grid-cols-3 gap-x-4 gap-y-2 sm:flex sm:flex-nowrap sm:items-center sm:justify-center sm:gap-6 text-sm">
-        <div className="flex items-center gap-2">
-          <span className="inline-block h-3 w-3 rounded-full bg-[#2C3144]" />
+      {/* Pitch Tabs - Clean horizontal tabs */}
+      <div className="flex space-x-2">
+        <button
+          onClick={() => setActivePitch('Pitch A')}
+          className={`flex-1 py-3 rounded-lg font-medium transition-all ${
+            activePitch === 'Pitch A'
+              ? 'bg-primary text-white shadow-lg'
+              : 'bg-dark-lighter text-gray-400 hover:text-white hover:bg-dark'
+          }`}
+        >
+          {t('pitchA')}
+        </button>
+        <button
+          onClick={() => setActivePitch('Pitch B')}
+          className={`flex-1 py-3 rounded-lg font-medium transition-all ${
+            activePitch === 'Pitch B'
+              ? 'bg-primary text-white shadow-lg'
+              : 'bg-dark-lighter text-gray-400 hover:text-white hover:bg-dark'
+          }`}
+        >
+          {t('pitchB')}
+        </button>
+      </div>
+
+      {/* Legend */}
+      <div className="flex flex-wrap gap-4 text-sm">
+        <div className="flex items-center space-x-2">
+          <div className="w-4 h-4 bg-gray-700 rounded"></div>
           <span className="text-gray-300">{t('available')}</span>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="inline-block h-3 w-3 rounded-full bg-amber-500" />
+        <div className="flex items-center space-x-2">
+          <div className="w-4 h-4 bg-amber-600 rounded"></div>
           <span className="text-gray-300">{t('pending')}</span>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="inline-block h-3 w-3 rounded-full bg-red-500" />
+        <div className="flex items-center space-x-2">
+          <div className="w-4 h-4 bg-red-600 rounded"></div>
           <span className="text-gray-300">{t('booked')}</span>
         </div>
-        <div className="flex items-center gap-2 col-span-3 justify-center sm:col-span-1 sm:justify-start">
-          <span className="inline-block h-3 w-3 rounded-full bg-slate-600" />
+        <div className="flex items-center space-x-2">
+          <div className="w-4 h-4 bg-slate-800 rounded"></div>
           <span className="text-gray-300">{t('blocked')}</span>
-        </div>
-      </div>
-
-      {/* Banner bar: date+arrows (top) | pitch pills (below on mobile, right on sm+) */}
-      <div className="bg-dark-lighter rounded-xl px-4 py-3">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          {/* Top: arrows + date */}
-          <div className="flex items-center gap-3 sm:gap-4">
-            <button
-              onClick={goToPrevious}
-              className="h-9 w-9 flex items-center justify-center rounded-lg bg-dark text-gray-300 hover:text-white"
-              aria-label="Previous day"
-            >
-              <ChevronLeft size={18} />
-            </button>
-
-            <div className="leading-tight whitespace-nowrap">
-              <div className="text-xl font-semibold text-white">
-                {format(currentDate, 'EEEE')}
-              </div>
-              <div className="text-sm text-gray-300">{format(currentDate, 'MMMM d')}</div>
-            </div>
-
-            <button
-              onClick={goToNext}
-              className="h-9 w-9 flex items-center justify-center rounded-lg bg-dark text-gray-300 hover:text-white"
-              aria-label="Next day"
-            >
-              <ChevronRight size={18} />
-            </button>
-          </div>
-
-          {/* Bottom on mobile: pitch pills */}
-          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar -mx-1 px-1 sm:mx-0 sm:px-0">
-            <button
-              onClick={() => setActivePitch('Pitch A')}
-              className={`h-9 px-5 rounded-lg text-sm font-medium transition-colors border whitespace-nowrap flex-shrink-0 ${
-                activePitch === 'Pitch A'
-                  ? 'bg-primary text-white border-transparent'
-                  : 'bg-dark text-gray-200 border-gray-700 hover:text-white'
-              }`}
-            >
-              {t('pitchA')}
-            </button>
-
-            <button
-              onClick={() => setActivePitch('Pitch B')}
-              className={`h-9 px-5 rounded-lg text-sm font-medium transition-colors border whitespace-nowrap flex-shrink-0 ${
-                activePitch === 'Pitch B'
-                  ? 'bg-primary text-white border-transparent'
-                  : 'bg-dark text-gray-200 border-gray-700 hover:text-white'
-              }`}
-            >
-              {t('pitchB')}
-            </button>
-          </div>
         </div>
       </div>
 
@@ -263,8 +250,8 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
         <div className="text-center py-12 text-gray-400">Loading...</div>
       ) : (
         <>
-          {/* Grid of cards for the selected pitch */}
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+          {/* Grid of time slots - Clean card design */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
             {timeSlots.map((slot) => {
               const { status, booking } = getSlotStatus(activePitch, slot.time);
 
@@ -272,29 +259,20 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
                 <button
                   key={`${activePitch}-${slot.time}`}
                   onClick={() => handleSlotClick(activePitch, slot.time)}
-                  className={`text-left rounded-xl p-5 transition-colors ${getCardClasses(status)}`}
+                  className={`p-4 rounded-lg transition-all ${getCardClasses(status)} flex flex-col items-center justify-center min-h-[100px]`}
                   title={`${activePitch} - ${slot.display} - ${t(status)}`}
                 >
-                  <div className="text-lg font-semibold text-white">
+                  <div className="text-white font-semibold text-lg mb-1">
                     {slot.display}
                   </div>
-                  <div className="mt-2 text-sm text-gray-300">
-                    {status === 'available' ? (
-                      <span>{t('available')}</span>
-                    ) : (
-                      <>
-                        <span className="capitalize">{t(status)}</span>
-                        {booking && (
-                          <>
-                            <span className="mx-2">·</span>
-                            <span className="text-white">
-                              {booking.teamName || booking.userEmail}
-                            </span>
-                          </>
-                        )}
-                      </>
-                    )}
+                  <div className="text-xs text-gray-300">
+                    {t(status)}
                   </div>
+                  {booking && (
+                    <div className="text-xs text-gray-200 mt-2 text-center truncate w-full px-1">
+                      {booking.teamName || booking.userEmail}
+                    </div>
+                  )}
                 </button>
               );
             })}
