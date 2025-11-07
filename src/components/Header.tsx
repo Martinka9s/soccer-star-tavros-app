@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Bell, LogOut, User } from 'lucide-react';
 import { User as UserType } from '../types';
@@ -18,8 +18,22 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, onAuthClick, activeTab,
   const [showNotifications, setShowNotifications] = useState(false);
   const { notifications, unreadCount, markAllAsRead, refresh } = useNotifications(user?.id);
 
-  const changeLanguage = (lng: string) => {
-    i18n.changeLanguage(lng);
+  // Ensure Greek (el) is the default on first load if no language has been chosen yet
+  useEffect(() => {
+    const lng = i18n.language;
+    if (!lng || (!lng.startsWith('el') && !lng.startsWith('en'))) {
+      i18n.changeLanguage('el');
+    }
+  }, [i18n]);
+
+  const isGreek = i18n.language?.startsWith('el');
+
+  const toggleLanguage = () => {
+    const next = isGreek ? 'en' : 'el';
+    i18n.changeLanguage(next);
+    try {
+      localStorage.setItem('i18nextLng', next);
+    } catch {}
   };
 
   return (
@@ -27,7 +41,8 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, onAuthClick, activeTab,
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center space-x-4">
-            <h1 className="text-2xl font-bold text-primary">{t('appName')}</h1>
+            {/* Brand: make it white (not purple) */}
+            <h1 className="text-2xl font-bold text-white">{t('appName')}</h1>
           </div>
 
           {user && (
@@ -68,28 +83,22 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, onAuthClick, activeTab,
           )}
 
           <div className="flex items-center space-x-4">
-            <div className="flex space-x-2">
-              <button
-                onClick={() => changeLanguage('en')}
-                className={`px-3 py-1 rounded ${
-                  i18n.language === 'en'
-                    ? 'bg-primary text-white'
-                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+            {/* Language toggle: EL | EN, Greek first and preselected */}
+            <button
+              onClick={toggleLanguage}
+              aria-label="Language toggle"
+              className="relative h-9 w-24 rounded-lg bg-dark border border-gray-700 flex items-center justify-between px-3 text-sm font-medium"
+            >
+              {/* slider */}
+              <span
+                className={`absolute top-0.5 bottom-0.5 w-11 rounded-md bg-primary transition-all ${
+                  isGreek ? 'left-0.5' : 'right-0.5'
                 }`}
-              >
-                EN
-              </button>
-              <button
-                onClick={() => changeLanguage('el')}
-                className={`px-3 py-1 rounded ${
-                  i18n.language === 'el'
-                    ? 'bg-primary text-white'
-                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                }`}
-              >
-                ΕΛ
-              </button>
-            </div>
+              />
+              {/* labels */}
+              <span className={`z-10 ${isGreek ? 'text-white' : 'text-gray-300'}`}>EL</span>
+              <span className={`z-10 ${!isGreek ? 'text-white' : 'text-gray-300'}`}>EN</span>
+            </button>
 
             {user ? (
               <>
