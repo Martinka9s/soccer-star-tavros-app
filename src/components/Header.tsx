@@ -129,7 +129,7 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, onAuthClick, activeTab,
                     <NotificationPanel
                       notifications={notifications}
                       onClose={() => setShowNotifications(false)}
-                      onMarkAllAsRead={markAllAsRead}
+                      onMarkAllAsRead={markAllRead}
                       onRefresh={refresh}
                     />
                   )}
