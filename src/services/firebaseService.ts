@@ -18,7 +18,6 @@ import {
   deleteDoc,
   doc,
   setDoc,
-  getDocs,
   getDoc,
   query,
   where,
@@ -28,14 +27,17 @@ import {
 } from 'firebase/firestore';
 import { User, Booking, Notification, UserRole, PitchType } from '../types';
 
-// Firebase configuration
+// --- helpers -----------------------------------------------------------------
+const clean = (v: unknown) => String(v ?? '').trim();
+
+// Firebase configuration (trimmed to avoid %0A / spaces in URLs)
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY as string,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN as string,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID as string,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET as string,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID as string,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID as string,
+  apiKey: clean(import.meta.env.VITE_FIREBASE_API_KEY),
+  authDomain: clean(import.meta.env.VITE_FIREBASE_AUTH_DOMAIN),
+  projectId: clean(import.meta.env.VITE_FIREBASE_PROJECT_ID),
+  storageBucket: clean(import.meta.env.VITE_FIREBASE_STORAGE_BUCKET),
+  messagingSenderId: clean(import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID),
+  appId: clean(import.meta.env.VITE_FIREBASE_APP_ID),
 };
 
 // Initialize Firebase
@@ -61,15 +63,15 @@ const convertTimestamp = (timestamp: any): Date => {
   return new Date(timestamp);
 };
 
-/** Ensures users/{uid} exists; returns normalized User */
+/** Ensures users/{uid} exists; returns normalized User (no collection reads) */
 async function ensureUserDoc(uid: string, email: string | null | undefined): Promise<User> {
   const ref = doc(db, 'users', uid);
   const snap = await getDoc(ref);
 
   if (!snap.exists()) {
-    // Default role (first user becomes admin)
-    const usersSnapshot = await getDocs(usersCollection);
-    const role: UserRole = usersSnapshot.empty ? 'admin' : 'user';
+    // 🚫 Do NOT read the whole users collection (rules will block).
+    // Create a minimal profile with default role 'user'.
+    const role: UserRole = 'user';
 
     await setDoc(
       ref,
@@ -101,14 +103,12 @@ async function ensureUserDoc(uid: string, email: string | null | undefined): Pro
 }
 
 export const authService = {
-  /** Register + create `users/{uid}`; first user becomes admin */
+  /** Register user; create users/{uid} with role 'user' (no collection read) */
   async register(email: string, password: string): Promise<User> {
     const cred = await createUserWithEmailAndPassword(auth, email, password);
     const uid = cred.user.uid;
 
-    // First user becomes admin
-    const usersSnapshot = await getDocs(usersCollection);
-    const role: UserRole = usersSnapshot.empty ? 'admin' : 'user';
+    const role: UserRole = 'user'; // default; promote manually in Console if needed
 
     await setDoc(
       doc(db, 'users', uid),
@@ -129,24 +129,45 @@ export const authService = {
     };
   },
 
-  /** Login + ensure/fetch profile from `users/{uid}` */
+  /** Login + ensure/fetch profile; if Firestore fails, return provisional user */
   async login(email: string, password: string): Promise<User> {
     console.log('TRY LOGIN', email);
     const cred = await signInWithEmailAndPassword(auth, email, password);
     console.log('LOGIN OK', cred.user.uid);
-    const uid = cred.user.uid;
-    return ensureUserDoc(uid, cred.user.email || email);
+
+    try {
+      return await ensureUserDoc(cred.user.uid, cred.user.email || email);
+    } catch (e) {
+      console.warn('Firestore unavailable during login; using provisional user', e);
+      return {
+        id: cred.user.uid,
+        email: cred.user.email || email,
+        role: 'user',
+        createdAt: new Date(),
+      };
+    }
   },
 
   async logout(): Promise<void> {
     await signOut(auth);
   },
 
-  /** Current user from auth + ensure/fetch profile; returns null if signed out */
+  /** Current user from auth; if Firestore fails, return provisional user */
   async getCurrentUser(): Promise<User | null> {
     const firebaseUser = auth.currentUser;
     if (!firebaseUser) return null;
-    return ensureUserDoc(firebaseUser.uid, firebaseUser.email);
+
+    try {
+      return await ensureUserDoc(firebaseUser.uid, firebaseUser.email);
+    } catch (e) {
+      console.warn('Firestore unavailable in getCurrentUser; using provisional user', e);
+      return {
+        id: firebaseUser.uid,
+        email: firebaseUser.email || '',
+        role: 'user',
+        createdAt: new Date(),
+      };
+    }
   },
 
   onAuthStateChange(callback: (user: FirebaseUser | null) => void) {
