@@ -14,9 +14,8 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({ user, onLogout, onAuthClick, activeTab, onTabChange }) => {
   const { t, i18n } = useTranslation();
-  const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
-  const { notifications, unreadCount, markAllAsRead, refresh } = useNotifications(user?.id);
+  const { unreadCount } = useNotifications(user?.id);
 
   // Ensure Greek default if nothing stored
   useEffect(() => {
@@ -83,7 +82,7 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, onAuthClick, activeTab,
               </button>
               <button
                 onClick={() => onTabChange('myBookings')}
-                className={`px-4 py-2 rounded-lg transition-colors ${
+                className={`px-4 py-2 rounded-lg transition-colors relative ${
                   activeTab === 'myBookings'
                     ? 'bg-primary text-white'
                     : 'text-gray-300 hover:bg-dark hover:text-white'
@@ -91,6 +90,9 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, onAuthClick, activeTab,
                 aria-current={activeTab === 'myBookings' ? 'page' : undefined}
               >
                 {getBookingsLabel()}
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse" />
+                )}
               </button>
               {user.role === 'admin' && (
                 <button
@@ -137,33 +139,6 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, onAuthClick, activeTab,
 
             {user ? (
               <>
-                {/* Notifications */}
-                <div className="relative">
-                  <button
-                    onClick={() => setShowNotifications(!showNotifications)}
-                    className="relative p-2 text-gray-300 hover:text-white transition-colors"
-                    aria-label={t('notifications') as string}
-                  >
-                    <Bell size={20} className="md:w-6 md:h-6" />
-                    {unreadCount > 0 && (
-                      <span
-                        className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center"
-                        aria-label={`${unreadCount} unread notifications`}
-                      >
-                        {unreadCount}
-                      </span>
-                    )}
-                  </button>
-                  {showNotifications && (
-                    <NotificationPanel
-                      notifications={notifications}
-                      onClose={() => setShowNotifications(false)}
-                      onMarkAllRead={markAllAsRead}
-                      onRefresh={refresh}
-                    />
-                  )}
-                </div>
-
                 {/* Profile Menu - Mobile: Icon only with dropdown */}
                 <div className="relative profile-menu-container md:hidden">
                   <button
@@ -249,7 +224,7 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, onAuthClick, activeTab,
               </button>
               <button
                 onClick={() => onTabChange('myBookings')}
-                className={`px-4 py-2 rounded-lg text-center transition-colors text-sm ${
+                className={`px-4 py-2 rounded-lg text-center transition-colors text-sm relative ${
                   activeTab === 'myBookings'
                     ? 'bg-primary text-white'
                     : 'text-gray-300 bg-dark hover:bg-dark/80 hover:text-white'
@@ -257,6 +232,9 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, onAuthClick, activeTab,
                 aria-current={activeTab === 'myBookings' ? 'page' : undefined}
               >
                 {getBookingsLabel()}
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse" />
+                )}
               </button>
             </div>
 
