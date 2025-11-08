@@ -19,18 +19,21 @@ import {
   doc,
   setDoc,
   getDoc,
+  getDocs, // ✅ needed
   query,
   where,
   orderBy,
   serverTimestamp,
   Timestamp,
+  type QueryDocumentSnapshot,
+  type DocumentData,
 } from 'firebase/firestore';
 import { User, Booking, Notification, UserRole, PitchType } from '../types';
 
 // --- helpers -----------------------------------------------------------------
 const clean = (v: unknown) => String(v ?? '').trim();
 
-// Firebase configuration (trimmed to avoid %0A / spaces in URLs)
+// Firebase configuration (trimmed to avoid stray whitespace/newlines)
 const firebaseConfig = {
   apiKey: clean(import.meta.env.VITE_FIREBASE_API_KEY),
   authDomain: clean(import.meta.env.VITE_FIREBASE_AUTH_DOMAIN),
@@ -52,8 +55,7 @@ export const db = initializeFirestore(app, {
   }),
 });
 
-// Collections
-const usersCollection = collection(db, 'users');
+// Collections (only the ones we use directly)
 const bookingsCollection = collection(db, 'bookings');
 const notificationsCollection = collection(db, 'notifications');
 
@@ -69,7 +71,6 @@ async function ensureUserDoc(uid: string, email: string | null | undefined): Pro
   const snap = await getDoc(ref);
 
   if (!snap.exists()) {
-    // 🚫 Do NOT read the whole users collection (rules will block).
     // Create a minimal profile with default role 'user'.
     const role: UserRole = 'user';
 
@@ -183,7 +184,9 @@ export const authService = {
 // --- BOOKINGS ----------------------------------------------------------------
 
 export const bookingService = {
-  async createBooking(bookingData: Omit<Booking, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
+  async createBooking(
+    bookingData: Omit<Booking, 'id' | 'createdAt' | 'updatedAt'>
+  ): Promise<string> {
     const docRef = await addDoc(bookingsCollection, {
       ...bookingData,
       createdAt: serverTimestamp(),
@@ -197,42 +200,50 @@ export const bookingService = {
     const snapshot = await getDocs(qy);
 
     return snapshot.docs.map(
-      (d) =>
+      (d: QueryDocumentSnapshot<DocumentData>) =>
         ({
           id: d.id,
           ...d.data(),
-          createdAt: convertTimestamp(d.data().createdAt),
-          updatedAt: convertTimestamp(d.data().updatedAt),
+          createdAt: convertTimestamp((d.data() as any).createdAt),
+          updatedAt: convertTimestamp((d.data() as any).updatedAt),
         } as Booking)
     );
   },
 
   async getBookingsByUser(userId: string): Promise<Booking[]> {
-    const qy = query(bookingsCollection, where('userId', '==', userId), orderBy('date', 'desc'));
+    const qy = query(
+      bookingsCollection,
+      where('userId', '==', userId),
+      orderBy('date', 'desc')
+    );
     const snapshot = await getDocs(qy);
 
     return snapshot.docs.map(
-      (d) =>
+      (d: QueryDocumentSnapshot<DocumentData>) =>
         ({
           id: d.id,
           ...d.data(),
-          createdAt: convertTimestamp(d.data().createdAt),
-          updatedAt: convertTimestamp(d.data().updatedAt),
+          createdAt: convertTimestamp((d.data() as any).createdAt),
+          updatedAt: convertTimestamp((d.data() as any).updatedAt),
         } as Booking)
     );
   },
 
   async getPendingBookings(): Promise<Booking[]> {
-    const qy = query(bookingsCollection, where('status', '==', 'pending'), orderBy('createdAt', 'desc'));
+    const qy = query(
+      bookingsCollection,
+      where('status', '==', 'pending'),
+      orderBy('createdAt', 'desc')
+    );
     const snapshot = await getDocs(qy);
 
     return snapshot.docs.map(
-      (d) =>
+      (d: QueryDocumentSnapshot<DocumentData>) =>
         ({
           id: d.id,
           ...d.data(),
-          createdAt: convertTimestamp(d.data().createdAt),
-          updatedAt: convertTimestamp(d.data().updatedAt),
+          createdAt: convertTimestamp((d.data() as any).createdAt),
+          updatedAt: convertTimestamp((d.data() as any).updatedAt),
         } as Booking)
     );
   },
@@ -255,11 +266,12 @@ export const bookingService = {
     const bookingDoc = await getDoc(bookingRef);
 
     if (bookingDoc.exists()) {
+      const data = bookingDoc.data() as any;
       return {
         id: bookingDoc.id,
-        ...bookingDoc.data(),
-        createdAt: convertTimestamp(bookingDoc.data().createdAt),
-        updatedAt: convertTimestamp(bookingDoc.data().updatedAt),
+        ...data,
+        createdAt: convertTimestamp(data.createdAt),
+        updatedAt: convertTimestamp(data.updatedAt),
       } as Booking;
     }
 
@@ -293,15 +305,19 @@ export const notificationService = {
   },
 
   async getNotificationsByUser(userId: string): Promise<Notification[]> {
-    const qy = query(notificationsCollection, where('userId', '==', userId), orderBy('createdAt', 'desc'));
+    const qy = query(
+      notificationsCollection,
+      where('userId', '==', userId),
+      orderBy('createdAt', 'desc')
+    );
     const snapshot = await getDocs(qy);
 
     return snapshot.docs.map(
-      (d) =>
+      (d: QueryDocumentSnapshot<DocumentData>) =>
         ({
           id: d.id,
           ...d.data(),
-          createdAt: convertTimestamp(d.data().createdAt),
+          createdAt: convertTimestamp((d.data() as any).createdAt),
         } as Notification)
     );
   },
@@ -312,9 +328,15 @@ export const notificationService = {
   },
 
   async markAllAsRead(userId: string): Promise<void> {
-    const qy = query(notificationsCollection, where('userId', '==', userId), where('read', '==', false));
+    const qy = query(
+      notificationsCollection,
+      where('userId', '==', userId),
+      where('read', '==', false)
+    );
     const snapshot = await getDocs(qy);
-    const updatePromises = snapshot.docs.map((d) => updateDoc(d.ref, { read: true }));
+    const updatePromises = snapshot.docs.map((d: QueryDocumentSnapshot<DocumentData>) =>
+      updateDoc(d.ref, { read: true })
+    );
     await Promise.all(updatePromises);
   },
 
