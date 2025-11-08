@@ -13,6 +13,7 @@ const resources = {
       // Navigation
       calendar: 'Calendar',
       myBookings: 'My Bookings',
+      bookings: 'Bookings',
       pendingRequests: 'Pending Requests',
 
       // Calendar
@@ -120,6 +121,7 @@ const resources = {
       // Navigation
       calendar: 'Ημερολόγιο',
       myBookings: 'Οι Κρατήσεις μου',
+      bookings: 'Κρατήσεις',
       pendingRequests: 'Αιτήματα σε εκκρεμότητα',
 
       // Calendar
