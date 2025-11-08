@@ -52,7 +52,8 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, onAuthClick, activeTab,
   // Get bookings label based on user role
   const getBookingsLabel = () => {
     if (!user) return t('myBookings');
-    return user.role === 'admin' ? t('bookings') : t('myBookings');
+    // Check if 'bookings' key exists, otherwise fall back to 'myBookings'
+    return user.role === 'admin' ? (t('bookings', { defaultValue: 'Bookings' })) : t('myBookings');
   };
 
   return (
