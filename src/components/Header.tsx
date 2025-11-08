@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Bell, LogOut, User } from 'lucide-react';
+import { LogOut, User } from 'lucide-react';
 import { User as UserType } from '../types';
-import NotificationPanel from './NotificationPanel';
 import { useNotifications } from '../hooks/useNotifications';
 
 interface HeaderProps {
