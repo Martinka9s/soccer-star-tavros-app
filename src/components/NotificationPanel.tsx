@@ -19,7 +19,7 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({
   const { t } = useTranslation();
 
   return (
-    <div className="absolute right-0 top-12 w-96 max-w-[90vw] bg-dark-lighter border border-gray-700 rounded-lg shadow-xl z-50">
+    <div className="absolute right-0 top-12 w-80 md:w-96 max-w-[calc(100vw-2rem)] bg-dark-lighter border border-gray-700 rounded-lg shadow-xl z-50">
       <div className="flex items-center justify-between p-4 border-b border-gray-700">
         <h3 className="text-lg font-semibold text-white">{t('notifications')}</h3>
         <div className="flex items-center space-x-2">
@@ -29,18 +29,18 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({
               className="text-sm text-primary hover:text-primary-light transition-colors flex items-center space-x-1"
             >
               <CheckCheck size={16} />
-              <span>{t('markAllRead')}</span>
+              <span className="hidden sm:inline">{t('markAllRead')}</span>
             </button>
           )}
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-white transition-colors"
+            aria-label="Close notifications"
           >
             <X size={20} />
           </button>
         </div>
       </div>
-
       <div className="max-h-96 overflow-y-auto">
         {notifications.length === 0 ? (
           <div className="p-8 text-center text-gray-400">
@@ -62,7 +62,7 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({
                     }`}
                   />
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm text-gray-300">{notification.message}</p>
+                    <p className="text-sm text-gray-300 break-words">{notification.message}</p>
                     <p className="text-xs text-gray-500 mt-1">
                       {format(notification.createdAt, 'MMM d, yyyy HH:mm')}
                     </p>
