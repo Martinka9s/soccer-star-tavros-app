@@ -48,7 +48,7 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, onAuthClick, activeTab,
             </a>
           </div>
 
-          {/* Desktop tabs (in top row) */}
+          {/* Desktop tabs */}
           {user && (
             <nav className="hidden md:flex space-x-1">
               <button
@@ -129,7 +129,7 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, onAuthClick, activeTab,
                     <NotificationPanel
                       notifications={notifications}
                       onClose={() => setShowNotifications(false)}
-                      onMarkAllAsRead={markAllRead}
+                      onMarkAllRead={markAllAsRead}  // ✅ correct prop + variable
                       onRefresh={refresh}
                     />
                   )}
@@ -170,7 +170,6 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, onAuthClick, activeTab,
       {user && (
         <div className="md:hidden border-t border-gray-700 bg-dark-lighter">
           <div className="container mx-auto px-4 py-2">
-            {/* two main tabs side-by-side */}
             <div className="grid grid-cols-2 gap-2">
               <button
                 onClick={() => onTabChange('calendar')}
@@ -196,7 +195,6 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, onAuthClick, activeTab,
               </button>
             </div>
 
-            {/* admin-only third button below */}
             {user.role === 'admin' && (
               <div className="mt-2">
                 <button
