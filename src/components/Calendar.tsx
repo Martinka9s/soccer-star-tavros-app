@@ -244,14 +244,25 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
   const goToPrevious = () => setCurrentDate(subDays(currentDate, 1));
   const goToNext = () => setCurrentDate(addDays(currentDate, 1));
 
+  // ---------- Visibility + formatting helpers ----------
+  // Who can see details for friendly (no team) bookings?
+  const canSeePrivateDetails = (booking: Booking, viewer: User | null) => {
+    const isFriendlyNoTeam =
+      !booking.homeTeam && !booking.awayTeam && !booking.teamName; // no teams set
+    if (!isFriendlyNoTeam) return true;            // Matches or team bookings are public
+    if (!viewer) return false;                     // not logged in → hide
+    if (viewer.role === 'admin') return true;      // admin → show
+    return booking.userId === viewer.id;           // only the booker sees it
+  };
 
-  // NEW: mask email like "local@g…"
+  // Mask email like "local@g…"
   const maskEmail = (email: string) => {
     if (!email) return '';
     const [local, domain = ''] = email.split('@');
     const domainFirst = domain[0] || '';
     return `${local}@${domainFirst}…`;
   };
+  // ----------------------------------------------------
 
   return (
     <div className="space-y-6">
@@ -416,36 +427,49 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
                       <span>{t('available')}</span>
                     ) : (
                       <>
-                        {/* First line: status */}
+                        {/* First line: status only */}
                         <span className="capitalize">{t(status)}</span>
 
-                        {booking && (
-                          <>
-                            {/* If it's a match, keep opponent line inline */}
-                            {booking.homeTeam && booking.awayTeam ? (
+                        {booking && (() => {
+                          const isMatch = !!(booking.homeTeam && booking.awayTeam);
+                          const showPrivate = canSeePrivateDetails(booking, user);
+
+                          if (isMatch) {
+                            // Matches are public → show inline
+                            return (
                               <>
                                 <span className="mx-2">·</span>
                                 <span className="text-white">
                                   {`${booking.homeTeam} vs ${booking.awayTeam}`}
                                 </span>
                               </>
-                            ) : (
-                              /* Single team or friendly booking:
-                                 Second line with masked email or team name, truncated */
+                            );
+                          }
+
+                          // Friendly / single booking (may be private)
+                          if (showPrivate) {
+                            // Show teamName or masked email on a second line, truncated
+                            const line =
+                              (booking.teamName && booking.teamName.trim().length > 0)
+                                ? booking.teamName
+                                : maskEmail(booking.userEmail || '');
+
+                            return (
                               <span className="block mt-1">
                                 <span
                                   className="block max-w-[140px] sm:max-w-[180px] overflow-hidden text-ellipsis whitespace-nowrap text-white/90"
-                                  title={booking.teamName || booking.userEmail || ''}
-                                  aria-label={booking.teamName || booking.userEmail || ''}
+                                  title={line}
+                                  aria-label={line}
                                 >
-                                  {(booking.teamName && booking.teamName.trim().length > 0)
-                                    ? booking.teamName
-                                    : maskEmail(booking.userEmail || '')}
+                                  {line}
                                 </span>
                               </span>
-                            )}
-                          </>
-                        )}
+                            );
+                          }
+
+                          // Not allowed to see details → show nothing beyond "Booked"
+                          return null;
+                        })()}
                       </>
                     )}
                   </div>
