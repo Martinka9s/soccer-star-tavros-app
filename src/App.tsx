@@ -99,7 +99,7 @@ function App() {
         )}
         {activeTab === 'myBookings' && user && <MyBookings user={user} />}
         {activeTab === 'pendingRequests' && user?.role === 'admin' && (
-          <PendingRequests onCountChange={setPendingCount} />
+          <PendingRequests />
         )}
       </main>
 
