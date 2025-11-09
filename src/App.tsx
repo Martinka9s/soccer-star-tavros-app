@@ -43,8 +43,8 @@ function App() {
     setActiveTab('myBookings');
   };
 
-  const handleRegister = async (email: string, password: string) => {
-    await authService.register(email, password);
+  const handleRegister = async (email: string, password: string, teamName: string) => {
+    await authService.register(email, password, teamName);
     setShowAuthModal(false);
     setActiveTab('myBookings');
   };
