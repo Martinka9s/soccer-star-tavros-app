@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { X, Eye, EyeOff, Mail, Lock } from 'lucide-react';
+import { X, Eye, EyeOff, Mail, Lock, Users } from 'lucide-react';
 import { authService } from '../services/firebaseService';
 
 interface AuthModalProps {
   onClose: () => void;
   onLogin: (email: string, password: string) => Promise<void>;
-  onRegister: (email: string, password: string) => Promise<void>;
+  onRegister: (email: string, password: string, teamName: string) => Promise<void>;
 }
 
 const AuthModal: React.FC<AuthModalProps> = ({ onClose, onLogin, onRegister }) => {
@@ -37,6 +37,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose, onLogin, onRegister }) =
       case 'auth/user-disabled':
         return 'This account has been disabled. Please contact support.';
       default:
+        if (code === 'Team name is required') return code;
         return t(isLogin ? 'loginError' : 'registerError') || 'Something went wrong. Please try again.';
     }
   };
@@ -51,7 +52,12 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose, onLogin, onRegister }) =
       if (isLogin) {
         await onLogin(email.trim(), password);
       } else {
-        await onRegister(email.trim(), password);
+        if (!teamName.trim()) {
+          setErrorCode('Team name is required');
+          setLoading(false);
+          return;
+        }
+        await onRegister(email.trim(), password, teamName.trim());
       }
       // Don't close here - let parent handle it on success
     } catch (err: any) {
@@ -196,6 +202,25 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose, onLogin, onRegister }) =
             )}
           </div>
 
+          {!isLogin && (
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                {t('teamName')}
+              </label>
+              <div className="relative">
+                <Users className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+                <input
+                  type="text"
+                  value={teamName}
+                  onChange={(e) => setTeamName(e.target.value)}
+                  required={!isLogin}
+                  className="w-full pl-10 pr-3 py-2 bg-dark border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-primary"
+                  placeholder="e.g., Eagles FC"
+                />
+              </div>
+            </div>
+          )}
+
           <button
             type="submit"
             disabled={loading}
@@ -214,6 +239,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose, onLogin, onRegister }) =
                 setIsLogin(!isLogin);
                 setErrorCode(null);
                 setInfo(null);
+                setTeamName('');
               }}
               className="text-primary hover:text-primary-light transition-colors font-medium"
             >
