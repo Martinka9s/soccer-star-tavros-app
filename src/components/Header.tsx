@@ -13,7 +13,7 @@ interface HeaderProps {
   pendingCount?: number;
 }
 
-const Header: React.FC<HeaderProps> = ({ user, onLogout, onAuthClick, activeTab, onTabChange }) => {
+const Header: React.FC<HeaderProps> = ({ user, onLogout, onAuthClick, activeTab, onTabChange, pendingCount = 0 }) => {
   const { t, i18n } = useTranslation();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const { unreadCount } = useNotifications(user?.id);
@@ -98,7 +98,7 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, onAuthClick, activeTab,
               {user.role === 'admin' && (
                 <button
                   onClick={() => onTabChange('pendingRequests')}
-                  className={`px-4 py-2 rounded-lg transition-colors ${
+                  className={`px-4 py-2 rounded-lg transition-colors relative ${
                     activeTab === 'pendingRequests'
                       ? 'bg-primary text-white'
                       : 'text-gray-300 hover:bg-dark hover:text-white'
@@ -106,6 +106,9 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, onAuthClick, activeTab,
                   aria-current={activeTab === 'pendingRequests' ? 'page' : undefined}
                 >
                   {t('pendingRequests')}
+                  {pendingCount > 0 && (
+                    <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse" />
+                  )}
                 </button>
               )}
             </nav>
@@ -243,7 +246,7 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, onAuthClick, activeTab,
               <div className="mt-2">
                 <button
                   onClick={() => onTabChange('pendingRequests')}
-                  className={`w-full px-4 py-2 rounded-lg text-center transition-colors text-sm ${
+                  className={`w-full px-4 py-2 rounded-lg text-center transition-colors text-sm relative ${
                     activeTab === 'pendingRequests'
                       ? 'bg-primary text-white'
                       : 'text-gray-300 bg-dark hover:bg-dark/80 hover:text-white'
@@ -251,6 +254,9 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, onAuthClick, activeTab,
                   aria-current={activeTab === 'pendingRequests' ? 'page' : undefined}
                 >
                   {t('pendingRequests')}
+                  {pendingCount > 0 && (
+                    <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse" />
+                  )}
                 </button>
               </div>
             )}
