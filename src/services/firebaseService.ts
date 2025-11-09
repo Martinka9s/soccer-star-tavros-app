@@ -25,6 +25,7 @@ import {
   orderBy,
   serverTimestamp,
   Timestamp,
+  runTransaction, // ✅ added
   type QueryDocumentSnapshot,
   type DocumentData,
 } from 'firebase/firestore';
@@ -362,17 +363,30 @@ export const bookingService = {
     );
   },
 
+  // ✅ Transactional update: no-op if doc no longer exists
   async updateBooking(bookingId: string, updates: Partial<Booking>): Promise<void> {
-    const bookingRef = doc(db, 'bookings', bookingId);
-    await updateDoc(bookingRef, {
-      ...updates,
-      updatedAt: serverTimestamp(),
+    const ref = doc(db, 'bookings', bookingId);
+    await runTransaction(db, async (tx) => {
+      const snap = await tx.get(ref);
+      if (!snap.exists()) {
+        // Already processed elsewhere – treat as success
+        return;
+      }
+      tx.update(ref, {
+        ...updates,
+        updatedAt: serverTimestamp(),
+      });
     });
   },
 
+  // ✅ Safe delete: ignore "not-found" race
   async deleteBooking(bookingId: string): Promise<void> {
-    const bookingRef = doc(db, 'bookings', bookingId);
-    await deleteDoc(bookingRef);
+    const ref = doc(db, 'bookings', bookingId);
+    try {
+      await deleteDoc(ref);
+    } catch (e: any) {
+      if (e?.code !== 'not-found') throw e;
+    }
   },
 
   async getBooking(bookingId: string): Promise<Booking | null> {
@@ -464,9 +478,14 @@ export const notificationService = {
     );
   },
 
+  // ✅ Hardened: ignore not-found in race conditions
   async markAsRead(notificationId: string): Promise<void> {
     const notificationRef = doc(db, 'notifications', notificationId);
-    await updateDoc(notificationRef, { read: true });
+    try {
+      await updateDoc(notificationRef, { read: true });
+    } catch (e: any) {
+      if (e?.code !== 'not-found') throw e;
+    }
   },
 
   async markAllAsRead(userId: string): Promise<void> {
