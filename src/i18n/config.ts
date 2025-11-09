@@ -164,6 +164,7 @@ const resources = {
       // Auth
       email: 'Email',
       password: 'Κωδικός',
+      teamName: 'Όνομα Ομάδας',
       loginTitle: 'Σύνδεση στο λογαριασμό σας',
       registerTitle: 'Δημιουργία λογαριασμού',
       noAccount: 'Δεν έχετε λογαριασμό;',
