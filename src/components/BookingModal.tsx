@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { X } from 'lucide-react';
 import { Booking, PitchType, User } from '../types';
+import { userService } from '../services/firebaseService';
 
 interface BookingModalProps {
   isOpen: boolean;
@@ -16,6 +17,8 @@ interface BookingModalProps {
   user: User;
   existingBookings: Booking[];
 }
+
+type BookingMode = 'match' | 'single-team' | 'guest';
 
 const BookingModal: React.FC<BookingModalProps> = ({
   isOpen,
@@ -35,9 +38,32 @@ const BookingModal: React.FC<BookingModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  // NEW: Admin team selection
+  const [bookingMode, setBookingMode] = useState<BookingMode>('guest');
+  const [availableTeams, setAvailableTeams] = useState<{ userId: string; teamName: string; email: string }[]>([]);
+  const [homeTeam, setHomeTeam] = useState('');
+  const [awayTeam, setAwayTeam] = useState('');
+  const [selectedTeam, setSelectedTeam] = useState('');
+
   const isAdmin = user.role === 'admin';
   const isEditMode = !!existingBooking;
   const isBlocked = existingBooking?.status === 'blocked';
+
+  // Load available teams for admin
+  useEffect(() => {
+    if (isAdmin && isOpen) {
+      loadTeams();
+    }
+  }, [isAdmin, isOpen]);
+
+  const loadTeams = async () => {
+    try {
+      const teams = await userService.getAllTeams();
+      setAvailableTeams(teams);
+    } catch (error) {
+      console.error('Error loading teams:', error);
+    }
+  };
 
   useEffect(() => {
     if (existingBooking) {
@@ -46,15 +72,31 @@ const BookingModal: React.FC<BookingModalProps> = ({
       setTeamName(existingBooking.teamName || '');
       setNotes(existingBooking.notes || '');
       setStatus(existingBooking.status as any);
+
+      // Detect booking mode from existing booking
+      if (existingBooking.homeTeam && existingBooking.awayTeam) {
+        setBookingMode('match');
+        setHomeTeam(existingBooking.homeTeam);
+        setAwayTeam(existingBooking.awayTeam);
+      } else if (existingBooking.teamName && availableTeams.some(t => t.teamName === existingBooking.teamName)) {
+        setBookingMode('single-team');
+        setSelectedTeam(existingBooking.teamName);
+      } else {
+        setBookingMode('guest');
+      }
     } else {
       setDuration(1);
       setPhoneNumber(user.phoneNumber || '');
       setTeamName('');
       setNotes('');
       setStatus('pending');
+      setBookingMode('guest');
+      setHomeTeam('');
+      setAwayTeam('');
+      setSelectedTeam('');
     }
     setError('');
-  }, [existingBooking, user, isOpen]);
+  }, [existingBooking, user, isOpen, availableTeams]);
 
   if (!isOpen || !selectedSlot) return null;
 
@@ -107,7 +149,29 @@ const BookingModal: React.FC<BookingModalProps> = ({
       return;
     }
 
-    if (!isAdmin && !phoneNumber.trim()) {
+    // Validation for admin booking modes
+    if (isAdmin && !isBlocked) {
+      if (bookingMode === 'match') {
+        if (!homeTeam || !awayTeam) {
+          setError('Please select both home and away teams');
+          return;
+        }
+        if (homeTeam === awayTeam) {
+          setError('Home and away teams must be different');
+          return;
+        }
+      } else if (bookingMode === 'single-team') {
+        if (!selectedTeam) {
+          setError('Please select a team');
+          return;
+        }
+      } else if (bookingMode === 'guest') {
+        if (!phoneNumber.trim()) {
+          setError('Phone number is required for guest bookings');
+          return;
+        }
+      }
+    } else if (!isAdmin && !phoneNumber.trim()) {
       setError('Phone number is required');
       return;
     }
@@ -121,14 +185,36 @@ const BookingModal: React.FC<BookingModalProps> = ({
         startTime: selectedSlot.time,
         duration,
         status: isAdmin && isBlocked ? 'blocked' : (isAdmin ? status : 'pending'),
-        phoneNumber: phoneNumber.trim(),
-        teamName: teamName.trim(),
         notes: notes.trim(),
       };
 
-      if (!isAdmin || !isBlocked) {
+      // Handle different booking modes
+      if (isAdmin && bookingMode === 'match') {
+        // Match booking
+        bookingData.homeTeam = homeTeam;
+        bookingData.awayTeam = awayTeam;
+        
+        // Find user IDs for both teams
+        const homeTeamUser = availableTeams.find(t => t.teamName === homeTeam);
+        const awayTeamUser = availableTeams.find(t => t.teamName === awayTeam);
+        
+        if (homeTeamUser) bookingData.homeTeamUserId = homeTeamUser.userId;
+        if (awayTeamUser) bookingData.awayTeamUserId = awayTeamUser.userId;
+        
+      } else if (isAdmin && bookingMode === 'single-team') {
+        // Single team booking
+        const teamUser = availableTeams.find(t => t.teamName === selectedTeam);
+        if (teamUser) {
+          bookingData.userId = teamUser.userId;
+          bookingData.userEmail = teamUser.email;
+          bookingData.teamName = selectedTeam;
+        }
+      } else {
+        // Guest booking or regular user booking
         bookingData.userId = user.id;
         bookingData.userEmail = user.email;
+        bookingData.phoneNumber = phoneNumber.trim();
+        bookingData.teamName = teamName.trim();
       }
 
       await onSubmit(bookingData);
@@ -197,6 +283,47 @@ const BookingModal: React.FC<BookingModalProps> = ({
             </div>
           </div>
 
+          {/* Admin Booking Mode Selection */}
+          {isAdmin && !isBlocked && !isEditMode && (
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Booking Type
+              </label>
+              <div className="space-y-2">
+                <label className="flex items-center space-x-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    value="match"
+                    checked={bookingMode === 'match'}
+                    onChange={() => setBookingMode('match')}
+                    className="text-primary focus:ring-primary"
+                  />
+                  <span className="text-white">Match (2 teams)</span>
+                </label>
+                <label className="flex items-center space-x-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    value="single-team"
+                    checked={bookingMode === 'single-team'}
+                    onChange={() => setBookingMode('single-team')}
+                    className="text-primary focus:ring-primary"
+                  />
+                  <span className="text-white">Single Team</span>
+                </label>
+                <label className="flex items-center space-x-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    value="guest"
+                    checked={bookingMode === 'guest'}
+                    onChange={() => setBookingMode('guest')}
+                    className="text-primary focus:ring-primary"
+                  />
+                  <span className="text-white">Guest / Other</span>
+                </label>
+              </div>
+            </div>
+          )}
+
           {!isBlocked && (
             <>
               <div>
@@ -222,32 +349,102 @@ const BookingModal: React.FC<BookingModalProps> = ({
                 )}
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  {t('phoneNumber')} *
-                </label>
-                <input
-                  type="tel"
-                  value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
-                  required={!isAdmin}
-                  className="w-full px-4 py-2 bg-dark border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-primary"
-                  placeholder="69XXXXXXXX"
-                />
-              </div>
+              {/* Match Mode: Show home and away team dropdowns */}
+              {isAdmin && bookingMode === 'match' && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      Home Team *
+                    </label>
+                    <select
+                      value={homeTeam}
+                      onChange={(e) => setHomeTeam(e.target.value)}
+                      className="w-full px-4 py-2 bg-dark border border-gray-600 rounded-lg text-white focus:outline-none focus:border-primary"
+                      required
+                    >
+                      <option value="">Select home team</option>
+                      {availableTeams.map((team) => (
+                        <option key={team.userId} value={team.teamName}>
+                          {team.teamName}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  {t('teamName')}
-                </label>
-                <input
-                  type="text"
-                  value={teamName}
-                  onChange={(e) => setTeamName(e.target.value)}
-                  className="w-full px-4 py-2 bg-dark border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-primary"
-                  placeholder="Team name (optional)"
-                />
-              </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      Away Team *
+                    </label>
+                    <select
+                      value={awayTeam}
+                      onChange={(e) => setAwayTeam(e.target.value)}
+                      className="w-full px-4 py-2 bg-dark border border-gray-600 rounded-lg text-white focus:outline-none focus:border-primary"
+                      required
+                    >
+                      <option value="">Select away team</option>
+                      {availableTeams.filter(t => t.teamName !== homeTeam).map((team) => (
+                        <option key={team.userId} value={team.teamName}>
+                          {team.teamName}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </>
+              )}
+
+              {/* Single Team Mode: Show single team dropdown */}
+              {isAdmin && bookingMode === 'single-team' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Select Team *
+                  </label>
+                  <select
+                    value={selectedTeam}
+                    onChange={(e) => setSelectedTeam(e.target.value)}
+                    className="w-full px-4 py-2 bg-dark border border-gray-600 rounded-lg text-white focus:outline-none focus:border-primary"
+                    required
+                  >
+                    <option value="">Select a team</option>
+                    {availableTeams.map((team) => (
+                      <option key={team.userId} value={team.teamName}>
+                        {team.teamName}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {/* Guest Mode or Regular User: Show phone and team name fields */}
+              {(!isAdmin || bookingMode === 'guest') && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      {t('phoneNumber')} *
+                    </label>
+                    <input
+                      type="tel"
+                      value={phoneNumber}
+                      onChange={(e) => setPhoneNumber(e.target.value)}
+                      required={!isAdmin}
+                      className="w-full px-4 py-2 bg-dark border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-primary"
+                      placeholder="69XXXXXXXX"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      {t('teamName')}
+                    </label>
+                    <input
+                      type="text"
+                      value={teamName}
+                      onChange={(e) => setTeamName(e.target.value)}
+                      className="w-full px-4 py-2 bg-dark border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-primary"
+                      placeholder="Team name (optional)"
+                    />
+                  </div>
+                </>
+              )}
 
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
