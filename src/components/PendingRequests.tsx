@@ -13,6 +13,8 @@ const PendingRequests: React.FC<PendingRequestsProps> = ({ onCountChange }) => {
   const { t } = useTranslation();
   const [pendingBookings, setPendingBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
+  // Track which booking is being processed to avoid duplicate clicks
+  const [busyId, setBusyId] = useState<string | null>(null);
 
   useEffect(() => {
     void loadPendingBookings();
@@ -22,24 +24,35 @@ const PendingRequests: React.FC<PendingRequestsProps> = ({ onCountChange }) => {
     setLoading(true);
     try {
       const bookings = await bookingService.getPendingBookings();
-      setPendingBookings(bookings ?? []);
-      // Update parent component with count
-      if (onCountChange) {
-        onCountChange(bookings?.length ?? 0);
-      }
+      const list = bookings ?? [];
+      setPendingBookings(list);
+      onCountChange?.(list.length);
     } catch (error) {
       console.error('Error loading pending bookings:', error);
       setPendingBookings([]);
-      if (onCountChange) {
-        onCountChange(0);
-      }
+      onCountChange?.(0);
     } finally {
       setLoading(false);
     }
   };
 
+  const safeRemoveFromUI = (id: string) => {
+    setPendingBookings(prev => {
+      const next = prev.filter(b => b.id !== id);
+      onCountChange?.(next.length);
+      return next;
+    });
+  };
+
   const handleApprove = async (booking: Booking) => {
+    if (busyId) return;
+    setBusyId(booking.id);
+
+    // Optimistic: remove from UI immediately
+    safeRemoveFromUI(booking.id);
+
     try {
+      // If your service uses updateDoc, this will throw if doc no longer exists.
       await bookingService.updateBooking(booking.id, { status: 'booked' });
 
       if (booking.userId) {
@@ -57,16 +70,26 @@ const PendingRequests: React.FC<PendingRequestsProps> = ({ onCountChange }) => {
           })
         );
       }
-
-      await loadPendingBookings();
-    } catch (error) {
-      console.error('Error approving booking:', error);
-      alert('Failed to approve booking');
+    } catch (error: any) {
+      // Ignore "not-found" – it means another tab/admin already processed it.
+      if (error?.code !== 'not-found') {
+        console.error('Error approving booking:', error);
+        alert('Failed to approve booking');
+        // If it failed for another reason, re-sync list
+        await loadPendingBookings();
+      }
+    } finally {
+      setBusyId(null);
     }
   };
 
   const handleReject = async (booking: Booking) => {
+    if (busyId) return;
     if (!window.confirm('Are you sure you want to reject this booking?')) return;
+
+    setBusyId(booking.id);
+    // Optimistic: remove from UI immediately
+    safeRemoveFromUI(booking.id);
 
     try {
       await bookingService.deleteBooking(booking.id);
@@ -86,11 +109,15 @@ const PendingRequests: React.FC<PendingRequestsProps> = ({ onCountChange }) => {
           })
         );
       }
-
-      await loadPendingBookings();
-    } catch (error) {
-      console.error('Error rejecting booking:', error);
-      alert('Failed to reject booking');
+    } catch (error: any) {
+      // Ignore "not-found" – already removed elsewhere
+      if (error?.code !== 'not-found') {
+        console.error('Error rejecting booking:', error);
+        alert('Failed to reject booking');
+        await loadPendingBookings();
+      }
+    } finally {
+      setBusyId(null);
     }
   };
 
@@ -123,6 +150,8 @@ const PendingRequests: React.FC<PendingRequestsProps> = ({ onCountChange }) => {
         {pendingBookings.map((booking) => {
           const dateLabel = format(parseISO(booking.date), 'EEEE, MMM d, yyyy');
           const durationLabel = `${booking.duration} ${booking.duration === 1 ? t('hour') : t('hours')}`;
+
+          const isBusy = busyId === booking.id;
 
           return (
             <div
@@ -184,18 +213,28 @@ const PendingRequests: React.FC<PendingRequestsProps> = ({ onCountChange }) => {
                 <div className="flex lg:flex-col gap-3">
                   <button
                     onClick={() => handleApprove(booking)}
-                    className="flex-1 lg:flex-none flex items-center justify-center space-x-2 px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors"
+                    disabled={isBusy}
+                    className={`flex-1 lg:flex-none flex items-center justify-center space-x-2 px-6 py-3 rounded-lg font-medium transition-colors ${
+                      isBusy
+                        ? 'bg-green-800 text-white opacity-70 cursor-not-allowed'
+                        : 'bg-green-600 hover:bg-green-700 text-white'
+                    }`}
                   >
                     <Check size={20} />
-                    <span>{t('approve')}</span>
+                    <span>{isBusy ? t('processing') ?? 'Processing…' : t('approve')}</span>
                   </button>
 
                   <button
                     onClick={() => handleReject(booking)}
-                    className="flex-1 lg:flex-none flex items-center justify-center space-x-2 px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors"
+                    disabled={isBusy}
+                    className={`flex-1 lg:flex-none flex items-center justify-center space-x-2 px-6 py-3 rounded-lg font-medium transition-colors ${
+                      isBusy
+                        ? 'bg-red-800 text-white opacity-70 cursor-not-allowed'
+                        : 'bg-red-600 hover:bg-red-700 text-white'
+                    }`}
                   >
                     <X size={20} />
-                    <span>{t('reject')}</span>
+                    <span>{isBusy ? t('processing') ?? 'Processing…' : t('reject')}</span>
                   </button>
                 </div>
               </div>
