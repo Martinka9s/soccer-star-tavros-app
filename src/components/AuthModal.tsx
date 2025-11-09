@@ -29,9 +29,14 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose, onLogin, onRegister }) =
         return t('auth_weak_password') || 'Password should be at least 6 characters.';
       case 'auth/user-not-found':
       case 'auth/wrong-password':
-        return t('loginError') || 'Incorrect email or password.';
+      case 'auth/invalid-credential':
+        return 'Invalid email or password. Please check your credentials and try again.';
+      case 'auth/too-many-requests':
+        return 'Too many failed login attempts. Please try again later or reset your password.';
+      case 'auth/user-disabled':
+        return 'This account has been disabled. Please contact support.';
       default:
-        return t(isLogin ? 'loginError' : 'registerError') || 'Something went wrong.';
+        return t(isLogin ? 'loginError' : 'registerError') || 'Something went wrong. Please try again.';
     }
   };
 
@@ -47,8 +52,9 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose, onLogin, onRegister }) =
       } else {
         await onRegister(email.trim(), password);
       }
-      onClose();
+      // Don't close here - let parent handle it on success
     } catch (err: any) {
+      console.error('Auth error:', err);
       setErrorCode(err?.code || err?.message || 'unknown');
     } finally {
       setLoading(false);
@@ -64,8 +70,9 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose, onLogin, onRegister }) =
     }
     try {
       await authService.sendReset(email.trim());
-      setInfo(t('reset_sent') || 'Password reset email sent.');
+      setInfo(t('reset_sent') || 'Password reset email sent. Check your inbox.');
     } catch (err: any) {
+      console.error('Reset error:', err);
       setErrorCode(err?.code || err?.message || 'unknown');
     }
   };
@@ -80,6 +87,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose, onLogin, onRegister }) =
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-white transition-colors"
+            aria-label="Close"
           >
             <X size={24} />
           </button>
@@ -89,18 +97,36 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose, onLogin, onRegister }) =
           {errorCode && (
             <div className="p-3 bg-red-500/10 border border-red-500/60 rounded text-red-300 text-sm">
               {friendly(errorCode)}
-              {errorCode === 'auth/email-already-in-use' && !isLogin && (
+              {(errorCode === 'auth/email-already-in-use' && !isLogin) && (
                 <div className="mt-2">
                   <button
                     type="button"
-                    onClick={() => setIsLogin(true)}
-                    className="underline"
+                    onClick={() => {
+                      setIsLogin(true);
+                      setErrorCode(null);
+                    }}
+                    className="underline hover:text-red-200"
                   >
                     {t('signIn')}
                   </button>
                   <span className="mx-1 text-red-400">·</span>
-                  <button type="button" onClick={handleReset} className="underline">
-                    {t('send_reset_link') || 'Send reset link'}
+                  <button 
+                    type="button" 
+                    onClick={handleReset} 
+                    className="underline hover:text-red-200"
+                  >
+                    {t('send_reset_link') || 'Reset password'}
+                  </button>
+                </div>
+              )}
+              {(errorCode === 'auth/invalid-credential' || errorCode === 'auth/wrong-password') && isLogin && (
+                <div className="mt-2">
+                  <button 
+                    type="button" 
+                    onClick={handleReset} 
+                    className="underline hover:text-red-200"
+                  >
+                    {t('send_reset_link') || 'Forgot password?'}
                   </button>
                 </div>
               )}
@@ -126,6 +152,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose, onLogin, onRegister }) =
                 required
                 className="w-full pl-10 pr-3 py-2 bg-dark border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-primary"
                 placeholder="your@email.com"
+                autoComplete="email"
               />
             </div>
           </div>
@@ -144,6 +171,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose, onLogin, onRegister }) =
                 minLength={6}
                 className="w-full pl-10 pr-10 py-2 bg-dark border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-primary"
                 placeholder="••••••••"
+                autoComplete={isLogin ? 'current-password' : 'new-password'}
               />
               <button
                 type="button"
@@ -156,7 +184,11 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose, onLogin, onRegister }) =
             </div>
             {isLogin && (
               <div className="mt-1 text-right">
-                <button type="button" onClick={handleReset} className="text-sm text-gray-300 hover:underline">
+                <button 
+                  type="button" 
+                  onClick={handleReset} 
+                  className="text-sm text-primary hover:text-primary-light transition-colors"
+                >
                   {t('send_reset_link') || 'Forgot password?'}
                 </button>
               </div>
@@ -168,7 +200,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose, onLogin, onRegister }) =
             disabled={loading}
             className="w-full py-3 bg-primary hover:bg-primary-dark text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? `${t('submit') || 'Submit'}...` : t(isLogin ? 'signIn' : 'signUp')}
+            {loading ? '...' : t(isLogin ? 'signIn' : 'signUp')}
           </button>
 
           <div className="text-center text-sm">
@@ -182,7 +214,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose, onLogin, onRegister }) =
                 setErrorCode(null);
                 setInfo(null);
               }}
-              className="text-primary hover:text-primary-light transition-colors"
+              className="text-primary hover:text-primary-light transition-colors font-medium"
             >
               {t(isLogin ? 'signUp' : 'signIn')}
             </button>
