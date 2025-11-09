@@ -1,15 +1,14 @@
 export type UserRole = 'user' | 'admin';
-
 export type BookingStatus = 'available' | 'pending' | 'booked' | 'blocked';
-
 export type PitchType = 'Pitch A' | 'Pitch B';
 
 export interface User {
   id: string;
   email: string;
   role: UserRole;
-  createdAt: Date;
+  teamName?: string; // NEW: User's team name
   phoneNumber?: string;
+  createdAt: Date;
 }
 
 export interface Booking {
@@ -19,11 +18,20 @@ export interface Booking {
   startTime: string; // HH:mm format
   duration: number; // in hours
   status: BookingStatus;
+  
+  // NEW: Match between two teams (when admin creates)
+  homeTeam?: string;
+  awayTeam?: string;
+  homeTeamUserId?: string;
+  awayTeamUserId?: string;
+  
+  // Existing: Single user booking
   userId?: string;
   userEmail?: string;
   teamName?: string;
   phoneNumber?: string;
   notes?: string;
+  
   createdAt: Date;
   updatedAt: Date;
 }
@@ -31,7 +39,7 @@ export interface Booking {
 export interface Notification {
   id: string;
   userId: string;
-  type: 'approved' | 'rejected' | 'cancelled';
+  type: 'approved' | 'rejected' | 'cancelled' | 'match_scheduled'; // NEW type
   bookingId: string;
   pitchType: PitchType;
   date: string;
