@@ -107,7 +107,7 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, onAuthClick, activeTab,
                 >
                   {t('pendingRequests')}
                   {pendingCount > 0 && (
-                    <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse" />
+                    <span className="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-full animate-pulse" />
                   )}
                 </button>
               )}
@@ -255,7 +255,7 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, onAuthClick, activeTab,
                 >
                   {t('pendingRequests')}
                   {pendingCount > 0 && (
-                    <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse" />
+                    <span className="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-full animate-pulse" />
                   )}
                 </button>
               </div>
