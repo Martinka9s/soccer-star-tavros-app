@@ -5,7 +5,11 @@ import { format, parseISO } from 'date-fns';
 import { Booking } from '../types';
 import { bookingService, notificationService } from '../services/firebaseService';
 
-const PendingRequests: React.FC = () => {
+interface PendingRequestsProps {
+  onCountChange?: (count: number) => void;
+}
+
+const PendingRequests: React.FC<PendingRequestsProps> = ({ onCountChange }) => {
   const { t } = useTranslation();
   const [pendingBookings, setPendingBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
@@ -19,9 +23,16 @@ const PendingRequests: React.FC = () => {
     try {
       const bookings = await bookingService.getPendingBookings();
       setPendingBookings(bookings ?? []);
+      // Update parent component with count
+      if (onCountChange) {
+        onCountChange(bookings?.length ?? 0);
+      }
     } catch (error) {
       console.error('Error loading pending bookings:', error);
       setPendingBookings([]);
+      if (onCountChange) {
+        onCountChange(0);
+      }
     } finally {
       setLoading(false);
     }
