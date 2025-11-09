@@ -38,24 +38,15 @@ function App() {
   }, [user]);
 
   const handleLogin = async (email: string, password: string) => {
-    try {
-      await authService.login(email, password);
-      setShowAuthModal(false);
-      setActiveTab('myBookings');
-    } catch (err) {
-      console.error('Login error:', err);
-      // Let AuthModal show its own error UI if it has one
-    }
+    await authService.login(email, password);
+    setShowAuthModal(false);
+    setActiveTab('myBookings');
   };
 
   const handleRegister = async (email: string, password: string) => {
-    try {
-      await authService.register(email, password);
-      setShowAuthModal(false);
-      setActiveTab('myBookings');
-    } catch (err) {
-      console.error('Register error:', err);
-    }
+    await authService.register(email, password);
+    setShowAuthModal(false);
+    setActiveTab('myBookings');
   };
 
   const handleLogout = async () => {
@@ -99,7 +90,7 @@ function App() {
         )}
         {activeTab === 'myBookings' && user && <MyBookings user={user} />}
         {activeTab === 'pendingRequests' && user?.role === 'admin' && (
-          <PendingRequests />
+          <PendingRequests onCountChange={setPendingCount} />
         )}
       </main>
 
