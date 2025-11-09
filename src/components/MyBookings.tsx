@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Calendar as CalendarIcon, Clock } from 'lucide-react';
+import { Calendar as CalendarIcon, Clock, Users } from 'lucide-react';
 import { format, parseISO, isFuture } from 'date-fns';
 import { Booking, User } from '../types';
 import { bookingService } from '../services/firebaseService';
@@ -22,7 +22,7 @@ const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
   const loadBookings = async () => {
     setLoading(true);
     try {
-      const userBookings = await bookingService.getBookingsByUser(user.id);
+      const userBookings = await bookingService.getBookingsByUserOrTeam(user.id, user.teamName);
       setBookings(userBookings ?? []);
     } catch (error) {
       console.error('Error loading bookings:', error);
@@ -57,16 +57,52 @@ const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
     }
   };
 
+  const isMatchBooking = (booking: Booking): boolean => {
+    return !!(booking.homeTeam && booking.awayTeam);
+  };
+
   const renderBookingCard = (booking: Booking) => {
+    const isMatch = isMatchBooking(booking);
+
     return (
       <div
         key={booking.id}
-        className="bg-dark-lighter border border-gray-700 rounded-lg p-4 hover:border-primary transition-colors"
+        className={`bg-dark-lighter border rounded-lg p-4 hover:border-primary transition-colors ${
+          isMatch ? 'border-purple-600' : 'border-gray-700'
+        }`}
       >
         <div className="flex items-start justify-between mb-3">
-          <div>
-            <h3 className="text-lg font-semibold text-white">{booking.pitchType}</h3>
-            <div className="flex items-center space-x-4 mt-2 text-sm text-gray-400">
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-1">
+              <h3 className="text-lg font-semibold text-white">{booking.pitchType}</h3>
+              {isMatch && (
+                <span className="text-xs bg-purple-600 text-white px-2 py-1 rounded-full flex items-center gap-1">
+                  <Users size={12} />
+                  Match
+                </span>
+              )}
+            </div>
+            
+            {isMatch ? (
+              <div className="mt-2 text-white">
+                <div className="flex items-center gap-2 text-base font-medium">
+                  <span className={user.teamName === booking.homeTeam ? 'text-primary font-bold' : ''}>
+                    {booking.homeTeam}
+                  </span>
+                  <span className="text-gray-400">vs</span>
+                  <span className={user.teamName === booking.awayTeam ? 'text-primary font-bold' : ''}>
+                    {booking.awayTeam}
+                  </span>
+                </div>
+              </div>
+            ) : booking.teamName ? (
+              <div className="mt-2">
+                <span className="text-sm text-gray-400">Team: </span>
+                <span className="text-sm text-white">{booking.teamName}</span>
+              </div>
+            ) : null}
+
+            <div className="flex items-center space-x-4 mt-3 text-sm text-gray-400">
               <div className="flex items-center space-x-1">
                 <CalendarIcon size={16} />
                 <span>{format(parseISO(booking.date), 'MMM d, yyyy')}</span>
@@ -79,8 +115,9 @@ const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
               </div>
             </div>
           </div>
+          
           <span
-            className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(
+            className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap ${getStatusColor(
               booking.status
             )}`}
           >
@@ -88,22 +125,16 @@ const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
           </span>
         </div>
 
-        {booking.teamName ? (
+        {!isMatch && booking.phoneNumber ? (
           <div className="mt-2">
-            <span className="text-sm text-gray-400">Team: </span>
-            <span className="text-sm text-white">{booking.teamName}</span>
-          </div>
-        ) : null}
-
-        {booking.phoneNumber ? (
-          <div className="mt-1">
             <span className="text-sm text-gray-400">Phone: </span>
             <span className="text-sm text-white">{booking.phoneNumber}</span>
           </div>
         ) : null}
 
         {booking.notes ? (
-          <div className="mt-2 p-2 bg-dark rounded text-sm text-gray-300">
+          <div className="mt-3 p-2 bg-dark rounded text-sm text-gray-300">
+            <span className="text-gray-400">Notes: </span>
             {booking.notes}
           </div>
         ) : null}
