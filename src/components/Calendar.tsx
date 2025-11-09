@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { format, addDays, subDays, startOfDay, isBefore, parseISO } from 'date-fns';
 import { Booking, PitchType, User } from '../types';
-import { bookingService } from '../services/firebaseService';
+import { bookingService, notificationService } from '../services/firebaseService';
 import BookingModal from './BookingModal';
 
 interface CalendarProps {
@@ -135,8 +135,8 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
       if (bookingData.delete && selectedBooking) {
         await bookingService.deleteBooking(selectedBooking.id);
 
+        // Send cancellation notification
         if (selectedBooking.userId && user?.role === 'admin') {
-          const { notificationService } = await import('../services/firebaseService');
           await notificationService.createNotification(
             selectedBooking.userId,
             'cancelled',
@@ -151,15 +151,84 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
             })
           );
         }
+
+        // If it was a match, notify both teams
+        if (selectedBooking.homeTeam && selectedBooking.awayTeam) {
+          if (selectedBooking.homeTeamUserId) {
+            await notificationService.createNotification(
+              selectedBooking.homeTeamUserId,
+              'cancelled',
+              selectedBooking.id,
+              selectedBooking.pitchType,
+              selectedBooking.date,
+              selectedBooking.startTime,
+              `Match cancelled: ${selectedBooking.homeTeam} vs ${selectedBooking.awayTeam}`
+            );
+          }
+          if (selectedBooking.awayTeamUserId) {
+            await notificationService.createNotification(
+              selectedBooking.awayTeamUserId,
+              'cancelled',
+              selectedBooking.id,
+              selectedBooking.pitchType,
+              selectedBooking.date,
+              selectedBooking.startTime,
+              `Match cancelled: ${selectedBooking.homeTeam} vs ${selectedBooking.awayTeam}`
+            );
+          }
+        }
       } else if (selectedBooking) {
+        // Update existing booking
         await bookingService.updateBooking(selectedBooking.id, bookingData);
       } else {
-        await bookingService.createBooking({
+        // Create new booking
+        const bookingId = await bookingService.createBooking({
           ...bookingData,
           pitchType: selectedSlot.pitch,
           date: selectedSlot.date,
           startTime: selectedSlot.time,
         });
+
+        // Send notifications based on booking type
+        if (bookingData.homeTeam && bookingData.awayTeam) {
+          // Match booking - notify both teams
+          if (bookingData.homeTeamUserId) {
+            await notificationService.createMatchNotification(
+              bookingData.homeTeamUserId,
+              bookingId,
+              selectedSlot.pitch,
+              selectedSlot.date,
+              selectedSlot.time,
+              bookingData.homeTeam,
+              bookingData.awayTeam,
+              true // isHomeTeam
+            );
+          }
+          if (bookingData.awayTeamUserId) {
+            await notificationService.createMatchNotification(
+              bookingData.awayTeamUserId,
+              bookingId,
+              selectedSlot.pitch,
+              selectedSlot.date,
+              selectedSlot.time,
+              bookingData.homeTeam,
+              bookingData.awayTeam,
+              false // isHomeTeam (away team)
+            );
+          }
+        } else if (bookingData.userId && bookingData.userId !== user?.id) {
+          // Single team booking by admin - notify the team owner
+          await notificationService.createNotification(
+            bookingData.userId,
+            'approved',
+            bookingId,
+            selectedSlot.pitch,
+            selectedSlot.date,
+            selectedSlot.time,
+            `Booking confirmed for ${bookingData.teamName || 'your team'} on ${selectedSlot.date} at ${selectedSlot.time}`
+          );
+        }
+        // Guest bookings (no userId or userId === admin) don't get notifications
       }
 
       await loadBookings();
@@ -174,6 +243,14 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
 
   const goToPrevious = () => setCurrentDate(subDays(currentDate, 1));
   const goToNext = () => setCurrentDate(addDays(currentDate, 1));
+
+  // Helper to display booking info on calendar
+  const getBookingDisplayText = (booking: Booking): string => {
+    if (booking.homeTeam && booking.awayTeam) {
+      return `${booking.homeTeam} vs ${booking.awayTeam}`;
+    }
+    return booking.teamName || booking.userEmail || '';
+  };
 
   return (
     <div className="space-y-6">
@@ -342,7 +419,7 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
                           <>
                             <span className="mx-2">·</span>
                             <span className="text-white">
-                              {booking.teamName || booking.userEmail}
+                              {getBookingDisplayText(booking)}
                             </span>
                           </>
                         )}
