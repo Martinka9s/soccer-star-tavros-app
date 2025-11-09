@@ -19,7 +19,7 @@ import {
   doc,
   setDoc,
   getDoc,
-  getDocs, // ✅ needed
+  getDocs,
   query,
   where,
   orderBy,
@@ -55,9 +55,10 @@ export const db = initializeFirestore(app, {
   }),
 });
 
-// Collections (only the ones we use directly)
+// Collections
 const bookingsCollection = collection(db, 'bookings');
 const notificationsCollection = collection(db, 'notifications');
+const usersCollection = collection(db, 'users');
 
 // Helper: Firestore timestamp → Date
 const convertTimestamp = (timestamp: any): Date => {
@@ -65,7 +66,7 @@ const convertTimestamp = (timestamp: any): Date => {
   return new Date(timestamp);
 };
 
-/** Ensures users/{uid} exists; returns normalized User (no collection reads) */
+/** Ensures users/{uid} exists; returns normalized User */
 async function ensureUserDoc(uid: string, email: string | null | undefined): Promise<User> {
   const ref = doc(db, 'users', uid);
   const snap = await getDoc(ref);
@@ -98,14 +99,17 @@ async function ensureUserDoc(uid: string, email: string | null | undefined): Pro
     id: data.id,
     email: data.email,
     role: data.role,
+    teamName: data.teamName,
     createdAt: convertTimestamp(data.createdAt),
     phoneNumber: data.phoneNumber,
   };
 }
 
+// --- AUTH SERVICE ------------------------------------------------------------
+
 export const authService = {
-  /** Register user; create users/{uid} with role 'user' (no collection read) */
-  async register(email: string, password: string): Promise<User> {
+  /** Register user with team name; create users/{uid} with role 'user' */
+  async register(email: string, password: string, teamName: string): Promise<User> {
     const cred = await createUserWithEmailAndPassword(auth, email, password);
     const uid = cred.user.uid;
 
@@ -117,6 +121,7 @@ export const authService = {
         id: uid,
         email,
         role,
+        teamName: teamName.trim(),
         createdAt: serverTimestamp(),
       },
       { merge: true }
@@ -126,6 +131,7 @@ export const authService = {
       id: uid,
       email,
       role,
+      teamName: teamName.trim(),
       createdAt: new Date(),
     };
   },
@@ -181,6 +187,44 @@ export const authService = {
   },
 };
 
+// --- USER SERVICE ------------------------------------------------------------
+
+export const userService = {
+  /** Get all teams (for admin dropdown) */
+  async getAllTeams(): Promise<{ userId: string; teamName: string; email: string }[]> {
+    const q = query(usersCollection, where('teamName', '!=', ''));
+    const snapshot = await getDocs(q);
+
+    return snapshot.docs.map((doc) => {
+      const data = doc.data();
+      return {
+        userId: doc.id,
+        teamName: data.teamName || '',
+        email: data.email || '',
+      };
+    });
+  },
+
+  /** Get user by team name */
+  async getUserByTeamName(teamName: string): Promise<User | null> {
+    const q = query(usersCollection, where('teamName', '==', teamName.trim()));
+    const snapshot = await getDocs(q);
+
+    if (snapshot.empty) return null;
+
+    const docSnap = snapshot.docs[0];
+    const data = docSnap.data();
+    return {
+      id: docSnap.id,
+      email: data.email,
+      role: data.role,
+      teamName: data.teamName,
+      phoneNumber: data.phoneNumber,
+      createdAt: convertTimestamp(data.createdAt),
+    };
+  },
+};
+
 // --- BOOKINGS ----------------------------------------------------------------
 
 export const bookingService = {
@@ -227,6 +271,76 @@ export const bookingService = {
           updatedAt: convertTimestamp((d.data() as any).updatedAt),
         } as Booking)
     );
+  },
+
+  /** Get bookings where user is involved (either as single user or as one of the teams) */
+  async getBookingsByUserOrTeam(userId: string, teamName?: string): Promise<Booking[]> {
+    // Get bookings where user is the single booker
+    const userQuery = query(
+      bookingsCollection,
+      where('userId', '==', userId),
+      orderBy('date', 'desc')
+    );
+    const userSnapshot = await getDocs(userQuery);
+    const userBookings = userSnapshot.docs.map(
+      (d: QueryDocumentSnapshot<DocumentData>) =>
+        ({
+          id: d.id,
+          ...d.data(),
+          createdAt: convertTimestamp((d.data() as any).createdAt),
+          updatedAt: convertTimestamp((d.data() as any).updatedAt),
+        } as Booking)
+    );
+
+    // If user has a team, also get match bookings
+    if (teamName) {
+      const homeTeamQuery = query(
+        bookingsCollection,
+        where('homeTeam', '==', teamName),
+        orderBy('date', 'desc')
+      );
+      const awayTeamQuery = query(
+        bookingsCollection,
+        where('awayTeam', '==', teamName),
+        orderBy('date', 'desc')
+      );
+
+      const [homeSnapshot, awaySnapshot] = await Promise.all([
+        getDocs(homeTeamQuery),
+        getDocs(awayTeamQuery),
+      ]);
+
+      const homeBookings = homeSnapshot.docs.map(
+        (d: QueryDocumentSnapshot<DocumentData>) =>
+          ({
+            id: d.id,
+            ...d.data(),
+            createdAt: convertTimestamp((d.data() as any).createdAt),
+            updatedAt: convertTimestamp((d.data() as any).updatedAt),
+          } as Booking)
+      );
+
+      const awayBookings = awaySnapshot.docs.map(
+        (d: QueryDocumentSnapshot<DocumentData>) =>
+          ({
+            id: d.id,
+            ...d.data(),
+            createdAt: convertTimestamp((d.data() as any).createdAt),
+            updatedAt: convertTimestamp((d.data() as any).updatedAt),
+          } as Booking)
+      );
+
+      // Combine and deduplicate
+      const allBookings = [...userBookings, ...homeBookings, ...awayBookings];
+      const uniqueBookings = Array.from(
+        new Map(allBookings.map((b) => [b.id, b])).values()
+      );
+
+      // Sort by date descending
+      return uniqueBookings.sort((a, b) => b.date.localeCompare(a.date));
+    }
+
+    return userBookings;
   },
 
   async getPendingBookings(): Promise<Booking[]> {
@@ -294,6 +408,34 @@ export const notificationService = {
     await addDoc(notificationsCollection, {
       userId,
       type,
+      bookingId,
+      pitchType,
+      date,
+      startTime,
+      message,
+      read: false,
+      createdAt: serverTimestamp(),
+    });
+  },
+
+  /** Create notification for match between two teams */
+  async createMatchNotification(
+    userId: string,
+    bookingId: string,
+    pitchType: PitchType,
+    date: string,
+    startTime: string,
+    homeTeam: string,
+    awayTeam: string,
+    isHomeTeam: boolean
+  ): Promise<void> {
+    const userTeam = isHomeTeam ? homeTeam : awayTeam;
+    const opponent = isHomeTeam ? awayTeam : homeTeam;
+    const message = `Match scheduled: ${userTeam} vs ${opponent} on ${date} at ${startTime} (${pitchType})`;
+
+    await addDoc(notificationsCollection, {
+      userId,
+      type: 'match_scheduled',
       bookingId,
       pitchType,
       date,
