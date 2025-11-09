@@ -37,8 +37,8 @@ const PendingRequests: React.FC<PendingRequestsProps> = ({ onCountChange }) => {
   };
 
   const safeRemoveFromUI = (id: string) => {
-    setPendingBookings(prev => {
-      const next = prev.filter(b => b.id !== id);
+    setPendingBookings((prev) => {
+      const next = prev.filter((b) => b.id !== id);
       onCountChange?.(next.length);
       return next;
     });
@@ -52,10 +52,25 @@ const PendingRequests: React.FC<PendingRequestsProps> = ({ onCountChange }) => {
     safeRemoveFromUI(booking.id);
 
     try {
-      // If your service uses updateDoc, this will throw if doc no longer exists.
-      await bookingService.updateBooking(booking.id, { status: 'booked' });
+      // ✅ Preserve userId to ensure it appears in "My bookings"
+      await bookingService.updateBooking(booking.id, {
+        status: 'booked',
+        userId: booking.userId ?? booking.userId, // keep as-is if present
+      });
+    } catch (error: any) {
+      // Ignore "not-found" – another admin may have processed it already
+      if (error?.code !== 'not-found') {
+        console.error('Error approving booking (status update):', error);
+        alert('Failed to approve booking');
+        await loadPendingBookings();
+      }
+      setBusyId(null);
+      return;
+    }
 
-      if (booking.userId) {
+    // Notifications should not block approval UX (non-blocking try/catch)
+    if (booking.userId) {
+      try {
         await notificationService.createNotification(
           booking.userId,
           'approved',
@@ -69,18 +84,12 @@ const PendingRequests: React.FC<PendingRequestsProps> = ({ onCountChange }) => {
             time: booking.startTime,
           })
         );
+      } catch (e) {
+        console.warn('Notification write failed (non-blocking):', e);
       }
-    } catch (error: any) {
-      // Ignore "not-found" – it means another tab/admin already processed it.
-      if (error?.code !== 'not-found') {
-        console.error('Error approving booking:', error);
-        alert('Failed to approve booking');
-        // If it failed for another reason, re-sync list
-        await loadPendingBookings();
-      }
-    } finally {
-      setBusyId(null);
     }
+
+    setBusyId(null);
   };
 
   const handleReject = async (booking: Booking) => {
@@ -93,8 +102,20 @@ const PendingRequests: React.FC<PendingRequestsProps> = ({ onCountChange }) => {
 
     try {
       await bookingService.deleteBooking(booking.id);
+    } catch (error: any) {
+      // Ignore "not-found" – already removed elsewhere
+      if (error?.code !== 'not-found') {
+        console.error('Error rejecting booking:', error);
+        alert('Failed to reject booking');
+        await loadPendingBookings();
+        setBusyId(null);
+        return;
+      }
+    }
 
-      if (booking.userId) {
+    // Non-blocking notification on rejection
+    if (booking.userId) {
+      try {
         await notificationService.createNotification(
           booking.userId,
           'rejected',
@@ -108,17 +129,12 @@ const PendingRequests: React.FC<PendingRequestsProps> = ({ onCountChange }) => {
             time: booking.startTime,
           })
         );
+      } catch (e) {
+        console.warn('Notification write failed (non-blocking):', e);
       }
-    } catch (error: any) {
-      // Ignore "not-found" – already removed elsewhere
-      if (error?.code !== 'not-found') {
-        console.error('Error rejecting booking:', error);
-        alert('Failed to reject booking');
-        await loadPendingBookings();
-      }
-    } finally {
-      setBusyId(null);
     }
+
+    setBusyId(null);
   };
 
   if (loading) {
@@ -149,7 +165,9 @@ const PendingRequests: React.FC<PendingRequestsProps> = ({ onCountChange }) => {
       <div className="grid grid-cols-1 gap-4">
         {pendingBookings.map((booking) => {
           const dateLabel = format(parseISO(booking.date), 'EEEE, MMM d, yyyy');
-          const durationLabel = `${booking.duration} ${booking.duration === 1 ? t('hour') : t('hours')}`;
+          const durationLabel = `${booking.duration} ${
+            booking.duration === 1 ? t('hour') : t('hours')
+          }`;
 
           const isBusy = busyId === booking.id;
 
