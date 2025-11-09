@@ -26,9 +26,10 @@ import {
   serverTimestamp,
   Timestamp,
   runTransaction,
-  onSnapshot, // ✅ added for realtime listeners
+  onSnapshot, // ✅ realtime listeners
   type QueryDocumentSnapshot,
   type DocumentData,
+  type QuerySnapshot, // ✅ added for typed snapshots
 } from 'firebase/firestore';
 import { User, Booking, Notification, UserRole, PitchType } from '../types';
 
@@ -41,7 +42,7 @@ const firebaseConfig = {
   authDomain: clean(import.meta.env.VITE_FIREBASE_AUTH_DOMAIN),
   projectId: clean(import.meta.env.VITE_FIREBASE_PROJECT_ID),
   storageBucket: clean(import.meta.env.VITE_FIREBASE_STORAGE_BUCKET),
-  messagingSenderId: clean(import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID),
+  messagingSenderId: clean(importmeta.env.VITE_FIREBASE_MESSAGING_SENDER_ID),
   appId: clean(import.meta.env.VITE_FIREBASE_APP_ID),
 };
 
@@ -302,10 +303,12 @@ export const bookingService = {
         orderBy('date', 'desc')
       );
 
-      const [homeSnapshot, awaySnapshot] = await Promise.all([
-        getDocs(homeTeamQuery),
-        getDocs(awaySnapshot),
-      ]);
+      // ✅ Corrected and typed: second call uses awayTeamQuery,
+      // and both snapshots have explicit types.
+      const [homeSnapshot, awaySnapshot]: [
+        QuerySnapshot<DocumentData>,
+        QuerySnapshot<DocumentData>
+      ] = await Promise.all([getDocs(homeTeamQuery), getDocs(awayTeamQuery)]);
 
       const homeBookings = homeSnapshot.docs.map(
         (d: QueryDocumentSnapshot<DocumentData>) =>
@@ -329,9 +332,7 @@ export const bookingService = {
 
       // Combine and deduplicate
       const allBookings = [...userBookings, ...homeBookings, ...awayBookings];
-      const uniqueBookings = Array.from(
-        new Map(allBookings.map((b) => [b.id, b])).values()
-      );
+      const uniqueBookings = Array.from(new Map(allBookings.map((b) => [b.id, b])).values());
 
       // Sort by date descending
       return uniqueBookings.sort((a, b) => b.date.localeCompare(a.date));
