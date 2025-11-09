@@ -244,12 +244,20 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
   const goToPrevious = () => setCurrentDate(subDays(currentDate, 1));
   const goToNext = () => setCurrentDate(addDays(currentDate, 1));
 
-  // Helper to display booking info on calendar
+  // Helper: show match vs; otherwise email/team on a separate line
   const getBookingDisplayText = (booking: Booking): string => {
     if (booking.homeTeam && booking.awayTeam) {
       return `${booking.homeTeam} vs ${booking.awayTeam}`;
     }
     return booking.teamName || booking.userEmail || '';
+  };
+
+  // NEW: mask email like "local@g…"
+  const maskEmail = (email: string) => {
+    if (!email) return '';
+    const [local, domain = ''] = email.split('@');
+    const domainFirst = domain[0] || '';
+    return `${local}@${domainFirst}…`;
   };
 
   return (
@@ -409,18 +417,40 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
                   <div className="text-lg font-semibold text-white">
                     {slot.display}
                   </div>
+
                   <div className="mt-2 text-sm text-gray-300">
                     {status === 'available' ? (
                       <span>{t('available')}</span>
                     ) : (
                       <>
+                        {/* First line: status */}
                         <span className="capitalize">{t(status)}</span>
+
                         {booking && (
                           <>
-                            <span className="mx-2">·</span>
-                            <span className="text-white">
-                              {getBookingDisplayText(booking)}
-                            </span>
+                            {/* If it's a match, keep opponent line inline */}
+                            {booking.homeTeam && booking.awayTeam ? (
+                              <>
+                                <span className="mx-2">·</span>
+                                <span className="text-white">
+                                  {`${booking.homeTeam} vs ${booking.awayTeam}`}
+                                </span>
+                              </>
+                            ) : (
+                              /* Single team or friendly booking:
+                                 Second line with masked email or team name, truncated */
+                              <span className="block mt-1">
+                                <span
+                                  className="block max-w-[140px] sm:max-w-[180px] overflow-hidden text-ellipsis whitespace-nowrap text-white/90"
+                                  title={booking.teamName || booking.userEmail || ''}
+                                  aria-label={booking.teamName || booking.userEmail || ''}
+                                >
+                                  {(booking.teamName && booking.teamName.trim().length > 0)
+                                    ? booking.teamName
+                                    : maskEmail(booking.userEmail || '')}
+                                </span>
+                              </span>
+                            )}
                           </>
                         )}
                       </>
