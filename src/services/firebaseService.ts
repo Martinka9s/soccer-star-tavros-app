@@ -26,23 +26,23 @@ import {
   serverTimestamp,
   Timestamp,
   runTransaction,
-  onSnapshot, // ✅ realtime listeners
+  onSnapshot,
   type QueryDocumentSnapshot,
   type DocumentData,
-  type QuerySnapshot, // ✅ added for typed snapshots
+  type QuerySnapshot,
 } from 'firebase/firestore';
 import { User, Booking, Notification, UserRole, PitchType } from '../types';
 
 // --- helpers -----------------------------------------------------------------
 const clean = (v: unknown) => String(v ?? '').trim();
 
-// Firebase configuration (trimmed to avoid stray whitespace/newlines)
+// Firebase configuration (corrected import.meta)
 const firebaseConfig = {
   apiKey: clean(import.meta.env.VITE_FIREBASE_API_KEY),
   authDomain: clean(import.meta.env.VITE_FIREBASE_AUTH_DOMAIN),
   projectId: clean(import.meta.env.VITE_FIREBASE_PROJECT_ID),
   storageBucket: clean(import.meta.env.VITE_FIREBASE_STORAGE_BUCKET),
-  messagingSenderId: clean(importmeta.env.VITE_FIREBASE_MESSAGING_SENDER_ID),
+  messagingSenderId: clean(import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID),
   appId: clean(import.meta.env.VITE_FIREBASE_APP_ID),
 };
 
@@ -75,9 +75,7 @@ async function ensureUserDoc(uid: string, email: string | null | undefined): Pro
   const snap = await getDoc(ref);
 
   if (!snap.exists()) {
-    // Create a minimal profile with default role 'user'.
     const role: UserRole = 'user';
-
     await setDoc(
       ref,
       {
@@ -88,7 +86,6 @@ async function ensureUserDoc(uid: string, email: string | null | undefined): Pro
       },
       { merge: true }
     );
-
     return {
       id: uid,
       email: email || '',
@@ -111,13 +108,11 @@ async function ensureUserDoc(uid: string, email: string | null | undefined): Pro
 // --- AUTH SERVICE ------------------------------------------------------------
 
 export const authService = {
-  /** Register user with team name; create users/{uid} with role 'user' */
   async register(email: string, password: string, teamName: string): Promise<User> {
     const cred = await createUserWithEmailAndPassword(auth, email, password);
     const uid = cred.user.uid;
 
-    const role: UserRole = 'user'; // default; promote manually in Console if needed
-
+    const role: UserRole = 'user';
     await setDoc(
       doc(db, 'users', uid),
       {
@@ -139,12 +134,11 @@ export const authService = {
     };
   },
 
-  /** Login + ensure/fetch profile; if Firestore fails, return provisional user */
   async login(email: string, password: string): Promise<User> {
     const cred = await signInWithEmailAndPassword(auth, email, password);
     try {
       return await ensureUserDoc(cred.user.uid, cred.user.email || email);
-    } catch (e) {
+    } catch {
       return {
         id: cred.user.uid,
         email: cred.user.email || email,
@@ -158,7 +152,6 @@ export const authService = {
     await signOut(auth);
   },
 
-  /** Current user from auth; if Firestore fails, return provisional user */
   async getCurrentUser(): Promise<User | null> {
     const firebaseUser = auth.currentUser;
     if (!firebaseUser) return null;
@@ -179,7 +172,6 @@ export const authService = {
     return onAuthStateChanged(auth, callback);
   },
 
-  /** Forgot password */
   async sendReset(email: string) {
     await sendPasswordResetEmail(auth, email);
   },
@@ -188,7 +180,6 @@ export const authService = {
 // --- USER SERVICE ------------------------------------------------------------
 
 export const userService = {
-  /** Get all teams (for admin dropdown) */
   async getAllTeams(): Promise<{ userId: string; teamName: string; email: string }[]> {
     const q = query(usersCollection, where('teamName', '!=', ''));
     const snapshot = await getDocs(q);
@@ -203,11 +194,9 @@ export const userService = {
     });
   },
 
-  /** Get user by team name */
   async getUserByTeamName(teamName: string): Promise<User | null> {
     const q = query(usersCollection, where('teamName', '==', teamName.trim()));
     const snapshot = await getDocs(q);
-
     if (snapshot.empty) return null;
 
     const docSnap = snapshot.docs[0];
@@ -273,7 +262,6 @@ export const bookingService = {
 
   /** Get bookings where user is involved (either as single user or as one of the teams) */
   async getBookingsByUserOrTeam(userId: string, teamName?: string): Promise<Booking[]> {
-    // Get bookings where user is the single booker
     const userQuery = query(
       bookingsCollection,
       where('userId', '==', userId),
@@ -290,7 +278,6 @@ export const bookingService = {
         } as Booking)
     );
 
-    // If user has a team, also get match bookings
     if (teamName) {
       const homeTeamQuery = query(
         bookingsCollection,
@@ -303,8 +290,7 @@ export const bookingService = {
         orderBy('date', 'desc')
       );
 
-      // ✅ Corrected and typed: second call uses awayTeamQuery,
-      // and both snapshots have explicit types.
+      // ✅ fixed: correctly reference awayTeamQuery and typed
       const [homeSnapshot, awaySnapshot]: [
         QuerySnapshot<DocumentData>,
         QuerySnapshot<DocumentData>
@@ -330,11 +316,8 @@ export const bookingService = {
           } as Booking)
       );
 
-      // Combine and deduplicate
       const allBookings = [...userBookings, ...homeBookings, ...awayBookings];
       const uniqueBookings = Array.from(new Map(allBookings.map((b) => [b.id, b])).values());
-
-      // Sort by date descending
       return uniqueBookings.sort((a, b) => b.date.localeCompare(a.date));
     }
 
@@ -360,23 +343,15 @@ export const bookingService = {
     );
   },
 
-  // ✅ Transactional update: no-op if doc no longer exists
   async updateBooking(bookingId: string, updates: Partial<Booking>): Promise<void> {
     const ref = doc(db, 'bookings', bookingId);
     await runTransaction(db, async (tx) => {
       const snap = await tx.get(ref);
-      if (!snap.exists()) {
-        // Already processed elsewhere – treat as success
-        return;
-      }
-      tx.update(ref, {
-        ...updates,
-        updatedAt: serverTimestamp(),
-      });
+      if (!snap.exists()) return;
+      tx.update(ref, { ...updates, updatedAt: serverTimestamp() });
     });
   },
 
-  // ✅ Safe delete: ignore "not-found" race
   async deleteBooking(bookingId: string): Promise<void> {
     const ref = doc(db, 'bookings', bookingId);
     try {
@@ -399,11 +374,9 @@ export const bookingService = {
         updatedAt: convertTimestamp(data.updatedAt),
       } as Booking;
     }
-
     return null;
   },
 
-  // ✅ NEW: realtime listener for user's bookings and team matches
   listenBookingsByUserOrTeam(
     userId: string,
     teamName: string | undefined,
@@ -423,12 +396,10 @@ export const bookingService = {
 
     const emit = () => {
       const arr = Array.from(byId.values());
-      // Sort here if you want a consistent order (date desc like your fetchers)
       arr.sort((a, b) => b.date.localeCompare(a.date));
       onChange(arr);
     };
 
-    // User's own bookings
     const qUser = query(bookingsCollection, where('userId', '==', userId), orderBy('date', 'desc'));
     unsubscribes.push(
       onSnapshot(qUser, (snap) => {
@@ -440,7 +411,6 @@ export const bookingService = {
       })
     );
 
-    // Team matches (home/away) if team exists
     if (teamName) {
       const qHome = query(bookingsCollection, where('homeTeam', '==', teamName), orderBy('date', 'desc'));
       const qAway = query(bookingsCollection, where('awayTeam', '==', teamName), orderBy('date', 'desc'));
@@ -466,7 +436,6 @@ export const bookingService = {
       );
     }
 
-    // return unsubscribe function
     return () => unsubscribes.forEach((u) => u());
   },
 };
@@ -496,7 +465,6 @@ export const notificationService = {
     });
   },
 
-  /** Create notification for match between two teams */
   async createMatchNotification(
     userId: string,
     bookingId: string,
