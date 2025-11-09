@@ -25,7 +25,8 @@ import {
   orderBy,
   serverTimestamp,
   Timestamp,
-  runTransaction, // ✅ added
+  runTransaction,
+  onSnapshot, // ✅ added for realtime listeners
   type QueryDocumentSnapshot,
   type DocumentData,
 } from 'firebase/firestore';
@@ -139,14 +140,10 @@ export const authService = {
 
   /** Login + ensure/fetch profile; if Firestore fails, return provisional user */
   async login(email: string, password: string): Promise<User> {
-    console.log('TRY LOGIN', email);
     const cred = await signInWithEmailAndPassword(auth, email, password);
-    console.log('LOGIN OK', cred.user.uid);
-
     try {
       return await ensureUserDoc(cred.user.uid, cred.user.email || email);
     } catch (e) {
-      console.warn('Firestore unavailable during login; using provisional user', e);
       return {
         id: cred.user.uid,
         email: cred.user.email || email,
@@ -167,8 +164,7 @@ export const authService = {
 
     try {
       return await ensureUserDoc(firebaseUser.uid, firebaseUser.email);
-    } catch (e) {
-      console.warn('Firestore unavailable in getCurrentUser; using provisional user', e);
+    } catch {
       return {
         id: firebaseUser.uid,
         email: firebaseUser.email || '',
@@ -308,7 +304,7 @@ export const bookingService = {
 
       const [homeSnapshot, awaySnapshot] = await Promise.all([
         getDocs(homeTeamQuery),
-        getDocs(awayTeamQuery),
+        getDocs(awaySnapshot),
       ]);
 
       const homeBookings = homeSnapshot.docs.map(
@@ -405,6 +401,73 @@ export const bookingService = {
 
     return null;
   },
+
+  // ✅ NEW: realtime listener for user's bookings and team matches
+  listenBookingsByUserOrTeam(
+    userId: string,
+    teamName: string | undefined,
+    onChange: (bookings: Booking[]) => void
+  ) {
+    const unsubscribes: Array<() => void> = [];
+    const byId = new Map<string, Booking>();
+
+    const upsertDoc = (docId: string, raw: any) => {
+      byId.set(docId, {
+        id: docId,
+        ...raw,
+        createdAt: convertTimestamp(raw.createdAt),
+        updatedAt: convertTimestamp(raw.updatedAt),
+      } as Booking);
+    };
+
+    const emit = () => {
+      const arr = Array.from(byId.values());
+      // Sort here if you want a consistent order (date desc like your fetchers)
+      arr.sort((a, b) => b.date.localeCompare(a.date));
+      onChange(arr);
+    };
+
+    // User's own bookings
+    const qUser = query(bookingsCollection, where('userId', '==', userId), orderBy('date', 'desc'));
+    unsubscribes.push(
+      onSnapshot(qUser, (snap) => {
+        snap.docChanges().forEach((chg) => {
+          if (chg.type === 'removed') byId.delete(chg.doc.id);
+          else upsertDoc(chg.doc.id, chg.doc.data());
+        });
+        emit();
+      })
+    );
+
+    // Team matches (home/away) if team exists
+    if (teamName) {
+      const qHome = query(bookingsCollection, where('homeTeam', '==', teamName), orderBy('date', 'desc'));
+      const qAway = query(bookingsCollection, where('awayTeam', '==', teamName), orderBy('date', 'desc'));
+
+      unsubscribes.push(
+        onSnapshot(qHome, (snap) => {
+          snap.docChanges().forEach((chg) => {
+            if (chg.type === 'removed') byId.delete(chg.doc.id);
+            else upsertDoc(chg.doc.id, chg.doc.data());
+          });
+          emit();
+        })
+      );
+
+      unsubscribes.push(
+        onSnapshot(qAway, (snap) => {
+          snap.docChanges().forEach((chg) => {
+            if (chg.type === 'removed') byId.delete(chg.doc.id);
+            else upsertDoc(chg.doc.id, chg.doc.data());
+          });
+          emit();
+        })
+      );
+    }
+
+    // return unsubscribe function
+    return () => unsubscribes.forEach((u) => u());
+  },
 };
 
 // --- NOTIFICATIONS -----------------------------------------------------------
@@ -478,7 +541,6 @@ export const notificationService = {
     );
   },
 
-  // ✅ Hardened: ignore not-found in race conditions
   async markAsRead(notificationId: string): Promise<void> {
     const notificationRef = doc(db, 'notifications', notificationId);
     try {
