@@ -14,6 +14,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose, onLogin, onRegister }) =
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [teamName, setTeamName] = useState('');
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorCode, setErrorCode] = useState<string | null>(null);
@@ -26,7 +27,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose, onLogin, onRegister }) =
       case 'auth/invalid-email':
         return t('auth_invalid_email') || 'Invalid email address.';
       case 'auth/weak-password':
-        return t('auth_weak_password') || 'Password must be at least 6 characters long and include one uppercase letter, one lowercase letter, and one number.';
+        return t('auth_weak_password') || 'Password should be at least 6 characters.';
       case 'auth/user-not-found':
       case 'auth/wrong-password':
       case 'auth/invalid-credential':
