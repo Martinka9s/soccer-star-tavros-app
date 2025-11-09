@@ -66,7 +66,7 @@ const resources = {
       // NEW: Auth error/help texts
       auth_email_in_use: 'Email already in use. Try logging in or reset your password.',
       auth_invalid_email: 'Invalid email address.',
-      auth_weak_password: 'Password should be at least 6 characters.',
+      auth_weak_password: 'Password must be at least 6 characters long and include one uppercase letter, one lowercase letter, and one number.',
       send_reset_link: 'Send reset link',
       reset_sent: 'Password reset email sent.',
 
@@ -174,7 +174,7 @@ const resources = {
       // NEW: Auth error/help texts (EL)
       auth_email_in_use: 'Το email χρησιμοποιείται ήδη. Δοκιμάστε σύνδεση ή επαναφορά κωδικού.',
       auth_invalid_email: 'Μη έγκυρο email.',
-      auth_weak_password: 'Ο κωδικός πρέπει να έχει τουλάχιστον 6 χαρακτήρες.',
+      auth_weak_password: 'Ο κωδικός πρέπει να έχει τουλάχιστον 6 χαρακτήρες, 1 κεφαλαίο, 1 πεζό γράμμα και 1 αριθμό.',
       send_reset_link: 'Αποστολή συνδέσμου επαναφοράς',
       reset_sent: 'Στάλθηκε email για επαναφορά κωδικού.',
 
