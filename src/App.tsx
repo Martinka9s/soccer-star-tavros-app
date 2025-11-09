@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from './hooks/useAuth';
-import { authService } from './services/firebaseService';
+import { authService, bookingService } from './services/firebaseService';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import Calendar from './components/Calendar';
@@ -13,6 +13,29 @@ function App() {
   const { user, loading } = useAuth();
   const [activeTab, setActiveTab] = useState('calendar');
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [pendingCount, setPendingCount] = useState(0);
+
+  // Fetch pending bookings count for admin
+  useEffect(() => {
+    if (user?.role === 'admin') {
+      const fetchPendingCount = async () => {
+        try {
+          const pendingBookings = await bookingService.getPendingBookings();
+          setPendingCount(pendingBookings.length);
+        } catch (error) {
+          console.error('Error fetching pending count:', error);
+        }
+      };
+
+      fetchPendingCount();
+      
+      // Refresh every 30 seconds
+      const interval = setInterval(fetchPendingCount, 30000);
+      return () => clearInterval(interval);
+    } else {
+      setPendingCount(0);
+    }
+  }, [user]);
 
   const handleLogin = async (email: string, password: string) => {
     try {
@@ -38,6 +61,17 @@ function App() {
   const handleLogout = async () => {
     await authService.logout();
     setActiveTab('calendar');
+    setPendingCount(0);
+  };
+
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+    // Refresh pending count when navigating away from pending requests
+    if (tab !== 'pendingRequests' && user?.role === 'admin') {
+      bookingService.getPendingBookings().then(bookings => {
+        setPendingCount(bookings.length);
+      });
+    }
   };
 
   if (loading) {
@@ -55,7 +89,8 @@ function App() {
         onLogout={handleLogout}
         onAuthClick={() => setShowAuthModal(true)}
         activeTab={activeTab}
-        onTabChange={setActiveTab}
+        onTabChange={handleTabChange}
+        pendingCount={pendingCount}
       />
 
       <main className="flex-1 container mx-auto px-4 py-8">
@@ -63,7 +98,9 @@ function App() {
           <Calendar user={user} onLoginRequired={() => setShowAuthModal(true)} />
         )}
         {activeTab === 'myBookings' && user && <MyBookings user={user} />}
-        {activeTab === 'pendingRequests' && user?.role === 'admin' && <PendingRequests />}
+        {activeTab === 'pendingRequests' && user?.role === 'admin' && (
+          <PendingRequests onCountChange={setPendingCount} />
+        )}
       </main>
 
       <Footer />
