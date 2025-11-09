@@ -244,13 +244,6 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
   const goToPrevious = () => setCurrentDate(subDays(currentDate, 1));
   const goToNext = () => setCurrentDate(addDays(currentDate, 1));
 
-  // Helper: show match vs; otherwise email/team on a separate line
-  const getBookingDisplayText = (booking: Booking): string => {
-    if (booking.homeTeam && booking.awayTeam) {
-      return `${booking.homeTeam} vs ${booking.awayTeam}`;
-    }
-    return booking.teamName || booking.userEmail || '';
-  };
 
   // NEW: mask email like "local@g…"
   const maskEmail = (email: string) => {
