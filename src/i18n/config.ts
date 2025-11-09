@@ -55,6 +55,7 @@ const resources = {
       // Auth
       email: 'Email',
       password: 'Password',
+      teamName: 'Team Name',
       loginTitle: 'Login to your account',
       registerTitle: 'Create an account',
       noAccount: "Don't have an account?",
