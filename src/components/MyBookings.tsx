@@ -14,35 +14,33 @@ const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // 🔄 Realtime subscription: user's own bookings + team matches
   useEffect(() => {
-    void loadBookings();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user.id]);
-
-  const loadBookings = async () => {
+    if (!user?.id) return;
     setLoading(true);
-    try {
-      const userBookings = await bookingService.getBookingsByUserOrTeam(user.id, user.teamName);
-      setBookings(userBookings ?? []);
-    } catch (error) {
-      console.error('Error loading bookings:', error);
-      setBookings([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+
+    const unsubscribe = bookingService.listenBookingsByUserOrTeam(
+      user.id,
+      user.teamName,
+      (all) => {
+        // Hide only blocked; show pending + booked
+        const visible = all.filter((b) => b.status !== 'blocked');
+        setBookings(visible);
+        setLoading(false);
+      }
+    );
+
+    return () => unsubscribe();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user.id, user.teamName]);
 
   const isBookingFuture = (booking: Booking): boolean => {
     const bookingDateTime = parseISO(`${booking.date}T${booking.startTime}`);
     return isFuture(bookingDateTime);
   };
 
-  const upcomingBookings = bookings.filter(
-    (b) => isBookingFuture(b) && b.status !== 'blocked'
-  );
-  const pastBookings = bookings.filter(
-    (b) => !isBookingFuture(b) && b.status !== 'blocked'
-  );
+  const upcomingBookings = bookings.filter((b) => isBookingFuture(b));
+  const pastBookings = bookings.filter((b) => !isBookingFuture(b));
 
   const getStatusColor = (status: string): string => {
     switch (status) {
@@ -57,9 +55,8 @@ const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
     }
   };
 
-  const isMatchBooking = (booking: Booking): boolean => {
-    return !!(booking.homeTeam && booking.awayTeam);
-  };
+  const isMatchBooking = (booking: Booking): boolean =>
+    !!(booking.homeTeam && booking.awayTeam);
 
   const renderBookingCard = (booking: Booking) => {
     const isMatch = isMatchBooking(booking);
@@ -82,7 +79,7 @@ const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
                 </span>
               )}
             </div>
-            
+
             {isMatch ? (
               <div className="mt-2 text-white">
                 <div className="flex items-center gap-2 text-base font-medium">
@@ -115,7 +112,7 @@ const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
               </div>
             </div>
           </div>
-          
+
           <span
             className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap ${getStatusColor(
               booking.status
