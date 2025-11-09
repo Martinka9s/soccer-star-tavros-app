@@ -10,6 +10,7 @@ interface HeaderProps {
   onAuthClick: () => void;
   activeTab: string;
   onTabChange: (tab: string) => void;
+  pendingCount?: number;
 }
 
 const Header: React.FC<HeaderProps> = ({ user, onLogout, onAuthClick, activeTab, onTabChange }) => {
