@@ -11,7 +11,16 @@ import './i18n/config';
 
 function App() {
   const { user, loading } = useAuth();
-  const [activeTab, setActiveTab] = useState('calendar');
+  
+  // Load saved tab from sessionStorage or default to 'calendar'
+  const [activeTab, setActiveTab] = useState(() => {
+    try {
+      return sessionStorage.getItem('activeTab') || 'calendar';
+    } catch {
+      return 'calendar';
+    }
+  });
+  
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
 
@@ -26,7 +35,6 @@ function App() {
           console.error('Error fetching pending count:', error);
         }
       };
-
       fetchPendingCount();
       
       // Refresh every 30 seconds
@@ -40,23 +48,41 @@ function App() {
   const handleLogin = async (email: string, password: string) => {
     await authService.login(email, password);
     setShowAuthModal(false);
-    setActiveTab('myBookings');
+    const newTab = 'myBookings';
+    setActiveTab(newTab);
+    try {
+      sessionStorage.setItem('activeTab', newTab);
+    } catch {}
   };
 
   const handleRegister = async (email: string, password: string, teamName: string) => {
     await authService.register(email, password, teamName);
     setShowAuthModal(false);
-    setActiveTab('myBookings');
+    const newTab = 'myBookings';
+    setActiveTab(newTab);
+    try {
+      sessionStorage.setItem('activeTab', newTab);
+    } catch {}
   };
 
   const handleLogout = async () => {
     await authService.logout();
-    setActiveTab('calendar');
+    const newTab = 'calendar';
+    setActiveTab(newTab);
     setPendingCount(0);
+    try {
+      sessionStorage.setItem('activeTab', newTab);
+    } catch {}
   };
 
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
+    
+    // Save to sessionStorage
+    try {
+      sessionStorage.setItem('activeTab', tab);
+    } catch {}
+    
     // Refresh pending count when navigating away from pending requests
     if (tab !== 'pendingRequests' && user?.role === 'admin') {
       bookingService.getPendingBookings().then(bookings => {
