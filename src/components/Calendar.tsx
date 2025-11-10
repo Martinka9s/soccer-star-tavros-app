@@ -271,27 +271,7 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
         <p className="mt-2 text-base text-gray-300">{t('selectDateAndPitch')}</p>
       </div>
 
-      {/* Legend */}
-      <div className="grid grid-cols-3 gap-x-4 gap-y-2 sm:flex sm:flex-nowrap sm:items-center sm:justify-center sm:gap-6 text-sm">
-        <div className="flex items-center gap-2">
-          <span className="inline-block h-3 w-3 rounded-full bg-[#2C3144]" />
-          <span className="text-gray-300">{t('available')}</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="inline-block h-3 w-3 rounded-full bg-amber-500" />
-          <span className="text-gray-300">{t('pending')}</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="inline-block h-3 w-3 rounded-full bg-red-500" />
-          <span className="text-gray-300">{t('booked')}</span>
-        </div>
-        <div className="flex items-center gap-2 col-span-3 justify-center sm:col-span-1 sm:justify-start">
-          <span className="inline-block h-3 w-3 rounded-full bg-slate-600" />
-          <span className="text-gray-300">{t('blocked')}</span>
-        </div>
-      </div>
-
-      {/* Banner bar */}
+      {/* Banner bar (legend removed as requested) */}
       <div className="bg-dark-lighter rounded-xl px-4 py-3">
         {/* Mobile (app) layout */}
         <div className="sm:hidden">
@@ -446,23 +426,25 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
                 <button
                   key={`${activePitch}-${slot.time}`}
                   onClick={() => handleSlotClick(activePitch, slot.time)}
-                  className={`relative text-left rounded-xl p-3 transition-colors ${getCardClasses(status)} h-20`}
+                  className={`relative text-left rounded-xl p-3 transition-colors ${getCardClasses(status)} h-24`} // ↑ more height to avoid clipping
                   title={`${activePitch} - ${slot.display} - ${t(status)}`}
                 >
                   {/* micro status badge fixed in the corner */}
-                  <span className={`absolute right-2 top-2 text-[10px] leading-none px-2 py-0.5 rounded-full ${statusBadgeClass}`}>
+                  <span
+                    className={`absolute right-2 top-2 text-[10px] leading-none px-2 py-0.5 rounded-full ${statusBadgeClass}`}
+                  >
                     {t(status)}
                   </span>
 
-                  <div className="h-full grid grid-rows-[auto,auto,auto] gap-1">
+                  <div className="h-full grid grid-rows-[auto,auto,auto] gap-1.5">
                     {/* Row 1: time only */}
-                    <div className="text-sm font-semibold text-white truncate" title={slot.display}>
+                    <div className="text-sm font-semibold text-white truncate leading-5" title={slot.display}>
                       {slot.display}
                     </div>
 
                     {/* Row 2: primary (or placeholder nbsp to keep height consistent) */}
                     <div
-                      className="text-sm text-white whitespace-nowrap overflow-hidden text-ellipsis"
+                      className="text-sm text-white whitespace-nowrap overflow-hidden text-ellipsis leading-5"
                       title={showPrimary ? primaryLabel : ''}
                     >
                       {showPrimary ? primaryLabel : '\u00A0'}
@@ -470,7 +452,7 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
 
                     {/* Row 3: secondary (or placeholder) */}
                     <div
-                      className="text-xs text-gray-300 whitespace-nowrap overflow-hidden text-ellipsis"
+                      className="text-xs text-gray-300 whitespace-nowrap overflow-hidden text-ellipsis leading-5"
                       title={showSecondary ? secondaryLabel : ''}
                     >
                       {showSecondary ? secondaryLabel : '\u00A0'}
