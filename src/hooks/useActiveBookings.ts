@@ -18,10 +18,12 @@ export function useActiveBookings(userId?: string | null, teamName?: string) {
       userId,
       teamName,
       (bookings) => {
-        // Get today's date in YYYY-MM-DD format
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const todayStr = today.toISOString().split('T')[0];
+        // Get today's date in YYYY-MM-DD format (local timezone)
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const todayStr = `${year}-${month}-${day}`;
 
         // Count bookings that are:
         // 1. Booked or pending (NOT 'available' or 'blocked')
