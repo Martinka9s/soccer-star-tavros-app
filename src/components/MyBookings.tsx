@@ -1,13 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Calendar as CalendarIcon, Clock, Users, ChevronLeft, ChevronRight } from 'lucide-react';
-import { format, parseISO, isFuture, subMonths, addMonths } from 'date-fns';
+import { format, parseISO, subMonths, addMonths, addDays, isAfter, isBefore } from 'date-fns';
 import { Booking, User } from '../types';
 import { bookingService } from '../services/firebaseService';
 import BookingModal from './BookingModal';
 
 interface MyBookingsProps {
   user: User;
+}
+
+// ✅ Robust builder: avoids parseISO pitfalls and trims time safely
+function toLocalDateTime(dateStr: string, timeStr: string): Date | null {
+  try {
+    const [y, m, d] = (dateStr || '').split('-').map((v) => Number(v));
+    if (!y || !m || !d) return null;
+    const [hh, mm] = ((timeStr || '').trim()).split(':').map((v) => Number(v));
+    if (Number.isNaN(hh) || Number.isNaN(mm)) return null;
+    return new Date(y, m - 1, d, hh, mm, 0, 0);
+  } catch {
+    return null;
+  }
 }
 
 const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
@@ -32,7 +45,7 @@ const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
     setLoading(true);
 
     if (isAdmin) {
-      // Admin: fetch ALL bookings from past 6 months to future 1 month
+      // Admin: fetch ALL bookings from past 6 months to future 1 month (source dataset)
       const startDate = format(subMonths(new Date(), 6), 'yyyy-MM-dd');
       const endDate = format(addMonths(new Date(), 1), 'yyyy-MM-dd');
 
@@ -58,7 +71,7 @@ const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
           setBookings(visible);
           setLoading(false);
         },
-        user.phoneNumber // <-- include phone to catch "Guest" bookings
+        user.phoneNumber
       );
 
       return () => unsubscribe();
@@ -66,21 +79,39 @@ const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user.id, user.teamName, user.phoneNumber, isAdmin]);
 
-  const isBookingFuture = (booking: Booking): boolean => {
-    const bookingDateTime = parseISO(`${booking.date}T${booking.startTime}`);
-    return isFuture(bookingDateTime);
+  // ✅ Upcoming window: admins see next 7 days; users see all future
+  const now = new Date();
+  const in7 = addDays(now, 7);
+
+  const isBookingInUpcomingWindow = (b: Booking): boolean => {
+    const dt = toLocalDateTime(b.date, b.startTime);
+    if (!dt) return false;
+
+    // 🟢 Admins: only show within next 7 days
+    if (isAdmin) {
+      return isAfter(dt, now) && isBefore(dt, in7);
+    }
+
+    // 👤 Regular users: show all future bookings
+    return isAfter(dt, now);
   };
 
-  const upcomingBookings = bookings.filter((b) => isBookingFuture(b));
-  let pastBookings = bookings.filter((b) => !isBookingFuture(b));
+  const isBookingPast = (b: Booking): boolean => {
+    const dt = toLocalDateTime(b.date, b.startTime);
+    if (!dt) return true; // invalid → treat as past so it's still visible somewhere
+    return isBefore(dt, now);
+  };
 
-  // Filter by date if admin selected a date
+  const upcomingBookings = bookings.filter((b) => isBookingInUpcomingWindow(b));
+  let pastBookings = bookings.filter((b) => isBookingPast(b));
+
+  // Filter by date if admin selected a date (applies to PAST section)
   if (isAdmin && selectedDate) {
     pastBookings = pastBookings.filter((b) => b.date === selectedDate);
   }
 
   // Pagination for past bookings
-  const totalPages = Math.ceil(pastBookings.length / ITEMS_PER_PAGE);
+  const totalPages = Math.ceil(pastBookings.length / ITEMS_PER_PAGE) || 1;
   const paginatedPastBookings = pastBookings.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE
@@ -138,7 +169,7 @@ const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
     }
   };
 
-  // ✅ Handle native calendar "Reset" and "Clear" uniformly
+  // Handle native calendar "Reset" and "Clear" uniformly
   const handleDateFilterInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSelectedDate(e.target.value || '');
   };
@@ -204,12 +235,13 @@ const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
             <div className="flex items-center space-x-4 mt-3 text-sm text-gray-400">
               <div className="flex items-center space-x-1">
                 <CalendarIcon size={16} />
+                {/* date string is safe for parseISO to render a label */}
                 <span>{format(parseISO(booking.date), 'MMM d, yyyy')}</span>
               </div>
               <div className="flex items-center space-x-1">
                 <Clock size={16} />
                 <span>
-                  {booking.startTime} ({booking.duration}h)
+                  {(booking.startTime || '').trim()} ({booking.duration}h)
                 </span>
               </div>
             </div>
@@ -294,8 +326,8 @@ const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
                 <input
                   type="date"
                   value={selectedDate}
-                  onChange={handleDateFilterInput}
-                  onInput={handleDateFilterInput} // <-- catches native "Reset"
+                  onChange={(e) => setSelectedDate(e.target.value || '')}
+                  onInput={(e) => setSelectedDate((e.target as HTMLInputElement).value || '')}
                   className="opacity-0 absolute inset-0 w-full h-full cursor-pointer z-10"
                   style={{ colorScheme: 'dark' }}
                   id="date-filter-input"
