@@ -14,7 +14,7 @@ const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
   const { t } = useTranslation();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
-  
+
   // Admin filters for past bookings
   const [selectedDate, setSelectedDate] = useState<string>('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -35,8 +35,9 @@ const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
       // Admin: fetch ALL bookings from past 6 months to future 1 month
       const startDate = format(subMonths(new Date(), 6), 'yyyy-MM-dd');
       const endDate = format(addMonths(new Date(), 1), 'yyyy-MM-dd');
-      
-      bookingService.getAllBookingsInRange(startDate, endDate)
+
+      bookingService
+        .getAllBookingsInRange(startDate, endDate)
         .then((all) => {
           const visible = all.filter((b) => b.status !== 'blocked');
           setBookings(visible);
@@ -48,7 +49,7 @@ const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
           setLoading(false);
         });
     } else {
-      // Regular user: realtime subscription
+      // Regular user: pseudo-realtime subscription
       const unsubscribe = bookingService.listenBookingsByUserOrTeam(
         user.id,
         user.teamName,
@@ -102,8 +103,7 @@ const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
     }
   };
 
-  const isMatchBooking = (booking: Booking): boolean =>
-    !!(booking.homeTeam && booking.awayTeam);
+  const isMatchBooking = (booking: Booking): boolean => !!(booking.homeTeam && booking.awayTeam);
 
   const handleEditBooking = (booking: Booking) => {
     setEditingBooking(booking);
@@ -119,16 +119,16 @@ const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
       } else {
         await bookingService.updateBooking(editingBooking.id, bookingData);
       }
-      
+
       setShowEditModal(false);
       setEditingBooking(null);
-      
-      // Refresh bookings list
+
+      // Refresh bookings list for admin
       if (isAdmin) {
         const startDate = format(subMonths(new Date(), 6), 'yyyy-MM-dd');
         const endDate = format(addMonths(new Date(), 1), 'yyyy-MM-dd');
         const all = await bookingService.getAllBookingsInRange(startDate, endDate);
-        const visible = all.filter((b) => b.status !== 'blocked'); // ✅ fixed: removed extra ')'
+        const visible = all.filter((b) => b.status !== 'blocked');
         setBookings(visible);
       }
     } catch (error) {
@@ -137,9 +137,14 @@ const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
     }
   };
 
+  // ✅ Handle native calendar "Reset" and "Clear" uniformly
+  const handleDateFilterInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSelectedDate(e.target.value || '');
+  };
+
   const renderBookingCard = (booking: Booking, isPast: boolean = false) => {
     const isMatch = isMatchBooking(booking);
-    const canEdit = isAdmin; // Admin can edit all bookings
+    const canEdit = isAdmin;
 
     const cardContent = (
       <div
@@ -160,7 +165,6 @@ const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
             </div>
 
             {isMatch ? (
-              // STACKED teams with safe truncation
               <div className="mt-2 text-white">
                 <div className="space-y-0.5">
                   <span
@@ -210,7 +214,6 @@ const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
             </div>
           </div>
 
-          {/* Only show status badge for upcoming bookings, not past */}
           {!isPast && (
             <span
               className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap ${getStatusColor(
@@ -259,9 +262,7 @@ const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
   };
 
   if (loading) {
-    return (
-      <div className="text-center py-12 text-gray-400">Loading your bookings...</div>
-    );
+    return <div className="text-center py-12 text-gray-400">Loading your bookings...</div>;
   }
 
   return (
@@ -284,7 +285,7 @@ const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
       <div>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
           <h2 className="text-2xl font-bold text-white">{t('pastBookings')}</h2>
-          
+
           {/* Admin Date Filter */}
           {isAdmin && (
             <div className="flex items-center gap-2">
@@ -292,12 +293,12 @@ const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
                 <input
                   type="date"
                   value={selectedDate}
-                  onChange={(e) => setSelectedDate(e.target.value)}
+                  onChange={handleDateFilterInput}
+                  onInput={handleDateFilterInput} // <-- catches native "Reset" in date picker
                   className="opacity-0 absolute inset-0 w-full h-full cursor-pointer z-10"
                   style={{ colorScheme: 'dark' }}
                   id="date-filter-input"
                   onClick={(e) => {
-                    // Force open the date picker
                     (e.target as HTMLInputElement).showPicker?.();
                   }}
                 />
@@ -306,7 +307,7 @@ const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
                   {selectedDate ? format(parseISO(selectedDate), 'MMM d, yyyy') : 'Filter by date'}
                 </div>
               </div>
-              
+
               {selectedDate && (
                 <button
                   onClick={() => setSelectedDate('')}
@@ -347,11 +348,11 @@ const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
                 >
                   <ChevronLeft size={20} />
                 </button>
-                
+
                 <span className="text-gray-300">
                   Page {currentPage} of {totalPages}
                 </span>
-                
+
                 <button
                   onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                   disabled={currentPage === totalPages}
