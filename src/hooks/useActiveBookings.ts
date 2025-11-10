@@ -24,10 +24,10 @@ export function useActiveBookings(userId?: string | null, teamName?: string) {
         const todayStr = today.toISOString().split('T')[0];
 
         // Count bookings that are:
-        // 1. Confirmed or pending
+        // 1. Booked or pending (NOT 'available' or 'blocked')
         // 2. Date is today or in the future
         const active = bookings.filter((booking) => {
-          const isActiveStatus = booking.status === 'confirmed' || booking.status === 'pending';
+          const isActiveStatus = booking.status === 'booked' || booking.status === 'pending';
           const isFutureOrToday = booking.date >= todayStr;
           return isActiveStatus && isFutureOrToday;
         });
