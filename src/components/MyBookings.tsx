@@ -128,7 +128,7 @@ const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
         const startDate = format(subMonths(new Date(), 6), 'yyyy-MM-dd');
         const endDate = format(addMonths(new Date(), 1), 'yyyy-MM-dd');
         const all = await bookingService.getAllBookingsInRange(startDate, endDate);
-        const visible = all.filter((b) => b.status !== 'blocked'));
+        const visible = all.filter((b) => b.status !== 'blocked'); // ✅ fixed: removed extra ')'
         setBookings(visible);
       }
     } catch (error) {
