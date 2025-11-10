@@ -245,12 +245,34 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
   const goToPrevious = () => setCurrentDate(subDays(currentDate, 1));
   const goToNext = () => setCurrentDate(addDays(currentDate, 1));
 
-  // Helper to display booking info on calendar
+  // ✅ FIXED: Helper to display booking info with proper privacy rules
   const getBookingDisplayText = (booking: Booking): string => {
-    if (booking.homeTeam && booking.awayTeam) {
-      return `${booking.homeTeam} vs ${booking.awayTeam}`;
+    // Admin sees everything
+    if (user?.role === 'admin') {
+      if (booking.homeTeam && booking.awayTeam) {
+        return `${booking.homeTeam} vs ${booking.awayTeam}`;
+      }
+      return booking.teamName || booking.userEmail || '';
     }
-    return booking.teamName || booking.userEmail || '';
+
+    // Regular user privacy logic
+    if (user) {
+      // 1. Team matches (homeTeam vs awayTeam) are ALWAYS visible to everyone
+      if (booking.homeTeam && booking.awayTeam) {
+        return `${booking.homeTeam} vs ${booking.awayTeam}`;
+      }
+
+      // 2. User's own single bookings - show their details
+      if (booking.userId === user.id) {
+        return booking.teamName || booking.userEmail || '';
+      }
+
+      // 3. Other users' single bookings - hide details, just show "Booked"
+      return ''; // Return empty string so it just shows the status
+    }
+
+    // Not logged in - show nothing
+    return '';
   };
 
   return (
@@ -399,6 +421,7 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
           <div className="grid grid-cols-2 md:grid-cols-2 xl:grid-cols-4 gap-4">
             {timeSlots.map((slot) => {
               const { status, booking } = getSlotStatus(activePitch, slot.time);
+              const displayText = booking ? getBookingDisplayText(booking) : '';
 
               return (
                 <button
@@ -416,11 +439,11 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
                     ) : (
                       <>
                         <span className="capitalize">{t(status)}</span>
-                        {booking && (
+                        {displayText && (
                           <>
                             <span className="mx-2">·</span>
                             <span className="text-white">
-                              {getBookingDisplayText(booking)}
+                              {displayText}
                             </span>
                           </>
                         )}
