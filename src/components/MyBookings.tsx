@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Calendar as CalendarIcon, Clock, Users } from 'lucide-react';
-import { format, parseISO, isFuture } from 'date-fns';
+import { Calendar as CalendarIcon, Clock, Users, ChevronLeft, ChevronRight } from 'lucide-react';
+import { format, parseISO, isFuture, subMonths, addMonths } from 'date-fns';
 import { Booking, User } from '../types';
 import { bookingService } from '../services/firebaseService';
 
@@ -13,26 +13,51 @@ const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
   const { t } = useTranslation();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // Admin filters for past bookings
+  const [selectedDate, setSelectedDate] = useState<string>('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 4;
 
-  // 🔄 Realtime subscription: user's own bookings + team matches
+  const isAdmin = user.role === 'admin';
+
+  // Fetch bookings
   useEffect(() => {
     if (!user?.id) return;
     setLoading(true);
 
-    const unsubscribe = bookingService.listenBookingsByUserOrTeam(
-      user.id,
-      user.teamName,
-      (all) => {
-        // Hide only blocked; show pending + booked
-        const visible = all.filter((b) => b.status !== 'blocked');
-        setBookings(visible);
-        setLoading(false);
-      }
-    );
+    if (isAdmin) {
+      // Admin: fetch ALL bookings from past 6 months to future 1 month
+      const startDate = format(subMonths(new Date(), 6), 'yyyy-MM-dd');
+      const endDate = format(addMonths(new Date(), 1), 'yyyy-MM-dd');
+      
+      bookingService.getAllBookingsInRange(startDate, endDate)
+        .then((all) => {
+          const visible = all.filter((b) => b.status !== 'blocked');
+          setBookings(visible);
+          setLoading(false);
+        })
+        .catch((error) => {
+          console.error('Error loading bookings:', error);
+          setBookings([]);
+          setLoading(false);
+        });
+    } else {
+      // Regular user: realtime subscription
+      const unsubscribe = bookingService.listenBookingsByUserOrTeam(
+        user.id,
+        user.teamName,
+        (all) => {
+          const visible = all.filter((b) => b.status !== 'blocked');
+          setBookings(visible);
+          setLoading(false);
+        }
+      );
 
-    return () => unsubscribe();
+      return () => unsubscribe();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user.id, user.teamName]);
+  }, [user.id, user.teamName, isAdmin]);
 
   const isBookingFuture = (booking: Booking): boolean => {
     const bookingDateTime = parseISO(`${booking.date}T${booking.startTime}`);
@@ -40,7 +65,24 @@ const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
   };
 
   const upcomingBookings = bookings.filter((b) => isBookingFuture(b));
-  const pastBookings = bookings.filter((b) => !isBookingFuture(b));
+  let pastBookings = bookings.filter((b) => !isBookingFuture(b));
+
+  // Filter by date if admin selected a date
+  if (isAdmin && selectedDate) {
+    pastBookings = pastBookings.filter((b) => b.date === selectedDate);
+  }
+
+  // Pagination for past bookings
+  const totalPages = Math.ceil(pastBookings.length / ITEMS_PER_PAGE);
+  const paginatedPastBookings = pastBookings.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
+  // Reset to page 1 when filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedDate]);
 
   const getStatusColor = (status: string): string => {
     switch (status) {
@@ -163,15 +205,66 @@ const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
 
       {/* Past Bookings */}
       <div>
-        <h2 className="text-2xl font-bold text-white mb-4">{t('pastBookings')}</h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-2xl font-bold text-white">{t('pastBookings')}</h2>
+          
+          {/* Admin Date Filter */}
+          {isAdmin && pastBookings.length > 0 && (
+            <div className="flex items-center gap-2">
+              <label className="text-sm text-gray-400">Filter by date:</label>
+              <input
+                type="date"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                className="px-3 py-1 bg-dark border border-gray-600 rounded text-white text-sm focus:outline-none focus:border-primary"
+              />
+              {selectedDate && (
+                <button
+                  onClick={() => setSelectedDate('')}
+                  className="text-sm text-gray-400 hover:text-white"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+
         {pastBookings.length === 0 ? (
           <div className="bg-dark-lighter border border-gray-700 rounded-lg p-8 text-center text-gray-400">
-            {t('noBookings')}
+            {selectedDate ? 'No bookings found for this date' : t('noBookings')}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {pastBookings.map((b) => renderBookingCard(b))}
-          </div>
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {paginatedPastBookings.map((b) => renderBookingCard(b))}
+            </div>
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-center gap-4 mt-6">
+                <button
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="p-2 bg-dark border border-gray-600 rounded text-gray-300 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <ChevronLeft size={20} />
+                </button>
+                
+                <span className="text-gray-300">
+                  Page {currentPage} of {totalPages}
+                </span>
+                
+                <button
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className="p-2 bg-dark border border-gray-600 rounded text-gray-300 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <ChevronRight size={20} />
+                </button>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
