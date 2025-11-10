@@ -84,7 +84,7 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
     return { status: 'available' };
   };
 
-  const getCardClasses = (status: string): string => {
+  const getCardClasses = (status: 'available' | 'pending' | 'booked' | 'blocked'): string => {
     switch (status) {
       case 'available':
         return 'bg-[#2C3144] hover:bg-[#343a52]';
@@ -271,7 +271,7 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
         <p className="mt-2 text-base text-gray-300">{t('selectDateAndPitch')}</p>
       </div>
 
-      {/* Banner bar (legend removed as requested) */}
+      {/* Banner bar with legend (restored) */}
       <div className="bg-dark-lighter rounded-xl px-4 py-3">
         {/* Mobile (app) layout */}
         <div className="sm:hidden">
@@ -322,6 +322,14 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
               {t('pitchB')}
             </button>
           </div>
+
+          {/* Legend (mobile) */}
+          <div className="mt-3 flex flex-wrap items-center gap-3">
+            <LegendPill colorClass="bg-[#3a4057]" label={t('available')} />
+            <LegendPill colorClass="bg-amber-500" label={t('pending')} />
+            <LegendPill colorClass="bg-red-600" label={t('booked')} />
+            <LegendPill colorClass="bg-slate-600" label={t('blocked')} />
+          </div>
         </div>
 
         {/* Desktop/Web layout */}
@@ -353,27 +361,37 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
             </button>
           </div>
 
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setActivePitch('Pitch A')}
-              className={`h-9 px-5 rounded-lg text-sm font-medium transition-colors border ${
-                activePitch === 'Pitch A'
-                  ? 'bg-primary text-white border-transparent'
-                  : 'bg-dark text-gray-200 border-gray-700 hover:text-white'
-              }`}
-            >
-              {t('pitchA')}
-            </button>
-            <button
-              onClick={() => setActivePitch('Pitch B')}
-              className={`h-9 px-5 rounded-lg text-sm font-medium transition-colors border ${
-                activePitch === 'Pitch B'
-                  ? 'bg-primary text-white border-transparent'
-                  : 'bg-dark text-gray-200 border-gray-700 hover:text-white'
-              }`}
-            >
-              {t('pitchB')}
-            </button>
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setActivePitch('Pitch A')}
+                className={`h-9 px-5 rounded-lg text-sm font-medium transition-colors border ${
+                  activePitch === 'Pitch A'
+                    ? 'bg-primary text-white border-transparent'
+                    : 'bg-dark text-gray-200 border-gray-700 hover:text-white'
+                }`}
+              >
+                {t('pitchA')}
+              </button>
+              <button
+                onClick={() => setActivePitch('Pitch B')}
+                className={`h-9 px-5 rounded-lg text-sm font-medium transition-colors border ${
+                  activePitch === 'Pitch B'
+                    ? 'bg-primary text-white border-transparent'
+                    : 'bg-dark text-gray-200 border-gray-700 hover:text-white'
+                }`}
+              >
+                {t('pitchB')}
+              </button>
+            </div>
+
+            {/* Legend (desktop) */}
+            <div className="hidden md:flex items-center gap-4">
+              <LegendDot label={t('available')} colorClass="bg-[#3a4057]" />
+              <LegendDot label={t('pending')} colorClass="bg-amber-500" />
+              <LegendDot label={t('booked')} colorClass="bg-red-600" />
+              <LegendDot label={t('blocked')} colorClass="bg-slate-600" />
+            </div>
           </div>
         </div>
       </div>
@@ -409,14 +427,15 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
                 }
               }
 
-              const statusBadgeClass =
+              // status badge color (no text in blocks)
+              const statusBadgeColor =
                 status === 'booked'
-                  ? 'bg-red-600 text-white'
+                  ? 'bg-red-600'
                   : status === 'pending'
-                  ? 'bg-amber-500 text-black'
+                  ? 'bg-amber-500'
                   : status === 'blocked'
-                  ? 'bg-slate-600 text-white'
-                  : 'bg-[#3a4057] text-gray-200';
+                  ? 'bg-slate-600'
+                  : 'bg-[#3a4057]';
 
               // For "available", show badge only (no duplicate text rows)
               const showPrimary = status !== 'available' && primaryLabel;
@@ -426,15 +445,15 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
                 <button
                   key={`${activePitch}-${slot.time}`}
                   onClick={() => handleSlotClick(activePitch, slot.time)}
-                  className={`relative text-left rounded-xl p-3 transition-colors ${getCardClasses(status)} h-24`} // ↑ more height to avoid clipping
+                  className={`relative text-left rounded-xl p-3 transition-colors ${getCardClasses(status)} h-24`}
                   title={`${activePitch} - ${slot.display} - ${t(status)}`}
                 >
-                  {/* micro status badge fixed in the corner */}
+                  {/* tiny colored dot (no text) */}
                   <span
-                    className={`absolute right-2 top-2 text-[10px] leading-none px-2 py-0.5 rounded-full ${statusBadgeClass}`}
-                  >
-                    {t(status)}
-                  </span>
+                    className={`absolute right-2 top-2 inline-block w-2.5 h-2.5 rounded-full ${statusBadgeColor}`}
+                    aria-label={t(status)}
+                    title={t(status)}
+                  />
 
                   <div className="h-full grid grid-rows-[auto,auto,auto] gap-1.5">
                     {/* Row 1: time only */}
@@ -483,5 +502,20 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
     </div>
   );
 };
+
+/** Legend helpers */
+const LegendDot: React.FC<{ label: string; colorClass: string }> = ({ label, colorClass }) => (
+  <div className="flex items-center gap-2 text-sm text-gray-200">
+    <span className={`inline-block w-3 h-3 rounded-full ${colorClass}`} />
+    <span>{label}</span>
+  </div>
+);
+
+const LegendPill: React.FC<{ label: string; colorClass: string }> = ({ label, colorClass }) => (
+  <div className="flex items-center gap-2 text-xs px-2 py-1 rounded-full bg-dark border border-gray-700 text-gray-200">
+    <span className={`inline-block w-2.5 h-2.5 rounded-full ${colorClass}`} />
+    <span className="whitespace-nowrap">{label}</span>
+  </div>
+);
 
 export default Calendar;
