@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { LogOut, User } from 'lucide-react';
 import { User as UserType } from '../types';
-import { useNotifications } from '../hooks/useNotifications';
+import { useActiveBookings } from '../hooks/useActiveBookings';
 
 interface HeaderProps {
   user: UserType | null;
@@ -16,7 +16,9 @@ interface HeaderProps {
 const Header: React.FC<HeaderProps> = ({ user, onLogout, onAuthClick, activeTab, onTabChange, pendingCount = 0 }) => {
   const { t, i18n } = useTranslation();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
-  const { unreadCount } = useNotifications(user?.id);
+  
+  // Use active bookings count for the red dot indicator
+  const { activeCount } = useActiveBookings(user?.id, user?.teamName);
 
   // Ensure Greek default if nothing stored
   useEffect(() => {
@@ -51,7 +53,6 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, onAuthClick, activeTab,
   // Get bookings label based on user role
   const getBookingsLabel = () => {
     if (!user) return t('myBookings');
-    // Check if 'bookings' key exists, otherwise fall back to 'myBookings'
     return user.role === 'admin' ? (t('bookings', { defaultValue: 'Bookings' })) : t('myBookings');
   };
 
@@ -91,7 +92,7 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, onAuthClick, activeTab,
                 aria-current={activeTab === 'myBookings' ? 'page' : undefined}
               >
                 {getBookingsLabel()}
-                {unreadCount > 0 && (
+                {activeCount > 0 && (
                   <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse" />
                 )}
               </button>
@@ -236,7 +237,7 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, onAuthClick, activeTab,
                 aria-current={activeTab === 'myBookings' ? 'page' : undefined}
               >
                 {getBookingsLabel()}
-                {unreadCount > 0 && (
+                {activeCount > 0 && (
                   <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse" />
                 )}
               </button>
