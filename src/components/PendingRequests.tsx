@@ -52,10 +52,10 @@ const PendingRequests: React.FC<PendingRequestsProps> = ({ onCountChange }) => {
     safeRemoveFromUI(booking.id);
 
     try {
-      // ✅ Preserve userId to ensure it appears in "My bookings"
+      // ✅ Change status to 'booked' and preserve userId
       await bookingService.updateBooking(booking.id, {
         status: 'booked',
-        userId: booking.userId ?? booking.userId, // keep as-is if present
+        userId: booking.userId, // Preserve the userId so it shows in user's bookings
       });
     } catch (error: any) {
       // Ignore "not-found" – another admin may have processed it already
