@@ -245,35 +245,25 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
   const goToPrevious = () => setCurrentDate(subDays(currentDate, 1));
   const goToNext = () => setCurrentDate(addDays(currentDate, 1));
 
-  // ✅ FIXED: Helper to display booking info with proper privacy rules
-  const getBookingDisplayText = (booking: Booking): string => {
-    // Admin sees everything
-    if (user?.role === 'admin') {
-      if (booking.homeTeam && booking.awayTeam) {
-        return `${booking.homeTeam} vs ${booking.awayTeam}`;
-      }
-      return booking.teamName || booking.userEmail || '';
-    }
-
-    // Regular user privacy logic
-    if (user) {
-      // 1. Team matches (homeTeam vs awayTeam) are ALWAYS visible to everyone
-      if (booking.homeTeam && booking.awayTeam) {
-        return `${booking.homeTeam} vs ${booking.awayTeam}`;
-      }
-
-      // 2. User's own single bookings - show their details
-      if (booking.userId === user.id) {
-        return booking.teamName || booking.userEmail || '';
-      }
-
-      // 3. Other users' single bookings - hide details, just show "Booked"
-      return ''; // Return empty string so it just shows the status
-    }
-
-    // Not logged in - show nothing
-    return '';
+  // ---------- Visibility + formatting helpers ----------
+  // Who can see details for friendly (no team) bookings?
+  const canSeePrivateDetails = (booking: Booking, viewer: User | null) => {
+    const isFriendlyNoTeam =
+      !booking.homeTeam && !booking.awayTeam && !booking.teamName; // no teams set
+    if (!isFriendlyNoTeam) return true;            // Matches or team bookings are public
+    if (!viewer) return false;                     // not logged in → hide
+    if (viewer.role === 'admin') return true;      // admin → show
+    return booking.userId === viewer.id;           // only the booker sees it
   };
+
+  // Mask email like "local@g…"
+  const maskEmail = (email: string) => {
+    if (!email) return '';
+    const [local, domain = ''] = email.split('@');
+    const domainFirst = domain[0] || '';
+    return `${local}@${domainFirst}…`;
+  };
+  // ----------------------------------------------------
 
   return (
     <div className="space-y-6">
@@ -283,7 +273,7 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
         <p className="mt-2 text-base text-gray-300">{t('selectDateAndPitch')}</p>
       </div>
 
-      {/* Legend: 3 on first row, 1 centered below (mobile); single row on sm+ */}
+      {/* Legend */}
       <div className="grid grid-cols-3 gap-x-4 gap-y-2 sm:flex sm:flex-nowrap sm:items-center sm:justify-center sm:gap-6 text-sm">
         <div className="flex items-center gap-2">
           <span className="inline-block h-3 w-3 rounded-full bg-[#2C3144]" />
@@ -305,9 +295,8 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
 
       {/* Banner bar */}
       <div className="bg-dark-lighter rounded-xl px-4 py-3">
-        {/* Mobile (app) layout: centered date with arrows; pills below */}
+        {/* Mobile (app) layout */}
         <div className="sm:hidden">
-          {/* Row 1: arrows + centered date */}
           <div className="grid grid-cols-[auto,1fr,auto] items-center">
             <button
               onClick={goToPrevious}
@@ -332,7 +321,7 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
             </button>
           </div>
 
-          {/* Row 2: Pitch A / Pitch B under the date */}
+          {/* Pitch pills */}
           <div className="mt-3 grid grid-cols-2 gap-2">
             <button
               onClick={() => setActivePitch('Pitch A')}
@@ -357,9 +346,8 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
           </div>
         </div>
 
-        {/* Desktop/Web layout: arrows+date left, pills right (original behavior) */}
+        {/* Desktop/Web layout */}
         <div className="hidden sm:flex items-center justify-between">
-          {/* Left: arrows tight to date */}
           <div className="flex items-center gap-4">
             <button
               onClick={goToPrevious}
@@ -387,7 +375,6 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
             </button>
           </div>
 
-          {/* Right: pitch pills */}
           <div className="flex items-center gap-2">
             <button
               onClick={() => setActivePitch('Pitch A')}
@@ -417,11 +404,10 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
         <div className="text-center py-12 text-gray-400">Loading...</div>
       ) : (
         <>
-          {/* Grid of cards for the selected pitch - 2 per row on mobile, 2 on md, 4 on xl */}
+          {/* Grid of cards */}
           <div className="grid grid-cols-2 md:grid-cols-2 xl:grid-cols-4 gap-4">
             {timeSlots.map((slot) => {
               const { status, booking } = getSlotStatus(activePitch, slot.time);
-              const displayText = booking ? getBookingDisplayText(booking) : '';
 
               return (
                 <button
@@ -433,20 +419,64 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
                   <div className="text-lg font-semibold text-white">
                     {slot.display}
                   </div>
+
                   <div className="mt-2 text-sm text-gray-300">
                     {status === 'available' ? (
                       <span>{t('available')}</span>
                     ) : (
                       <>
-                        <span className="capitalize">{t(status)}</span>
-                        {displayText && (
-                          <>
-                            <span className="mx-2">·</span>
-                            <span className="text-white">
-                              {displayText}
-                            </span>
-                          </>
-                        )}
+                        {/* First line: status only */}
+                        <span className="capitalize block">{t(status)}</span>
+
+                        {booking && (() => {
+                          const isMatch = !!(booking.homeTeam && booking.awayTeam);
+                          const showPrivate = canSeePrivateDetails(booking, user);
+
+                          if (isMatch) {
+                            // STACKED teams with safe truncation
+                            return (
+                              <div className="mt-1 space-y-0.5">
+                                <span
+                                  className="block w-full overflow-hidden text-ellipsis whitespace-nowrap text-white"
+                                  title={booking.homeTeam}
+                                  aria-label={booking.homeTeam}
+                                >
+                                  {booking.homeTeam}
+                                </span>
+                                <span
+                                  className="block w-full overflow-hidden text-ellipsis whitespace-nowrap text-white"
+                                  title={booking.awayTeam}
+                                  aria-label={booking.awayTeam}
+                                >
+                                  {booking.awayTeam}
+                                </span>
+                              </div>
+                            );
+                          }
+
+                          // Friendly / single booking (may be private)
+                          if (showPrivate) {
+                            const line =
+                              (booking.teamName && booking.teamName.trim().length > 0)
+                                ? booking.teamName
+                                : maskEmail(booking.userEmail || '');
+
+                            return (
+                              <span className="block mt-1">
+                                <span
+                                  className="block w-full overflow-hidden text-ellipsis whitespace-nowrap text-white/90"
+                                  title={line}
+                                  aria-label={line}
+                                >
+                                  {line}
+                                </span>
+                              </span>
+                            );
+                          }
+
+                          // Not allowed to see details → show nothing beyond the status
+                          return null;
+                        })()}
                       </>
                     )}
                   </div>
