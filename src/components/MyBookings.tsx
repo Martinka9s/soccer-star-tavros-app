@@ -263,21 +263,25 @@ const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
           {isAdmin && (
             <div className="flex items-center gap-2">
               <label className="text-sm text-gray-400 whitespace-nowrap">Filter by date:</label>
-              <input
-                type="date"
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                className="w-full sm:w-auto px-3 py-2 bg-dark border border-gray-600 rounded text-white text-sm focus:outline-none focus:border-primary"
-                style={{ 
-                  colorScheme: 'dark',
-                  WebkitAppearance: 'none',
-                  MozAppearance: 'textfield'
-                }}
-              />
+              <div className="relative">
+                <input
+                  type="date"
+                  value={selectedDate}
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                  className="w-full sm:w-auto px-3 py-2 bg-dark border border-gray-600 rounded text-white text-sm focus:outline-none focus:border-primary appearance-none"
+                  style={{ 
+                    colorScheme: 'dark',
+                  }}
+                  onClick={(e) => {
+                    // Force the date picker to open
+                    (e.target as HTMLInputElement).showPicker?.();
+                  }}
+                />
+              </div>
               {selectedDate && (
                 <button
                   onClick={() => setSelectedDate('')}
-                  className="px-2 py-1 text-sm text-gray-400 hover:text-white bg-dark border border-gray-600 rounded"
+                  className="px-2 py-1 text-sm text-gray-400 hover:text-white bg-dark border border-gray-600 rounded whitespace-nowrap"
                 >
                   Clear
                 </button>
