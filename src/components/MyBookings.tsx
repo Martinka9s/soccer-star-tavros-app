@@ -14,10 +14,9 @@ const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
   const { t } = useTranslation();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
-  
+
   // Admin filters for past bookings
   const [selectedDate, setSelectedDate] = useState<string>('');
-  const [showDatePicker, setShowDatePicker] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 4;
 
@@ -36,8 +35,9 @@ const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
       // Admin: fetch ALL bookings from past 6 months to future 1 month
       const startDate = format(subMonths(new Date(), 6), 'yyyy-MM-dd');
       const endDate = format(addMonths(new Date(), 1), 'yyyy-MM-dd');
-      
-      bookingService.getAllBookingsInRange(startDate, endDate)
+
+      bookingService
+        .getAllBookingsInRange(startDate, endDate)
         .then((all) => {
           const visible = all.filter((b) => b.status !== 'blocked');
           setBookings(visible);
@@ -120,10 +120,10 @@ const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
       } else {
         await bookingService.updateBooking(editingBooking.id, bookingData);
       }
-      
+
       setShowEditModal(false);
       setEditingBooking(null);
-      
+
       // Refresh bookings list
       if (isAdmin) {
         const startDate = format(subMonths(new Date(), 6), 'yyyy-MM-dd');
@@ -234,9 +234,7 @@ const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
   };
 
   if (loading) {
-    return (
-      <div className="text-center py-12 text-gray-400">Loading your bookings...</div>
-    );
+    return <div className="text-center py-12 text-gray-400">Loading your bookings...</div>;
   }
 
   return (
@@ -259,7 +257,7 @@ const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
       <div>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
           <h2 className="text-2xl font-bold text-white">{t('pastBookings')}</h2>
-          
+
           {/* Admin Date Filter */}
           {isAdmin && (
             <div className="flex items-center gap-2">
@@ -270,11 +268,8 @@ const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
                   value={selectedDate}
                   onChange={(e) => setSelectedDate(e.target.value)}
                   className="w-full sm:w-auto px-3 py-2 bg-dark border border-gray-600 rounded text-white text-sm focus:outline-none focus:border-primary appearance-none"
-                  style={{ 
-                    colorScheme: 'dark',
-                  }}
+                  style={{ colorScheme: 'dark' }}
                   onClick={(e) => {
-                    // Force the date picker to open
                     (e.target as HTMLInputElement).showPicker?.();
                   }}
                 />
@@ -319,11 +314,11 @@ const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
                 >
                   <ChevronLeft size={20} />
                 </button>
-                
+
                 <span className="text-gray-300">
                   Page {currentPage} of {totalPages}
                 </span>
-                
+
                 <button
                   onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                   disabled={currentPage === totalPages}
