@@ -169,11 +169,6 @@ const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
     }
   };
 
-  // Handle native calendar "Reset" and "Clear" uniformly
-  const handleDateFilterInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSelectedDate(e.target.value || '');
-  };
-
   const renderBookingCard = (booking: Booking, isPast: boolean = false) => {
     const isMatch = isMatchBooking(booking);
     const canEdit = isAdmin;
