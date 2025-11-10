@@ -205,23 +205,24 @@ const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
 
       {/* Past Bookings */}
       <div>
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
           <h2 className="text-2xl font-bold text-white">{t('pastBookings')}</h2>
           
           {/* Admin Date Filter */}
-          {isAdmin && pastBookings.length > 0 && (
+          {isAdmin && (
             <div className="flex items-center gap-2">
-              <label className="text-sm text-gray-400">Filter by date:</label>
+              <label className="text-sm text-gray-400 whitespace-nowrap">Filter by date:</label>
               <input
                 type="date"
                 value={selectedDate}
                 onChange={(e) => setSelectedDate(e.target.value)}
-                className="px-3 py-1 bg-dark border border-gray-600 rounded text-white text-sm focus:outline-none focus:border-primary"
+                className="px-3 py-2 bg-dark border border-gray-600 rounded text-white text-sm focus:outline-none focus:border-primary cursor-pointer"
+                style={{ colorScheme: 'dark' }}
               />
               {selectedDate && (
                 <button
                   onClick={() => setSelectedDate('')}
-                  className="text-sm text-gray-400 hover:text-white"
+                  className="px-2 py-1 text-sm text-gray-400 hover:text-white bg-dark border border-gray-600 rounded"
                 >
                   Clear
                 </button>
@@ -230,11 +231,19 @@ const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
           )}
         </div>
 
-        {pastBookings.length === 0 ? (
+        {pastBookings.length === 0 && selectedDate && (
           <div className="bg-dark-lighter border border-gray-700 rounded-lg p-8 text-center text-gray-400">
-            {selectedDate ? 'No bookings found for this date' : t('noBookings')}
+            No bookings found for {format(parseISO(selectedDate), 'MMM d, yyyy')}
           </div>
-        ) : (
+        )}
+
+        {pastBookings.length === 0 && !selectedDate && (
+          <div className="bg-dark-lighter border border-gray-700 rounded-lg p-8 text-center text-gray-400">
+            {t('noBookings')}
+          </div>
+        )}
+
+        {pastBookings.length > 0 && (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {paginatedPastBookings.map((b) => renderBookingCard(b))}
