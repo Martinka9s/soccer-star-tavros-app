@@ -17,7 +17,6 @@ const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
   
   // Admin filters for past bookings
   const [selectedDate, setSelectedDate] = useState<string>('');
-  const [showDatePicker, setShowDatePicker] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 4;
 
@@ -138,14 +137,14 @@ const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
     }
   };
 
-  const renderBookingCard = (booking: Booking) => {
+  const renderBookingCard = (booking: Booking, isPast: boolean = false) => {
     const isMatch = isMatchBooking(booking);
     const canEdit = isAdmin; // Admin can edit all bookings
 
     const cardContent = (
       <div
         className={`bg-dark-lighter border rounded-lg p-4 transition-colors h-full ${
-          isMatch ? 'border-purple-600/50' : 'border-gray-700'
+          isMatch ? 'border-gray-700' : 'border-gray-700'
         } ${canEdit ? 'hover:border-primary' : ''}`}
       >
         <div className="flex items-start justify-between mb-3">
@@ -193,13 +192,16 @@ const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
             </div>
           </div>
 
-          <span
-            className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap ${getStatusColor(
-              booking.status
-            )}`}
-          >
-            {t(booking.status)}
-          </span>
+          {/* Only show status badge for upcoming bookings */}
+          {!isPast && (
+            <span
+              className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap ${getStatusColor(
+                booking.status
+              )}`}
+            >
+              {t(booking.status)}
+            </span>
+          )}
         </div>
 
         {!isMatch && booking.phoneNumber ? (
@@ -264,48 +266,31 @@ const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
           {/* Admin Date Filter */}
           {isAdmin && (
             <div className="flex items-center gap-2">
-              <button
-                onClick={() => setShowDatePicker(!showDatePicker)}
-                className="px-4 py-2 bg-dark border border-gray-600 rounded text-white text-sm hover:border-primary transition-colors flex items-center gap-2"
-              >
-                <CalendarIcon size={16} />
-                {selectedDate ? format(parseISO(selectedDate), 'MMM d, yyyy') : 'Filter by date'}
-              </button>
+              <div className="relative">
+                <input
+                  type="date"
+                  value={selectedDate}
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                  className="opacity-0 absolute inset-0 w-full h-full cursor-pointer"
+                  style={{ colorScheme: 'dark' }}
+                  id="date-filter-input"
+                />
+                <label
+                  htmlFor="date-filter-input"
+                  className="px-4 py-2 bg-dark border border-gray-600 rounded text-white text-sm hover:border-primary transition-colors flex items-center gap-2 cursor-pointer"
+                >
+                  <CalendarIcon size={16} />
+                  {selectedDate ? format(parseISO(selectedDate), 'MMM d, yyyy') : 'Filter by date'}
+                </label>
+              </div>
               
-              {/* Hidden date input */}
-              {showDatePicker && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4" onClick={() => setShowDatePicker(false)}>
-                  <div className="bg-dark-lighter rounded-lg p-4 max-w-sm" onClick={(e) => e.stopPropagation()}>
-                    <input
-                      type="date"
-                      value={selectedDate}
-                      onChange={(e) => {
-                        setSelectedDate(e.target.value);
-                        setShowDatePicker(false);
-                      }}
-                      className="w-full px-3 py-2 bg-dark border border-gray-600 rounded text-white focus:outline-none focus:border-primary"
-                      style={{ colorScheme: 'dark' }}
-                      autoFocus
-                    />
-                    <div className="flex gap-2 mt-3">
-                      <button
-                        onClick={() => {
-                          setSelectedDate('');
-                          setShowDatePicker(false);
-                        }}
-                        className="flex-1 px-3 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded text-sm"
-                      >
-                        Clear
-                      </button>
-                      <button
-                        onClick={() => setShowDatePicker(false)}
-                        className="flex-1 px-3 py-2 bg-primary hover:bg-primary-dark text-white rounded text-sm"
-                      >
-                        Close
-                      </button>
-                    </div>
-                  </div>
-                </div>
+              {selectedDate && (
+                <button
+                  onClick={() => setSelectedDate('')}
+                  className="px-3 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded text-sm"
+                >
+                  Clear
+                </button>
               )}
             </div>
           )}
