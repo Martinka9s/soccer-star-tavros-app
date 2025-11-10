@@ -103,7 +103,8 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
     const today = startOfDay(new Date());
     const selectedDate = startOfDay(parseISO(dateString + 'T00:00:00'));
 
-    if (isBefore(selectedDate, today)) {
+    // Only block past dates for regular users
+    if (isBefore(selectedDate, today) && user?.role !== 'admin') {
       alert(t('pastDateError'));
       return;
     }
@@ -244,25 +245,13 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
   const goToPrevious = () => setCurrentDate(subDays(currentDate, 1));
   const goToNext = () => setCurrentDate(addDays(currentDate, 1));
 
-  // ---------- Visibility + formatting helpers ----------
-  // Who can see details for friendly (no team) bookings?
-  const canSeePrivateDetails = (booking: Booking, viewer: User | null) => {
-    const isFriendlyNoTeam =
-      !booking.homeTeam && !booking.awayTeam && !booking.teamName; // no teams set
-    if (!isFriendlyNoTeam) return true;            // Matches or team bookings are public
-    if (!viewer) return false;                     // not logged in → hide
-    if (viewer.role === 'admin') return true;      // admin → show
-    return booking.userId === viewer.id;           // only the booker sees it
+  // Helper to display booking info on calendar
+  const getBookingDisplayText = (booking: Booking): string => {
+    if (booking.homeTeam && booking.awayTeam) {
+      return `${booking.homeTeam} vs ${booking.awayTeam}`;
+    }
+    return booking.teamName || booking.userEmail || '';
   };
-
-  // Mask email like "local@g…"
-  const maskEmail = (email: string) => {
-    if (!email) return '';
-    const [local, domain = ''] = email.split('@');
-    const domainFirst = domain[0] || '';
-    return `${local}@${domainFirst}…`;
-  };
-  // ----------------------------------------------------
 
   return (
     <div className="space-y-6">
@@ -421,55 +410,20 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
                   <div className="text-lg font-semibold text-white">
                     {slot.display}
                   </div>
-
                   <div className="mt-2 text-sm text-gray-300">
                     {status === 'available' ? (
                       <span>{t('available')}</span>
                     ) : (
                       <>
-                        {/* First line: status only */}
                         <span className="capitalize">{t(status)}</span>
-
-                        {booking && (() => {
-                          const isMatch = !!(booking.homeTeam && booking.awayTeam);
-                          const showPrivate = canSeePrivateDetails(booking, user);
-
-                          if (isMatch) {
-                            // Matches are public → show inline
-                            return (
-                              <>
-                                <span className="mx-2">·</span>
-                                <span className="text-white">
-                                  {`${booking.homeTeam} vs ${booking.awayTeam}`}
-                                </span>
-                              </>
-                            );
-                          }
-
-                          // Friendly / single booking (may be private)
-                          if (showPrivate) {
-                            // Show teamName or masked email on a second line, truncated
-                            const line =
-                              (booking.teamName && booking.teamName.trim().length > 0)
-                                ? booking.teamName
-                                : maskEmail(booking.userEmail || '');
-
-                            return (
-                              <span className="block mt-1">
-                                <span
-                                  className="block max-w-[140px] sm:max-w-[180px] overflow-hidden text-ellipsis whitespace-nowrap text-white/90"
-                                  title={line}
-                                  aria-label={line}
-                                >
-                                  {line}
-                                </span>
-                              </span>
-                            );
-                          }
-
-                          // Not allowed to see details → show nothing beyond "Booked"
-                          return null;
-                        })()}
+                        {booking && (
+                          <>
+                            <span className="mx-2">·</span>
+                            <span className="text-white">
+                              {getBookingDisplayText(booking)}
+                            </span>
+                          </>
+                        )}
                       </>
                     )}
                   </div>
