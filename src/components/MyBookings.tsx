@@ -49,7 +49,7 @@ const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
           setLoading(false);
         });
     } else {
-      // Regular user: pseudo-realtime subscription
+      // Regular user: pseudo-realtime subscription (polling)
       const unsubscribe = bookingService.listenBookingsByUserOrTeam(
         user.id,
         user.teamName,
@@ -57,13 +57,14 @@ const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
           const visible = all.filter((b) => b.status !== 'blocked');
           setBookings(visible);
           setLoading(false);
-        }
+        },
+        user.phoneNumber // <-- include phone to catch "Guest" bookings
       );
 
       return () => unsubscribe();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user.id, user.teamName, isAdmin]);
+  }, [user.id, user.teamName, user.phoneNumber, isAdmin]);
 
   const isBookingFuture = (booking: Booking): boolean => {
     const bookingDateTime = parseISO(`${booking.date}T${booking.startTime}`);
@@ -148,9 +149,9 @@ const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
 
     const cardContent = (
       <div
-        className={`bg-dark-lighter border rounded-lg p-4 transition-colors h-full ${
-          isMatch ? 'border-gray-700' : 'border-gray-700'
-        } ${canEdit ? 'hover:border-primary' : ''}`}
+        className={`bg-dark-lighter border rounded-lg p-4 transition-colors h-full border-gray-700 ${
+          canEdit ? 'hover:border-primary' : ''
+        }`}
       >
         <div className="flex items-start justify-between mb-3">
           <div className="flex-1">
@@ -294,7 +295,7 @@ const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
                   type="date"
                   value={selectedDate}
                   onChange={handleDateFilterInput}
-                  onInput={handleDateFilterInput} // <-- catches native "Reset" in date picker
+                  onInput={handleDateFilterInput} // <-- catches native "Reset"
                   className="opacity-0 absolute inset-0 w-full h-full cursor-pointer z-10"
                   style={{ colorScheme: 'dark' }}
                   id="date-filter-input"
