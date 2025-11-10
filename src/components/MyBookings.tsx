@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Calendar as CalendarIcon, Clock, Users, ChevronLeft, ChevronRight } from 'lucide-react';
-import { format, parseISO, subMonths, addMonths, addDays, isAfter, isBefore, addMinutes, compareAsc } from 'date-fns';
+import { format, parseISO, subMonths, addMonths, addDays, isBefore, addMinutes, compareAsc } from 'date-fns';
 import { Booking, User } from '../types';
 import { bookingService } from '../services/firebaseService';
 import BookingModal from './BookingModal';
