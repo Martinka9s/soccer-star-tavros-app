@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Calendar as CalendarIcon, Clock, Users, ChevronLeft, ChevronRight } from 'lucide-react';
-import { format, parseISO, subMonths, addMonths, addDays, isAfter, isBefore } from 'date-fns';
+import { format, parseISO, subMonths, addMonths, addDays, isAfter, isBefore, addMinutes, compareAsc } from 'date-fns';
 import { Booking, User } from '../types';
 import { bookingService } from '../services/firebaseService';
 import BookingModal from './BookingModal';
@@ -10,17 +10,59 @@ interface MyBookingsProps {
   user: User;
 }
 
-// ✅ Robust builder: avoids parseISO pitfalls and trims time safely
+/** ---- Robust time parsing ----
+ * Accepts formats like: "9", "09", "9:0", "9:00", "21.00", "21h", "21:00 - 22:00", "21:00  "
+ * Returns hh (0–23), mm (0–59), or null if no hour found.
+ */
+function parseTimeFlexible(timeRaw: string | undefined | null): { hh: number; mm: number } | null {
+  const s = (timeRaw || '').trim();
+
+  // take only the first token if there is a range like "21:00 - 22:00"
+  const firstToken = s.split(/\s|-/)[0] || s;
+
+  // Try to capture H, HH, H:mm, HH:mm, H.mm, HH.mm
+  const m = firstToken.match(/^(\d{1,2})(?::|\.|h)?(\d{1,2})?$/i);
+  if (!m) return null;
+
+  let hh = Number(m[1]);
+  let mm = m[2] ? Number(m[2]) : 0;
+
+  if (Number.isNaN(hh) || hh < 0 || hh > 23) return null;
+  if (Number.isNaN(mm) || mm < 0 || mm > 59) mm = 0;
+
+  return { hh, mm };
+}
+
+// Build a local Date from "yyyy-MM-dd" and a flexible time string
 function toLocalDateTime(dateStr: string, timeStr: string): Date | null {
   try {
     const [y, m, d] = (dateStr || '').split('-').map((v) => Number(v));
     if (!y || !m || !d) return null;
-    const [hh, mm] = ((timeStr || '').trim()).split(':').map((v) => Number(v));
-    if (Number.isNaN(hh) || Number.isNaN(mm)) return null;
-    return new Date(y, m - 1, d, hh, mm, 0, 0);
+
+    const parsed = parseTimeFlexible(timeStr);
+    if (!parsed) return null;
+
+    return new Date(y, m - 1, d, parsed.hh, parsed.mm, 0, 0);
   } catch {
     return null;
   }
+}
+
+// ⏱️ Helpers to compute start/end and sort consistently
+function startOfBooking(b: Booking): Date | null {
+  return toLocalDateTime(b.date, b.startTime);
+}
+function endOfBooking(b: Booking): Date | null {
+  const s = startOfBooking(b);
+  if (!s) return null;
+  const minutes = Math.round((Number(b.duration ?? 1)) * 60) || 60; // default 1h if bad/missing
+  return addMinutes(s, minutes);
+}
+function byAsc(a: Date, b: Date) {
+  return compareAsc(a, b);
+}
+function byDesc(a: Date, b: Date) {
+  return compareAsc(b, a);
 }
 
 const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
@@ -79,31 +121,46 @@ const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user.id, user.teamName, user.phoneNumber, isAdmin]);
 
-  // ✅ Upcoming window: admins see next 7 days; users see all future
+  // ✅ Upcoming window: admins see next 7 days; users see all future/ongoing
   const now = new Date();
   const in7 = addDays(now, 7);
 
+  // Grace: treat very recent endings (±2 min) as ongoing (clock drift/seconds)
+  const GRACE_MS = 2 * 60 * 1000;
+
+  // A booking is "upcoming" if it hasn't ENDED yet (end > now - grace).
+  // Admins additionally limit to those starting within the next 7 days.
   const isBookingInUpcomingWindow = (b: Booking): boolean => {
-    const dt = toLocalDateTime(b.date, b.startTime);
-    if (!dt) return false;
+    const start = startOfBooking(b);
+    const end = endOfBooking(b);
+    if (!start || !end) return false;
 
-    // 🟢 Admins: only show within next 7 days
+    const notEndedYet = end.getTime() > now.getTime() - GRACE_MS;
+    if (!notEndedYet) return false;
+
     if (isAdmin) {
-      return isAfter(dt, now) && isBefore(dt, in7);
+      // show if it starts within next 7 days
+      return isBefore(start, in7) || +start === +in7;
     }
-
-    // 👤 Regular users: show all future bookings
-    return isAfter(dt, now);
+    // users: show all future/ongoing
+    return true;
   };
 
+  // A booking is "past" only if it has ENDED (end <= now - grace)
   const isBookingPast = (b: Booking): boolean => {
-    const dt = toLocalDateTime(b.date, b.startTime);
-    if (!dt) return true; // invalid → treat as past so it's still visible somewhere
-    return isBefore(dt, now);
+    const end = endOfBooking(b);
+    if (!end) return true; // invalid → treat as past so it's still visible somewhere
+    return end.getTime() <= now.getTime() - GRACE_MS;
   };
 
-  const upcomingBookings = bookings.filter((b) => isBookingInUpcomingWindow(b));
-  let pastBookings = bookings.filter((b) => isBookingPast(b));
+  // Build lists + sort (upcoming soonest first, past most-recent first)
+  const upcomingBookings = bookings
+    .filter((b) => isBookingInUpcomingWindow(b))
+    .sort((a, b) => byAsc(startOfBooking(a)!, startOfBooking(b)!));
+
+  let pastBookings = bookings
+    .filter((b) => isBookingPast(b))
+    .sort((a, b) => byDesc(startOfBooking(a)!, startOfBooking(b)!));
 
   // Filter by date if admin selected a date (applies to PAST section)
   if (isAdmin && selectedDate) {
@@ -127,6 +184,7 @@ const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
       case 'pending':
         return 'bg-amber-500 text-white';
       case 'booked':
+      case 'approved': // in case some singles use 'approved'
         return 'bg-green-500 text-white';
       case 'blocked':
         return 'bg-slate-600 text-white';
