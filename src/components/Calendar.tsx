@@ -271,7 +271,15 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
         <p className="mt-2 text-base text-gray-300">{t('selectDateAndPitch')}</p>
       </div>
 
-      {/* Banner bar with legend (restored) */}
+      {/* Legend (moved above the bar) */}
+      <div className="flex flex-wrap justify-center items-center gap-5 mt-1 text-sm">
+        <LegendDot label={t('available')} colorClass="bg-[#3a4057]" />
+        <LegendDot label={t('pending')} colorClass="bg-amber-500" />
+        <LegendDot label={t('booked')} colorClass="bg-red-600" />
+        <LegendDot label={t('blocked')} colorClass="bg-slate-600" />
+      </div>
+
+      {/* Banner bar (date + pitch pills only) */}
       <div className="bg-dark-lighter rounded-xl px-4 py-3">
         {/* Mobile (app) layout */}
         <div className="sm:hidden">
@@ -322,14 +330,6 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
               {t('pitchB')}
             </button>
           </div>
-
-          {/* Legend (mobile) */}
-          <div className="mt-3 flex flex-wrap items-center gap-3">
-            <LegendPill colorClass="bg-[#3a4057]" label={t('available')} />
-            <LegendPill colorClass="bg-amber-500" label={t('pending')} />
-            <LegendPill colorClass="bg-red-600" label={t('booked')} />
-            <LegendPill colorClass="bg-slate-600" label={t('blocked')} />
-          </div>
         </div>
 
         {/* Desktop/Web layout */}
@@ -361,37 +361,27 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
             </button>
           </div>
 
-          <div className="flex items-center gap-6">
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setActivePitch('Pitch A')}
-                className={`h-9 px-5 rounded-lg text-sm font-medium transition-colors border ${
-                  activePitch === 'Pitch A'
-                    ? 'bg-primary text-white border-transparent'
-                    : 'bg-dark text-gray-200 border-gray-700 hover:text-white'
-                }`}
-              >
-                {t('pitchA')}
-              </button>
-              <button
-                onClick={() => setActivePitch('Pitch B')}
-                className={`h-9 px-5 rounded-lg text-sm font-medium transition-colors border ${
-                  activePitch === 'Pitch B'
-                    ? 'bg-primary text-white border-transparent'
-                    : 'bg-dark text-gray-200 border-gray-700 hover:text-white'
-                }`}
-              >
-                {t('pitchB')}
-              </button>
-            </div>
-
-            {/* Legend (desktop) */}
-            <div className="hidden md:flex items-center gap-4">
-              <LegendDot label={t('available')} colorClass="bg-[#3a4057]" />
-              <LegendDot label={t('pending')} colorClass="bg-amber-500" />
-              <LegendDot label={t('booked')} colorClass="bg-red-600" />
-              <LegendDot label={t('blocked')} colorClass="bg-slate-600" />
-            </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setActivePitch('Pitch A')}
+              className={`h-9 px-5 rounded-lg text-sm font-medium transition-colors border ${
+                activePitch === 'Pitch A'
+                  ? 'bg-primary text-white border-transparent'
+                  : 'bg-dark text-gray-200 border-gray-700 hover:text-white'
+              }`}
+            >
+              {t('pitchA')}
+            </button>
+            <button
+              onClick={() => setActivePitch('Pitch B')}
+              className={`h-9 px-5 rounded-lg text-sm font-medium transition-colors border ${
+                activePitch === 'Pitch B'
+                  ? 'bg-primary text-white border-transparent'
+                  : 'bg-dark text-gray-200 border-gray-700 hover:text-white'
+              }`}
+            >
+              {t('pitchB')}
+            </button>
           </div>
         </div>
       </div>
@@ -508,13 +498,6 @@ const LegendDot: React.FC<{ label: string; colorClass: string }> = ({ label, col
   <div className="flex items-center gap-2 text-sm text-gray-200">
     <span className={`inline-block w-3 h-3 rounded-full ${colorClass}`} />
     <span>{label}</span>
-  </div>
-);
-
-const LegendPill: React.FC<{ label: string; colorClass: string }> = ({ label, colorClass }) => (
-  <div className="flex items-center gap-2 text-xs px-2 py-1 rounded-full bg-dark border border-gray-700 text-gray-200">
-    <span className={`inline-block w-2.5 h-2.5 rounded-full ${colorClass}`} />
-    <span className="whitespace-nowrap">{label}</span>
   </div>
 );
 
