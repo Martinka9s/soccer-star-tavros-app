@@ -128,7 +128,7 @@ const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
         const startDate = format(subMonths(new Date(), 6), 'yyyy-MM-dd');
         const endDate = format(addMonths(new Date(), 1), 'yyyy-MM-dd');
         const all = await bookingService.getAllBookingsInRange(startDate, endDate);
-        const visible = all.filter((b) => b.status !== 'blocked');
+        const visible = all.filter((b) => b.status !== 'blocked'));
         setBookings(visible);
       }
     } catch (error) {
@@ -160,21 +160,39 @@ const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
             </div>
 
             {isMatch ? (
+              // STACKED teams with safe truncation
               <div className="mt-2 text-white">
-                <div className="flex items-center gap-2 text-base font-medium">
-                  <span className={user.teamName === booking.homeTeam ? 'text-primary font-bold' : ''}>
+                <div className="space-y-0.5">
+                  <span
+                    className={`block w-full overflow-hidden text-ellipsis whitespace-nowrap ${
+                      user.teamName === booking.homeTeam ? 'text-primary font-bold' : ''
+                    }`}
+                    title={booking.homeTeam}
+                    aria-label={booking.homeTeam}
+                  >
                     {booking.homeTeam}
                   </span>
-                  <span className="text-gray-400">vs</span>
-                  <span className={user.teamName === booking.awayTeam ? 'text-primary font-bold' : ''}>
+                  <span
+                    className={`block w-full overflow-hidden text-ellipsis whitespace-nowrap ${
+                      user.teamName === booking.awayTeam ? 'text-primary font-bold' : ''
+                    }`}
+                    title={booking.awayTeam}
+                    aria-label={booking.awayTeam}
+                  >
                     {booking.awayTeam}
                   </span>
                 </div>
               </div>
             ) : booking.teamName ? (
               <div className="mt-2">
-                <span className="text-sm text-gray-400">Team: </span>
-                <span className="text-sm text-white">{booking.teamName}</span>
+                <span className="text-sm text-gray-400">{t('team') || 'Team'}: </span>
+                <span
+                  className="text-sm text-white block w-full overflow-hidden text-ellipsis whitespace-nowrap"
+                  title={booking.teamName}
+                  aria-label={booking.teamName}
+                >
+                  {booking.teamName}
+                </span>
               </div>
             ) : null}
 
@@ -206,15 +224,19 @@ const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
 
         {!isMatch && booking.phoneNumber ? (
           <div className="mt-2">
-            <span className="text-sm text-gray-400">Phone: </span>
-            <span className="text-sm text-white">{booking.phoneNumber}</span>
+            <span className="text-sm text-gray-400">{t('phone') || 'Phone'}: </span>
+            <span className="text-sm text-white block w-full overflow-hidden text-ellipsis whitespace-nowrap">
+              {booking.phoneNumber}
+            </span>
           </div>
         ) : null}
 
         {booking.notes ? (
           <div className="mt-3 p-2 bg-dark rounded text-sm text-gray-300">
-            <span className="text-gray-400">Notes: </span>
-            {booking.notes}
+            <span className="text-gray-400">{t('notes') || 'Notes'}: </span>
+            <span className="block w-full overflow-hidden text-ellipsis whitespace-nowrap">
+              {booking.notes}
+            </span>
           </div>
         ) : null}
       </div>
@@ -312,7 +334,7 @@ const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
         {pastBookings.length > 0 && (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {paginatedPastBookings.map((b) => renderBookingCard(b))}
+              {paginatedPastBookings.map((b) => renderBookingCard(b, true))}
             </div>
 
             {/* Pagination Controls */}
