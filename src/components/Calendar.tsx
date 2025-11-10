@@ -261,17 +261,15 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
     const domainFirst = domain[0] || '';
     return `${local}@${domainFirst}…`;
   };
-  
-  const canSeeContactInfo = (booking: Booking, viewer: User | null) => {
-  if (!viewer) return false;
-  if (viewer.role === 'admin') return true;
-  // owner of the booking
-  if (booking.userId && booking.userId === viewer.id) return true;
-  // same team member (for single-team bookings)
-  if (booking.teamName && viewer.teamName && booking.teamName === viewer.teamName) return true;
-  return false;
-};
 
+  // NEW: who can see contact info for single-team bookings
+  const canSeeContactInfo = (booking: Booking, viewer: User | null) => {
+    if (!viewer) return false;
+    if (viewer.role === 'admin') return true;
+    if (booking.userId && booking.userId === viewer.id) return true; // owner
+    if (booking.teamName && viewer.teamName && booking.teamName === viewer.teamName) return true; // same team
+    return false;
+  };
   // ----------------------------------------------------
 
   return (
@@ -282,7 +280,7 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
         <p className="mt-2 text-base text-gray-300">{t('selectDateAndPitch')}</p>
       </div>
 
-      {/* Legend (moved above the bar) */}
+      {/* Legend (above the bar) */}
       <div className="flex flex-wrap justify-center items-center gap-5 mt-1 text-sm">
         <LegendDot label={t('available')} colorClass="bg-[#3a4057]" />
         <LegendDot label={t('pending')} colorClass="bg-amber-500" />
@@ -403,39 +401,43 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
         <>
           {/* Grid of cards */}
           <div className="grid grid-cols-2 md:grid-cols-2 xl:grid-cols-4 gap-4">
-            {timeSlots.map(// Compute primary/secondary labels in a compact form
-let primaryLabel = '';
-let secondaryLabel = '';
+            {timeSlots.map((slot) => {
+              const { status, booking } = getSlotStatus(activePitch, slot.time);
 
-if (booking) {
-  if (booking.homeTeam && booking.awayTeam) {
-    // Match → teams are public; no contact info
-    primaryLabel = `${booking.homeTeam} vs ${booking.awayTeam}`;
-    secondaryLabel = '';
-  } else if (booking.teamName && booking.teamName.trim()) {
-    // Single-team booking → team name is public; contact only if allowed
-    primaryLabel = booking.teamName;
+              // Compute primary/secondary labels with privacy
+              let primaryLabel = '';
+              let secondaryLabel = '';
 
-    if (canSeeContactInfo(booking, user)) {
-      // show phone, else masked email, else nothing
-      secondaryLabel = booking.phoneNumber || (booking.userEmail ? maskEmail(booking.userEmail) : '');
-    } else {
-      secondaryLabel = ''; // hide contact info from other users
-    }
-  } else {
-    // Guest/friendly (no team) — keep private unless owner/admin (existing rule)
-    if (canSeePrivateDetails(booking, user)) {
-      primaryLabel = booking.userEmail ? maskEmail(booking.userEmail) : (booking.phoneNumber || '');
-      secondaryLabel = booking.phoneNumber && booking.userEmail ? booking.phoneNumber : '';
-    } else {
-      primaryLabel = '';    // fully hide
-      secondaryLabel = '';
-    }
-  }
-}
+              if (booking) {
+                if (booking.homeTeam && booking.awayTeam) {
+                  // Match → teams are public; no contact info
+                  primaryLabel = `${booking.homeTeam} vs ${booking.awayTeam}`;
+                  secondaryLabel = '';
+                } else if (booking.teamName && booking.teamName.trim()) {
+                  // Single-team → team public; contact only if allowed
+                  primaryLabel = booking.teamName;
+                  if (canSeeContactInfo(booking, user)) {
+                    secondaryLabel =
+                      booking.phoneNumber ||
+                      (booking.userEmail ? maskEmail(booking.userEmail) : '');
+                  } else {
+                    secondaryLabel = '';
+                  }
+                } else {
+                  // Guest/friendly (no team) — keep private unless owner/admin
+                  if (canSeePrivateDetails(booking, user)) {
+                    primaryLabel = booking.userEmail
+                      ? maskEmail(booking.userEmail)
+                      : (booking.phoneNumber || '');
+                    secondaryLabel =
+                      booking.phoneNumber && booking.userEmail ? booking.phoneNumber : '';
+                  } else {
+                    primaryLabel = '';
+                    secondaryLabel = '';
+                  }
+                }
+              }
 
-
-              // status badge color (no text in blocks)
               const statusBadgeColor =
                 status === 'booked'
                   ? 'bg-red-600'
@@ -445,9 +447,8 @@ if (booking) {
                   ? 'bg-slate-600'
                   : 'bg-[#3a4057]';
 
-              // For "available", show badge only (no duplicate text rows)
-              const showPrimary = status !== 'available' && primaryLabel;
-              const showSecondary = status !== 'available' && secondaryLabel;
+              const showPrimary = status !== 'available' && !!primaryLabel;
+              const showSecondary = status !== 'available' && !!secondaryLabel;
 
               return (
                 <button
@@ -469,7 +470,7 @@ if (booking) {
                       {slot.display}
                     </div>
 
-                    {/* Row 2: primary (or placeholder nbsp to keep height consistent) */}
+                    {/* Row 2: primary (or placeholder) */}
                     <div
                       className="text-sm text-white whitespace-nowrap overflow-hidden text-ellipsis leading-5"
                       title={showPrimary ? primaryLabel : ''}
