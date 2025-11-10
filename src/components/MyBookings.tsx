@@ -192,7 +192,7 @@ const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
             </div>
           </div>
 
-          {/* Only show status badge for upcoming bookings */}
+          {/* Only show status badge for upcoming bookings, not past */}
           {!isPast && (
             <span
               className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap ${getStatusColor(
