@@ -57,8 +57,8 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
     const labelStart = start;
     const labelEnd = `${endHour24.toString().padStart(2, '0')}:00`;
     return {
-      time: start,                      // start time in 24h
-      display: `${labelStart} - ${labelEnd}`, // e.g., 23:00 - 00:00, 00:00 - 01:00
+      time: start,                              // start time in 24h
+      display: `${labelStart} - ${labelEnd}`,   // e.g., 23:00 - 00:00, 00:00 - 01:00
     };
   });
 
@@ -246,17 +246,15 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
   const goToNext = () => setCurrentDate(addDays(currentDate, 1));
 
   // ---------- Visibility + formatting helpers ----------
-  // Who can see details for friendly (no team) bookings?
   const canSeePrivateDetails = (booking: Booking, viewer: User | null) => {
     const isFriendlyNoTeam =
-      !booking.homeTeam && !booking.awayTeam && !booking.teamName; // no teams set
-    if (!isFriendlyNoTeam) return true;            // Matches or team bookings are public
-    if (!viewer) return false;                     // not logged in → hide
-    if (viewer.role === 'admin') return true;      // admin → show
-    return booking.userId === viewer.id;           // only the booker sees it
+      !booking.homeTeam && !booking.awayTeam && !booking.teamName;
+    if (!isFriendlyNoTeam) return true;      // matches or team bookings → public
+    if (!viewer) return false;
+    if (viewer.role === 'admin') return true;
+    return booking.userId === viewer.id;     // only the booker sees it
   };
 
-  // Mask email like "local@g…"
   const maskEmail = (email: string) => {
     if (!email) return '';
     const [local, domain = ''] = email.split('@');
@@ -418,16 +416,15 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
                   // Match in one line
                   primaryLabel = `${booking.homeTeam} vs ${booking.awayTeam}`;
                 } else if (booking.teamName && booking.teamName.trim()) {
-                  // Single-team booking (admin-created or user-submitted with team)
+                  // Single-team booking
                   primaryLabel = booking.teamName;
                   secondaryLabel = booking.phoneNumber || booking.userEmail || '';
                 } else {
-                  // Guest or friendly (no team) — respect privacy via canSeePrivateDetails
+                  // Guest/friendly (no team) — respect privacy
                   if (canSeePrivateDetails(booking, user)) {
                     primaryLabel = booking.userEmail ? maskEmail(booking.userEmail) : (booking.phoneNumber || '');
-                    secondaryLabel = booking.phoneNumber && booking.userEmail
-                      ? booking.phoneNumber
-                      : '';
+                    secondaryLabel =
+                      booking.phoneNumber && booking.userEmail ? booking.phoneNumber : '';
                   }
                 }
               }
@@ -441,40 +438,42 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
                   ? 'bg-slate-600 text-white'
                   : 'bg-[#3a4057] text-gray-200';
 
+              // For "available", show badge only (no duplicate text rows)
+              const showPrimary = status !== 'available' && primaryLabel;
+              const showSecondary = status !== 'available' && secondaryLabel;
+
               return (
                 <button
                   key={`${activePitch}-${slot.time}`}
                   onClick={() => handleSlotClick(activePitch, slot.time)}
-                  className={`text-left rounded-xl p-3 transition-colors ${getCardClasses(status)} h-20`}
+                  className={`relative text-left rounded-xl p-3 transition-colors ${getCardClasses(status)} h-20`}
                   title={`${activePitch} - ${slot.display} - ${t(status)}`}
                 >
+                  {/* micro status badge fixed in the corner */}
+                  <span className={`absolute right-2 top-2 text-[10px] leading-none px-2 py-0.5 rounded-full ${statusBadgeClass}`}>
+                    {t(status)}
+                  </span>
+
                   <div className="h-full grid grid-rows-[auto,auto,auto] gap-1">
-                    {/* Row 1: time + micro status badge */}
-                    <div className="flex items-center justify-between">
-                      <div className="text-sm font-semibold text-white truncate" title={slot.display}>
-                        {slot.display}
-                      </div>
-                      <span
-                        className={`ml-2 text-[10px] leading-none px-1.5 py-0.5 rounded-full ${statusBadgeClass}`}
-                      >
-                        {t(status)}
-                      </span>
+                    {/* Row 1: time only */}
+                    <div className="text-sm font-semibold text-white truncate" title={slot.display}>
+                      {slot.display}
                     </div>
 
-                    {/* Row 2: primary label (teams/user) */}
+                    {/* Row 2: primary (or placeholder nbsp to keep height consistent) */}
                     <div
                       className="text-sm text-white whitespace-nowrap overflow-hidden text-ellipsis"
-                      title={primaryLabel}
+                      title={showPrimary ? primaryLabel : ''}
                     >
-                      {status === 'available' ? t('available') : primaryLabel}
+                      {showPrimary ? primaryLabel : '\u00A0'}
                     </div>
 
-                    {/* Row 3: secondary label (phone/email) */}
+                    {/* Row 3: secondary (or placeholder) */}
                     <div
                       className="text-xs text-gray-300 whitespace-nowrap overflow-hidden text-ellipsis"
-                      title={secondaryLabel}
+                      title={showSecondary ? secondaryLabel : ''}
                     >
-                      {status !== 'available' && secondaryLabel ? secondaryLabel : '\u00A0'}
+                      {showSecondary ? secondaryLabel : '\u00A0'}
                     </div>
                   </div>
                 </button>
