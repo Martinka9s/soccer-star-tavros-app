@@ -14,9 +14,10 @@ const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
   const { t } = useTranslation();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
-
+  
   // Admin filters for past bookings
   const [selectedDate, setSelectedDate] = useState<string>('');
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 4;
 
@@ -35,9 +36,8 @@ const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
       // Admin: fetch ALL bookings from past 6 months to future 1 month
       const startDate = format(subMonths(new Date(), 6), 'yyyy-MM-dd');
       const endDate = format(addMonths(new Date(), 1), 'yyyy-MM-dd');
-
-      bookingService
-        .getAllBookingsInRange(startDate, endDate)
+      
+      bookingService.getAllBookingsInRange(startDate, endDate)
         .then((all) => {
           const visible = all.filter((b) => b.status !== 'blocked');
           setBookings(visible);
@@ -120,10 +120,10 @@ const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
       } else {
         await bookingService.updateBooking(editingBooking.id, bookingData);
       }
-
+      
       setShowEditModal(false);
       setEditingBooking(null);
-
+      
       // Refresh bookings list
       if (isAdmin) {
         const startDate = format(subMonths(new Date(), 6), 'yyyy-MM-dd');
@@ -144,9 +144,9 @@ const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
 
     const cardContent = (
       <div
-        className={`bg-dark-lighter border rounded-lg p-4 transition-colors ${
-          isMatch ? 'border-purple-600' : 'border-gray-700'
-        } ${canEdit ? 'hover:border-primary cursor-pointer' : ''}`}
+        className={`bg-dark-lighter border rounded-lg p-4 transition-colors h-full ${
+          isMatch ? 'border-purple-600/50' : 'border-gray-700'
+        } ${canEdit ? 'hover:border-primary' : ''}`}
       >
         <div className="flex items-start justify-between mb-3">
           <div className="flex-1">
@@ -223,18 +223,21 @@ const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
         <button
           key={booking.id}
           onClick={() => handleEditBooking(booking)}
-          className="w-full text-left"
+          className="w-full text-left h-full hover:scale-[1.02] transition-transform"
+          type="button"
         >
           {cardContent}
         </button>
       );
     }
 
-    return <div key={booking.id}>{cardContent}</div>;
+    return <div key={booking.id} className="h-full">{cardContent}</div>;
   };
 
   if (loading) {
-    return <div className="text-center py-12 text-gray-400">Loading your bookings...</div>;
+    return (
+      <div className="text-center py-12 text-gray-400">Loading your bookings...</div>
+    );
   }
 
   return (
@@ -257,30 +260,52 @@ const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
       <div>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
           <h2 className="text-2xl font-bold text-white">{t('pastBookings')}</h2>
-
+          
           {/* Admin Date Filter */}
           {isAdmin && (
             <div className="flex items-center gap-2">
-              <label className="text-sm text-gray-400 whitespace-nowrap">Filter by date:</label>
-              <div className="relative">
-                <input
-                  type="date"
-                  value={selectedDate}
-                  onChange={(e) => setSelectedDate(e.target.value)}
-                  className="w-full sm:w-auto px-3 py-2 bg-dark border border-gray-600 rounded text-white text-sm focus:outline-none focus:border-primary appearance-none"
-                  style={{ colorScheme: 'dark' }}
-                  onClick={(e) => {
-                    (e.target as HTMLInputElement).showPicker?.();
-                  }}
-                />
-              </div>
-              {selectedDate && (
-                <button
-                  onClick={() => setSelectedDate('')}
-                  className="px-2 py-1 text-sm text-gray-400 hover:text-white bg-dark border border-gray-600 rounded whitespace-nowrap"
-                >
-                  Clear
-                </button>
+              <button
+                onClick={() => setShowDatePicker(!showDatePicker)}
+                className="px-4 py-2 bg-dark border border-gray-600 rounded text-white text-sm hover:border-primary transition-colors flex items-center gap-2"
+              >
+                <CalendarIcon size={16} />
+                {selectedDate ? format(parseISO(selectedDate), 'MMM d, yyyy') : 'Filter by date'}
+              </button>
+              
+              {/* Hidden date input */}
+              {showDatePicker && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4" onClick={() => setShowDatePicker(false)}>
+                  <div className="bg-dark-lighter rounded-lg p-4 max-w-sm" onClick={(e) => e.stopPropagation()}>
+                    <input
+                      type="date"
+                      value={selectedDate}
+                      onChange={(e) => {
+                        setSelectedDate(e.target.value);
+                        setShowDatePicker(false);
+                      }}
+                      className="w-full px-3 py-2 bg-dark border border-gray-600 rounded text-white focus:outline-none focus:border-primary"
+                      style={{ colorScheme: 'dark' }}
+                      autoFocus
+                    />
+                    <div className="flex gap-2 mt-3">
+                      <button
+                        onClick={() => {
+                          setSelectedDate('');
+                          setShowDatePicker(false);
+                        }}
+                        className="flex-1 px-3 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded text-sm"
+                      >
+                        Clear
+                      </button>
+                      <button
+                        onClick={() => setShowDatePicker(false)}
+                        className="flex-1 px-3 py-2 bg-primary hover:bg-primary-dark text-white rounded text-sm"
+                      >
+                        Close
+                      </button>
+                    </div>
+                  </div>
+                </div>
               )}
             </div>
           )}
@@ -314,11 +339,11 @@ const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
                 >
                   <ChevronLeft size={20} />
                 </button>
-
+                
                 <span className="text-gray-300">
                   Page {currentPage} of {totalPages}
                 </span>
-
+                
                 <button
                   onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                   disabled={currentPage === totalPages}
