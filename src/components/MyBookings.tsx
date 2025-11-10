@@ -271,17 +271,18 @@ const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
                   type="date"
                   value={selectedDate}
                   onChange={(e) => setSelectedDate(e.target.value)}
-                  className="opacity-0 absolute inset-0 w-full h-full cursor-pointer"
+                  className="opacity-0 absolute inset-0 w-full h-full cursor-pointer z-10"
                   style={{ colorScheme: 'dark' }}
                   id="date-filter-input"
+                  onClick={(e) => {
+                    // Force open the date picker
+                    (e.target as HTMLInputElement).showPicker?.();
+                  }}
                 />
-                <label
-                  htmlFor="date-filter-input"
-                  className="px-4 py-2 bg-dark border border-gray-600 rounded text-white text-sm hover:border-primary transition-colors flex items-center gap-2 cursor-pointer"
-                >
+                <div className="px-4 py-2 bg-dark border border-gray-600 rounded text-white text-sm hover:border-primary transition-colors flex items-center gap-2 pointer-events-none">
                   <CalendarIcon size={16} />
                   {selectedDate ? format(parseISO(selectedDate), 'MMM d, yyyy') : 'Filter by date'}
-                </label>
+                </div>
               </div>
               
               {selectedDate && (
