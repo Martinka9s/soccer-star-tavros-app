@@ -409,76 +409,73 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
             {timeSlots.map((slot) => {
               const { status, booking } = getSlotStatus(activePitch, slot.time);
 
+              // Compute primary/secondary labels in a compact form
+              let primaryLabel = '';
+              let secondaryLabel = '';
+
+              if (booking) {
+                if (booking.homeTeam && booking.awayTeam) {
+                  // Match in one line
+                  primaryLabel = `${booking.homeTeam} vs ${booking.awayTeam}`;
+                } else if (booking.teamName && booking.teamName.trim()) {
+                  // Single-team booking (admin-created or user-submitted with team)
+                  primaryLabel = booking.teamName;
+                  secondaryLabel = booking.phoneNumber || booking.userEmail || '';
+                } else {
+                  // Guest or friendly (no team) — respect privacy via canSeePrivateDetails
+                  if (canSeePrivateDetails(booking, user)) {
+                    primaryLabel = booking.userEmail ? maskEmail(booking.userEmail) : (booking.phoneNumber || '');
+                    secondaryLabel = booking.phoneNumber && booking.userEmail
+                      ? booking.phoneNumber
+                      : '';
+                  }
+                }
+              }
+
+              const statusBadgeClass =
+                status === 'booked'
+                  ? 'bg-red-600 text-white'
+                  : status === 'pending'
+                  ? 'bg-amber-500 text-black'
+                  : status === 'blocked'
+                  ? 'bg-slate-600 text-white'
+                  : 'bg-[#3a4057] text-gray-200';
+
               return (
                 <button
                   key={`${activePitch}-${slot.time}`}
                   onClick={() => handleSlotClick(activePitch, slot.time)}
-                  className={`text-left rounded-xl p-5 transition-colors ${getCardClasses(status)}`}
+                  className={`text-left rounded-xl p-3 transition-colors ${getCardClasses(status)} h-20`}
                   title={`${activePitch} - ${slot.display} - ${t(status)}`}
                 >
-                  <div className="text-lg font-semibold text-white">
-                    {slot.display}
-                  </div>
+                  <div className="h-full grid grid-rows-[auto,auto,auto] gap-1">
+                    {/* Row 1: time + micro status badge */}
+                    <div className="flex items-center justify-between">
+                      <div className="text-sm font-semibold text-white truncate" title={slot.display}>
+                        {slot.display}
+                      </div>
+                      <span
+                        className={`ml-2 text-[10px] leading-none px-1.5 py-0.5 rounded-full ${statusBadgeClass}`}
+                      >
+                        {t(status)}
+                      </span>
+                    </div>
 
-                  <div className="mt-2 text-sm text-gray-300">
-                    {status === 'available' ? (
-                      <span>{t('available')}</span>
-                    ) : (
-                      <>
-                        {/* First line: status only */}
-                        <span className="capitalize block">{t(status)}</span>
+                    {/* Row 2: primary label (teams/user) */}
+                    <div
+                      className="text-sm text-white whitespace-nowrap overflow-hidden text-ellipsis"
+                      title={primaryLabel}
+                    >
+                      {status === 'available' ? t('available') : primaryLabel}
+                    </div>
 
-                        {booking && (() => {
-                          const isMatch = !!(booking.homeTeam && booking.awayTeam);
-                          const showPrivate = canSeePrivateDetails(booking, user);
-
-                          if (isMatch) {
-                            // STACKED teams with safe truncation
-                            return (
-                              <div className="mt-1 space-y-0.5">
-                                <span
-                                  className="block w-full overflow-hidden text-ellipsis whitespace-nowrap text-white"
-                                  title={booking.homeTeam}
-                                  aria-label={booking.homeTeam}
-                                >
-                                  {booking.homeTeam}
-                                </span>
-                                <span
-                                  className="block w-full overflow-hidden text-ellipsis whitespace-nowrap text-white"
-                                  title={booking.awayTeam}
-                                  aria-label={booking.awayTeam}
-                                >
-                                  {booking.awayTeam}
-                                </span>
-                              </div>
-                            );
-                          }
-
-                          // Friendly / single booking (may be private)
-                          if (showPrivate) {
-                            const line =
-                              (booking.teamName && booking.teamName.trim().length > 0)
-                                ? booking.teamName
-                                : maskEmail(booking.userEmail || '');
-
-                            return (
-                              <span className="block mt-1">
-                                <span
-                                  className="block w-full overflow-hidden text-ellipsis whitespace-nowrap text-white/90"
-                                  title={line}
-                                  aria-label={line}
-                                >
-                                  {line}
-                                </span>
-                              </span>
-                            );
-                          }
-
-                          // Not allowed to see details → show nothing beyond the status
-                          return null;
-                        })()}
-                      </>
-                    )}
+                    {/* Row 3: secondary label (phone/email) */}
+                    <div
+                      className="text-xs text-gray-300 whitespace-nowrap overflow-hidden text-ellipsis"
+                      title={secondaryLabel}
+                    >
+                      {status !== 'available' && secondaryLabel ? secondaryLabel : '\u00A0'}
+                    </div>
                   </div>
                 </button>
               );
