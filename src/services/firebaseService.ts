@@ -292,54 +292,61 @@ export const bookingService = {
         } as Booking)
     );
 
-    // If user has a team, also get match bookings
-    if (teamName) {
-      const homeTeamQuery = query(
-        bookingsCollection,
-        where('homeTeam', '==', teamName),
-        orderBy('date', 'desc')
-      );
-      const awayTeamQuery = query(
-        bookingsCollection,
-        where('awayTeam', '==', teamName),
-        orderBy('date', 'desc')
-      );
+    // ✅ FIX: Only query by team if teamName exists and is not empty
+    if (teamName && teamName.trim()) {
+      try {
+        const homeTeamQuery = query(
+          bookingsCollection,
+          where('homeTeam', '==', teamName),
+          orderBy('date', 'desc')
+        );
+        const awayTeamQuery = query(
+          bookingsCollection,
+          where('awayTeam', '==', teamName),
+          orderBy('date', 'desc')
+        );
 
-      const [homeSnapshot, awaySnapshot] = await Promise.all([
-        getDocs(homeTeamQuery),
-        getDocs(awayTeamQuery),
-      ]);
+        const [homeSnapshot, awaySnapshot] = await Promise.all([
+          getDocs(homeTeamQuery),
+          getDocs(awayTeamQuery),
+        ]);
 
-      const homeBookings = homeSnapshot.docs.map(
-        (d: QueryDocumentSnapshot<DocumentData>) =>
-          ({
-            id: d.id,
-            ...d.data(),
-            createdAt: convertTimestamp((d.data() as any).createdAt),
-            updatedAt: convertTimestamp((d.data() as any).updatedAt),
-          } as Booking)
-      );
+        const homeBookings = homeSnapshot.docs.map(
+          (d: QueryDocumentSnapshot<DocumentData>) =>
+            ({
+              id: d.id,
+              ...d.data(),
+              createdAt: convertTimestamp((d.data() as any).createdAt),
+              updatedAt: convertTimestamp((d.data() as any).updatedAt),
+            } as Booking)
+        );
 
-      const awayBookings = awaySnapshot.docs.map(
-        (d: QueryDocumentSnapshot<DocumentData>) =>
-          ({
-            id: d.id,
-            ...d.data(),
-            createdAt: convertTimestamp((d.data() as any).createdAt),
-            updatedAt: convertTimestamp((d.data() as any).updatedAt),
-          } as Booking)
-      );
+        const awayBookings = awaySnapshot.docs.map(
+          (d: QueryDocumentSnapshot<DocumentData>) =>
+            ({
+              id: d.id,
+              ...d.data(),
+              createdAt: convertTimestamp((d.data() as any).createdAt),
+              updatedAt: convertTimestamp((d.data() as any).updatedAt),
+            } as Booking)
+        );
 
-      // Combine and deduplicate
-      const allBookings = [...userBookings, ...homeBookings, ...awayBookings];
-      const uniqueBookings = Array.from(
-        new Map(allBookings.map((b) => [b.id, b])).values()
-      );
+        // Combine and deduplicate
+        const allBookings = [...userBookings, ...homeBookings, ...awayBookings];
+        const uniqueBookings = Array.from(
+          new Map(allBookings.map((b) => [b.id, b])).values()
+        );
 
-      // Sort by date descending
-      return uniqueBookings.sort((a, b) => b.date.localeCompare(a.date));
+        // Sort by date descending
+        return uniqueBookings.sort((a, b) => b.date.localeCompare(a.date));
+      } catch (error) {
+        console.error('Error fetching team bookings (falling back to user bookings only):', error);
+        // If team queries fail (e.g., missing index), just return user bookings
+        return userBookings;
+      }
     }
 
+    // If no teamName, just return user bookings
     return userBookings;
   },
 
@@ -353,10 +360,14 @@ export const bookingService = {
     // A true realtime solution would use onSnapshot
     const fetchAndNotify = async () => {
       try {
-        const bookings = await this.getBookingsByUserOrTeam(userId, teamName);
+        // ✅ FIX: Only pass teamName if it exists and is not empty
+        const cleanTeamName = teamName && teamName.trim() ? teamName.trim() : undefined;
+        const bookings = await this.getBookingsByUserOrTeam(userId, cleanTeamName);
         callback(bookings);
       } catch (error) {
         console.error('Error in listener:', error);
+        // ✅ FIX: Don't let errors stop the UI - pass empty array instead
+        callback([]);
       }
     };
 
