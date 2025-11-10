@@ -25,18 +25,15 @@ import {
   orderBy,
   serverTimestamp,
   Timestamp,
-  runTransaction,
-  onSnapshot,
   type QueryDocumentSnapshot,
   type DocumentData,
-  type QuerySnapshot,
 } from 'firebase/firestore';
 import { User, Booking, Notification, UserRole, PitchType } from '../types';
 
 // --- helpers -----------------------------------------------------------------
 const clean = (v: unknown) => String(v ?? '').trim();
 
-// Firebase configuration (corrected import.meta)
+// Firebase configuration (trimmed to avoid stray whitespace/newlines)
 const firebaseConfig = {
   apiKey: clean(import.meta.env.VITE_FIREBASE_API_KEY),
   authDomain: clean(import.meta.env.VITE_FIREBASE_AUTH_DOMAIN),
@@ -75,7 +72,9 @@ async function ensureUserDoc(uid: string, email: string | null | undefined): Pro
   const snap = await getDoc(ref);
 
   if (!snap.exists()) {
+    // Create a minimal profile with default role 'user'.
     const role: UserRole = 'user';
+
     await setDoc(
       ref,
       {
@@ -86,6 +85,7 @@ async function ensureUserDoc(uid: string, email: string | null | undefined): Pro
       },
       { merge: true }
     );
+
     return {
       id: uid,
       email: email || '',
@@ -108,11 +108,13 @@ async function ensureUserDoc(uid: string, email: string | null | undefined): Pro
 // --- AUTH SERVICE ------------------------------------------------------------
 
 export const authService = {
+  /** Register user with team name; create users/{uid} with role 'user' */
   async register(email: string, password: string, teamName: string): Promise<User> {
     const cred = await createUserWithEmailAndPassword(auth, email, password);
     const uid = cred.user.uid;
 
-    const role: UserRole = 'user';
+    const role: UserRole = 'user'; // default; promote manually in Console if needed
+
     await setDoc(
       doc(db, 'users', uid),
       {
@@ -134,11 +136,16 @@ export const authService = {
     };
   },
 
+  /** Login + ensure/fetch profile; if Firestore fails, return provisional user */
   async login(email: string, password: string): Promise<User> {
+    console.log('TRY LOGIN', email);
     const cred = await signInWithEmailAndPassword(auth, email, password);
+    console.log('LOGIN OK', cred.user.uid);
+
     try {
       return await ensureUserDoc(cred.user.uid, cred.user.email || email);
-    } catch {
+    } catch (e) {
+      console.warn('Firestore unavailable during login; using provisional user', e);
       return {
         id: cred.user.uid,
         email: cred.user.email || email,
@@ -152,13 +159,15 @@ export const authService = {
     await signOut(auth);
   },
 
+  /** Current user from auth; if Firestore fails, return provisional user */
   async getCurrentUser(): Promise<User | null> {
     const firebaseUser = auth.currentUser;
     if (!firebaseUser) return null;
 
     try {
       return await ensureUserDoc(firebaseUser.uid, firebaseUser.email);
-    } catch {
+    } catch (e) {
+      console.warn('Firestore unavailable in getCurrentUser; using provisional user', e);
       return {
         id: firebaseUser.uid,
         email: firebaseUser.email || '',
@@ -172,6 +181,7 @@ export const authService = {
     return onAuthStateChanged(auth, callback);
   },
 
+  /** Forgot password */
   async sendReset(email: string) {
     await sendPasswordResetEmail(auth, email);
   },
@@ -180,6 +190,7 @@ export const authService = {
 // --- USER SERVICE ------------------------------------------------------------
 
 export const userService = {
+  /** Get all teams (for admin dropdown) */
   async getAllTeams(): Promise<{ userId: string; teamName: string; email: string }[]> {
     const q = query(usersCollection, where('teamName', '!=', ''));
     const snapshot = await getDocs(q);
@@ -194,9 +205,11 @@ export const userService = {
     });
   },
 
+  /** Get user by team name */
   async getUserByTeamName(teamName: string): Promise<User | null> {
     const q = query(usersCollection, where('teamName', '==', teamName.trim()));
     const snapshot = await getDocs(q);
+
     if (snapshot.empty) return null;
 
     const docSnap = snapshot.docs[0];
@@ -262,6 +275,7 @@ export const bookingService = {
 
   /** Get bookings where user is involved (either as single user or as one of the teams) */
   async getBookingsByUserOrTeam(userId: string, teamName?: string): Promise<Booking[]> {
+    // Get bookings where user is the single booker
     const userQuery = query(
       bookingsCollection,
       where('userId', '==', userId),
@@ -278,6 +292,7 @@ export const bookingService = {
         } as Booking)
     );
 
+    // If user has a team, also get match bookings
     if (teamName) {
       const homeTeamQuery = query(
         bookingsCollection,
@@ -290,11 +305,10 @@ export const bookingService = {
         orderBy('date', 'desc')
       );
 
-      // ✅ fixed: correctly reference awayTeamQuery and typed
-      const [homeSnapshot, awaySnapshot]: [
-        QuerySnapshot<DocumentData>,
-        QuerySnapshot<DocumentData>
-      ] = await Promise.all([getDocs(homeTeamQuery), getDocs(awayTeamQuery)]);
+      const [homeSnapshot, awaySnapshot] = await Promise.all([
+        getDocs(homeTeamQuery),
+        getDocs(awayTeamQuery),
+      ]);
 
       const homeBookings = homeSnapshot.docs.map(
         (d: QueryDocumentSnapshot<DocumentData>) =>
@@ -316,12 +330,61 @@ export const bookingService = {
           } as Booking)
       );
 
+      // Combine and deduplicate
       const allBookings = [...userBookings, ...homeBookings, ...awayBookings];
-      const uniqueBookings = Array.from(new Map(allBookings.map((b) => [b.id, b])).values());
+      const uniqueBookings = Array.from(
+        new Map(allBookings.map((b) => [b.id, b])).values()
+      );
+
+      // Sort by date descending
       return uniqueBookings.sort((a, b) => b.date.localeCompare(a.date));
     }
 
     return userBookings;
+  },
+
+  /** Realtime listener for user bookings (for regular users and admin personal bookings) */
+  listenBookingsByUserOrTeam(
+    userId: string,
+    teamName: string | undefined,
+    callback: (bookings: Booking[]) => void
+  ): () => void {
+    // For simplicity, we'll poll every 5 seconds
+    // A true realtime solution would use onSnapshot
+    const fetchAndNotify = async () => {
+      try {
+        const bookings = await this.getBookingsByUserOrTeam(userId, teamName);
+        callback(bookings);
+      } catch (error) {
+        console.error('Error in listener:', error);
+      }
+    };
+
+    fetchAndNotify();
+    const interval = setInterval(fetchAndNotify, 5000);
+
+    return () => clearInterval(interval);
+  },
+
+  /** Get ALL bookings in a date range (for admin) */
+  async getAllBookingsInRange(startDate: string, endDate: string): Promise<Booking[]> {
+    const qy = query(
+      bookingsCollection,
+      where('date', '>=', startDate),
+      where('date', '<=', endDate),
+      orderBy('date', 'desc')
+    );
+    const snapshot = await getDocs(qy);
+
+    return snapshot.docs.map(
+      (d: QueryDocumentSnapshot<DocumentData>) =>
+        ({
+          id: d.id,
+          ...d.data(),
+          createdAt: convertTimestamp((d.data() as any).createdAt),
+          updatedAt: convertTimestamp((d.data() as any).updatedAt),
+        } as Booking)
+    );
   },
 
   async getPendingBookings(): Promise<Booking[]> {
@@ -344,21 +407,16 @@ export const bookingService = {
   },
 
   async updateBooking(bookingId: string, updates: Partial<Booking>): Promise<void> {
-    const ref = doc(db, 'bookings', bookingId);
-    await runTransaction(db, async (tx) => {
-      const snap = await tx.get(ref);
-      if (!snap.exists()) return;
-      tx.update(ref, { ...updates, updatedAt: serverTimestamp() });
+    const bookingRef = doc(db, 'bookings', bookingId);
+    await updateDoc(bookingRef, {
+      ...updates,
+      updatedAt: serverTimestamp(),
     });
   },
 
   async deleteBooking(bookingId: string): Promise<void> {
-    const ref = doc(db, 'bookings', bookingId);
-    try {
-      await deleteDoc(ref);
-    } catch (e: any) {
-      if (e?.code !== 'not-found') throw e;
-    }
+    const bookingRef = doc(db, 'bookings', bookingId);
+    await deleteDoc(bookingRef);
   },
 
   async getBooking(bookingId: string): Promise<Booking | null> {
@@ -374,69 +432,8 @@ export const bookingService = {
         updatedAt: convertTimestamp(data.updatedAt),
       } as Booking;
     }
+
     return null;
-  },
-
-  listenBookingsByUserOrTeam(
-    userId: string,
-    teamName: string | undefined,
-    onChange: (bookings: Booking[]) => void
-  ) {
-    const unsubscribes: Array<() => void> = [];
-    const byId = new Map<string, Booking>();
-
-    const upsertDoc = (docId: string, raw: any) => {
-      byId.set(docId, {
-        id: docId,
-        ...raw,
-        createdAt: convertTimestamp(raw.createdAt),
-        updatedAt: convertTimestamp(raw.updatedAt),
-      } as Booking);
-    };
-
-    const emit = () => {
-      const arr = Array.from(byId.values());
-      arr.sort((a, b) => b.date.localeCompare(a.date));
-      onChange(arr);
-    };
-
-    const qUser = query(bookingsCollection, where('userId', '==', userId), orderBy('date', 'desc'));
-    unsubscribes.push(
-      onSnapshot(qUser, (snap) => {
-        snap.docChanges().forEach((chg) => {
-          if (chg.type === 'removed') byId.delete(chg.doc.id);
-          else upsertDoc(chg.doc.id, chg.doc.data());
-        });
-        emit();
-      })
-    );
-
-    if (teamName) {
-      const qHome = query(bookingsCollection, where('homeTeam', '==', teamName), orderBy('date', 'desc'));
-      const qAway = query(bookingsCollection, where('awayTeam', '==', teamName), orderBy('date', 'desc'));
-
-      unsubscribes.push(
-        onSnapshot(qHome, (snap) => {
-          snap.docChanges().forEach((chg) => {
-            if (chg.type === 'removed') byId.delete(chg.doc.id);
-            else upsertDoc(chg.doc.id, chg.doc.data());
-          });
-          emit();
-        })
-      );
-
-      unsubscribes.push(
-        onSnapshot(qAway, (snap) => {
-          snap.docChanges().forEach((chg) => {
-            if (chg.type === 'removed') byId.delete(chg.doc.id);
-            else upsertDoc(chg.doc.id, chg.doc.data());
-          });
-          emit();
-        })
-      );
-    }
-
-    return () => unsubscribes.forEach((u) => u());
   },
 };
 
@@ -465,6 +462,7 @@ export const notificationService = {
     });
   },
 
+  /** Create notification for match between two teams */
   async createMatchNotification(
     userId: string,
     bookingId: string,
@@ -512,11 +510,7 @@ export const notificationService = {
 
   async markAsRead(notificationId: string): Promise<void> {
     const notificationRef = doc(db, 'notifications', notificationId);
-    try {
-      await updateDoc(notificationRef, { read: true });
-    } catch (e: any) {
-      if (e?.code !== 'not-found') throw e;
-    }
+    await updateDoc(notificationRef, { read: true });
   },
 
   async markAllAsRead(userId: string): Promise<void> {
