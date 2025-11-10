@@ -4,6 +4,7 @@ import { Calendar as CalendarIcon, Clock, Users, ChevronLeft, ChevronRight } fro
 import { format, parseISO, isFuture, subMonths, addMonths } from 'date-fns';
 import { Booking, User } from '../types';
 import { bookingService } from '../services/firebaseService';
+import BookingModal from './BookingModal';
 
 interface MyBookingsProps {
   user: User;
@@ -18,6 +19,10 @@ const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
   const [selectedDate, setSelectedDate] = useState<string>('');
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 4;
+
+  // Edit modal state
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingBooking, setEditingBooking] = useState<Booking | null>(null);
 
   const isAdmin = user.role === 'admin';
 
@@ -100,15 +105,47 @@ const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
   const isMatchBooking = (booking: Booking): boolean =>
     !!(booking.homeTeam && booking.awayTeam);
 
+  const handleEditBooking = (booking: Booking) => {
+    setEditingBooking(booking);
+    setShowEditModal(true);
+  };
+
+  const handleBookingUpdate = async (bookingData: any) => {
+    if (!editingBooking) return;
+
+    try {
+      if (bookingData.delete) {
+        await bookingService.deleteBooking(editingBooking.id);
+      } else {
+        await bookingService.updateBooking(editingBooking.id, bookingData);
+      }
+      
+      setShowEditModal(false);
+      setEditingBooking(null);
+      
+      // Refresh bookings list
+      if (isAdmin) {
+        const startDate = format(subMonths(new Date(), 6), 'yyyy-MM-dd');
+        const endDate = format(addMonths(new Date(), 1), 'yyyy-MM-dd');
+        const all = await bookingService.getAllBookingsInRange(startDate, endDate);
+        const visible = all.filter((b) => b.status !== 'blocked');
+        setBookings(visible);
+      }
+    } catch (error) {
+      console.error('Error updating booking:', error);
+      throw error;
+    }
+  };
+
   const renderBookingCard = (booking: Booking) => {
     const isMatch = isMatchBooking(booking);
+    const canEdit = isAdmin; // Admin can edit all bookings
 
-    return (
+    const cardContent = (
       <div
-        key={booking.id}
-        className={`bg-dark-lighter border rounded-lg p-4 hover:border-primary transition-colors ${
+        className={`bg-dark-lighter border rounded-lg p-4 transition-colors ${
           isMatch ? 'border-purple-600' : 'border-gray-700'
-        }`}
+        } ${canEdit ? 'hover:border-primary cursor-pointer' : ''}`}
       >
         <div className="flex items-start justify-between mb-3">
           <div className="flex-1">
@@ -179,6 +216,20 @@ const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
         ) : null}
       </div>
     );
+
+    if (canEdit) {
+      return (
+        <button
+          key={booking.id}
+          onClick={() => handleEditBooking(booking)}
+          className="w-full text-left"
+        >
+          {cardContent}
+        </button>
+      );
+    }
+
+    return <div key={booking.id}>{cardContent}</div>;
   };
 
   if (loading) {
@@ -216,8 +267,12 @@ const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
                 type="date"
                 value={selectedDate}
                 onChange={(e) => setSelectedDate(e.target.value)}
-                className="px-3 py-2 bg-dark border border-gray-600 rounded text-white text-sm focus:outline-none focus:border-primary cursor-pointer"
-                style={{ colorScheme: 'dark' }}
+                className="w-full sm:w-auto px-3 py-2 bg-dark border border-gray-600 rounded text-white text-sm focus:outline-none focus:border-primary"
+                style={{ 
+                  colorScheme: 'dark',
+                  WebkitAppearance: 'none',
+                  MozAppearance: 'textfield'
+                }}
               />
               {selectedDate && (
                 <button
@@ -276,6 +331,26 @@ const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
           </>
         )}
       </div>
+
+      {/* Edit Modal for Admin */}
+      {showEditModal && editingBooking && isAdmin && (
+        <BookingModal
+          isOpen={showEditModal}
+          onClose={() => {
+            setShowEditModal(false);
+            setEditingBooking(null);
+          }}
+          onSubmit={handleBookingUpdate}
+          selectedSlot={{
+            pitch: editingBooking.pitchType,
+            date: editingBooking.date,
+            time: editingBooking.startTime,
+          }}
+          existingBooking={editingBooking}
+          user={user}
+          existingBookings={bookings}
+        />
+      )}
     </div>
   );
 };
