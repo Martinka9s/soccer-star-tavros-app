@@ -17,6 +17,7 @@ const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
   
   // Admin filters for past bookings
   const [selectedDate, setSelectedDate] = useState<string>('');
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 4;
 
