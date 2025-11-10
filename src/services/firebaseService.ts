@@ -236,6 +236,56 @@ export const bookingService = {
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });
+
+    // 🔔 Fire notifications (best-effort, non-blocking)
+    try {
+      const b: any = bookingData;
+
+      // SINGLE-TEAM booking (booked/approved immediately)
+      if (b.userId && b.status === 'booked') {
+        await notificationService.createNotification(
+          b.userId,
+          'approved',
+          docRef.id,
+          b.pitchType,
+          b.date,
+          b.startTime,
+          `Your booking on ${b.date} at ${b.startTime} (${b.pitchType}) has been approved.`
+        );
+      }
+
+      // MATCH booking → notify both sides if userIds present
+      const isMatch = Boolean(b.homeTeam && b.awayTeam);
+      if (isMatch) {
+        if (b.homeTeamUserId) {
+          await notificationService.createMatchNotification(
+            b.homeTeamUserId,
+            docRef.id,
+            b.pitchType,
+            b.date,
+            b.startTime,
+            b.homeTeam,
+            b.awayTeam,
+            true
+          );
+        }
+        if (b.awayTeamUserId) {
+          await notificationService.createMatchNotification(
+            b.awayTeamUserId,
+            docRef.id,
+            b.pitchType,
+            b.date,
+            b.startTime,
+            b.homeTeam,
+            b.awayTeam,
+            false
+          );
+        }
+      }
+    } catch (e) {
+      console.warn('createBooking: notifications failed (non-blocking):', e);
+    }
+
     return docRef.id;
   },
 
@@ -255,11 +305,7 @@ export const bookingService = {
   },
 
   async getBookingsByUser(userId: string): Promise<Booking[]> {
-    const qy = query(
-      bookingsCollection,
-      where('userId', '==', userId),
-      orderBy('date', 'desc')
-    );
+    const qy = query(bookingsCollection, where('userId', '==', userId), orderBy('date', 'desc'));
     const snapshot = await getDocs(qy);
 
     return snapshot.docs.map(
@@ -273,107 +319,66 @@ export const bookingService = {
     );
   },
 
-  /** Get bookings where user is involved (either as single user or as one of the teams) */
+  /** Get bookings where user is involved (as booker, by team name, or as team userId on a match) */
   async getBookingsByUserOrTeam(userId: string, teamName?: string): Promise<Booking[]> {
-    // Get bookings where user is the single booker
-    const userQuery = query(
-      bookingsCollection,
-      where('userId', '==', userId),
-      orderBy('date', 'desc')
-    );
-    const userSnapshot = await getDocs(userQuery);
-    const userBookings = userSnapshot.docs.map(
-      (d: QueryDocumentSnapshot<DocumentData>) =>
-        ({
-          id: d.id,
-          ...d.data(),
-          createdAt: convertTimestamp((d.data() as any).createdAt),
-          updatedAt: convertTimestamp((d.data() as any).updatedAt),
-        } as Booking)
-    );
+    // Direct user bookings
+    const userQuery = query(bookingsCollection, where('userId', '==', userId), orderBy('date', 'desc'));
 
-    // ✅ FIX: Only query by team if teamName exists and is not empty
-    if (teamName && teamName.trim()) {
-      try {
-        const homeTeamQuery = query(
-          bookingsCollection,
-          where('homeTeam', '==', teamName),
-          orderBy('date', 'desc')
-        );
-        const awayTeamQuery = query(
-          bookingsCollection,
-          where('awayTeam', '==', teamName),
-          orderBy('date', 'desc')
-        );
+    // Participation via userId on matches
+    const homeByUserId = query(bookingsCollection, where('homeTeamUserId', '==', userId), orderBy('date', 'desc'));
+    const awayByUserId = query(bookingsCollection, where('awayTeamUserId', '==', userId), orderBy('date', 'desc'));
 
-        const [homeSnapshot, awaySnapshot] = await Promise.all([
-          getDocs(homeTeamQuery),
-          getDocs(awayTeamQuery),
-        ]);
+    // Optional team-name based participation
+    const hasTeam = Boolean(teamName && teamName.trim());
+    const homeByTeam = hasTeam
+      ? query(bookingsCollection, where('homeTeam', '==', teamName!.trim()), orderBy('date', 'desc'))
+      : null;
+    const awayByTeam = hasTeam
+      ? query(bookingsCollection, where('awayTeam', '==', teamName!.trim()), orderBy('date', 'desc'))
+      : null;
 
-        const homeBookings = homeSnapshot.docs.map(
-          (d: QueryDocumentSnapshot<DocumentData>) =>
-            ({
-              id: d.id,
-              ...d.data(),
-              createdAt: convertTimestamp((d.data() as any).createdAt),
-              updatedAt: convertTimestamp((d.data() as any).updatedAt),
-            } as Booking)
-        );
+    const snapshots = await Promise.all([
+      getDocs(userQuery),
+      getDocs(homeByUserId),
+      getDocs(awayByUserId),
+      ...(homeByTeam ? [getDocs(homeByTeam)] : []),
+      ...(awayByTeam ? [getDocs(awayByTeam)] : []),
+    ]);
 
-        const awayBookings = awaySnapshot.docs.map(
-          (d: QueryDocumentSnapshot<DocumentData>) =>
-            ({
-              id: d.id,
-              ...d.data(),
-              createdAt: convertTimestamp((d.data() as any).createdAt),
-              updatedAt: convertTimestamp((d.data() as any).updatedAt),
-            } as Booking)
-        );
+    const allDocs = snapshots.flatMap((s) => s.docs);
+    const all = allDocs.map((d) => ({
+      id: d.id,
+      ...(d.data() as any),
+      createdAt: convertTimestamp((d.data() as any).createdAt),
+      updatedAt: convertTimestamp((d.data() as any).updatedAt),
+    })) as Booking[];
 
-        // Combine and deduplicate
-        const allBookings = [...userBookings, ...homeBookings, ...awayBookings];
-        const uniqueBookings = Array.from(
-          new Map(allBookings.map((b) => [b.id, b])).values()
-        );
+    // Deduplicate by ID
+    const unique = Array.from(new Map(all.map((b) => [b.id, b])).values());
 
-        // Sort by date descending
-        return uniqueBookings.sort((a, b) => b.date.localeCompare(a.date));
-      } catch (error) {
-        console.error('Error fetching team bookings (falling back to user bookings only):', error);
-        // If team queries fail (e.g., missing index), just return user bookings
-        return userBookings;
-      }
-    }
-
-    // If no teamName, just return user bookings
-    return userBookings;
+    // Sort by date desc (YYYY-MM-DD string)
+    return unique.sort((a, b) => b.date.localeCompare(a.date));
   },
 
-  /** Realtime listener for user bookings (for regular users and admin personal bookings) */
+  /** Pseudo-realtime listener (poll) */
   listenBookingsByUserOrTeam(
     userId: string,
     teamName: string | undefined,
     callback: (bookings: Booking[]) => void
   ): () => void {
-    // For simplicity, we'll poll every 5 seconds
-    // A true realtime solution would use onSnapshot
     const fetchAndNotify = async () => {
       try {
-        // ✅ FIX: Only pass teamName if it exists and is not empty
         const cleanTeamName = teamName && teamName.trim() ? teamName.trim() : undefined;
         const bookings = await this.getBookingsByUserOrTeam(userId, cleanTeamName);
         callback(bookings);
       } catch (error) {
         console.error('Error in listener:', error);
-        // ✅ FIX: Don't let errors stop the UI - pass empty array instead
         callback([]);
       }
     };
 
     fetchAndNotify();
     const interval = setInterval(fetchAndNotify, 5000);
-
     return () => clearInterval(interval);
   },
 
@@ -399,11 +404,7 @@ export const bookingService = {
   },
 
   async getPendingBookings(): Promise<Booking[]> {
-    const qy = query(
-      bookingsCollection,
-      where('status', '==', 'pending'),
-      orderBy('createdAt', 'desc')
-    );
+    const qy = query(bookingsCollection, where('status', '==', 'pending'), orderBy('createdAt', 'desc'));
     const snapshot = await getDocs(qy);
 
     return snapshot.docs.map(
@@ -502,11 +503,7 @@ export const notificationService = {
   },
 
   async getNotificationsByUser(userId: string): Promise<Notification[]> {
-    const qy = query(
-      notificationsCollection,
-      where('userId', '==', userId),
-      orderBy('createdAt', 'desc')
-    );
+    const qy = query(notificationsCollection, where('userId', '==', userId), orderBy('createdAt', 'desc'));
     const snapshot = await getDocs(qy);
 
     return snapshot.docs.map(
@@ -525,11 +522,7 @@ export const notificationService = {
   },
 
   async markAllAsRead(userId: string): Promise<void> {
-    const qy = query(
-      notificationsCollection,
-      where('userId', '==', userId),
-      where('read', '==', false)
-    );
+    const qy = query(notificationsCollection, where('userId', '==', userId), where('read', '==', false));
     const snapshot = await getDocs(qy);
     const updatePromises = snapshot.docs.map((d: QueryDocumentSnapshot<DocumentData>) =>
       updateDoc(d.ref, { read: true })
