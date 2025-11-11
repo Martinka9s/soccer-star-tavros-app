@@ -28,17 +28,17 @@
   --color-primary-dark: #4338ca;
 }
 
-/* Light mode colors */
+/* Light mode colors - Your Brand Palette */
 .light {
-  --color-bg: #e5e7eb;
-  --color-bg-lighter: #f9fafb;
-  --color-bg-card: #ffffff;
-  --color-text-primary: #111827;
-  --color-text-secondary: #374151;
-  --color-text-tertiary: #6b7280;
-  --color-border: #d1d5db;
-  --color-primary: #4f46e5;
-  --color-primary-dark: #4338ca;
+  --color-bg: #e2e8f0; /* slate-200 - Page Canvas */
+  --color-bg-lighter: #f8fafc; /* slate-50 - Content Surfaces */
+  --color-bg-card: #f1f5f9; /* slate-100 - Slightly Darker Surfaces */
+  --color-text-primary: #111827; /* gray-900 - Primary Text */
+  --color-text-secondary: #374151; /* gray-700 - Secondary Text */
+  --color-text-tertiary: #6b7280; /* gray-500 - Subtle Text */
+  --color-border: #e2e8f0; /* slate-200/300 - Standard Borders */
+  --color-primary: #6B2FB5; /* Brand Purple */
+  --color-primary-dark: #5a2596; /* Darker Purple for hover */
 }
 
 body {
