@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { format, addDays, subDays, startOfDay, isBefore, parseISO } from 'date-fns';
+import { el } from 'date-fns/locale';
 import { Booking, PitchType, User } from '../types';
 import { bookingService, notificationService } from '../services/firebaseService';
 import BookingModal from './BookingModal';
@@ -12,7 +13,7 @@ interface CalendarProps {
 }
 
 const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   const [currentDate, setCurrentDate] = useState(new Date());
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -31,6 +32,11 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
   const [activePitch, setActivePitch] = useState<PitchType>('Pitch A');
 
   const dateString = format(currentDate, 'yyyy-MM-dd');
+  
+  // Helper to format dates with locale
+  const formatWithLocale = (date: Date, formatStr: string) => {
+    return format(date, formatStr, { locale: i18n.language === 'el' ? el : undefined });
+  };
 
   useEffect(() => {
     loadBookings();
@@ -303,7 +309,7 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
 
             <div className="text-center">
               <div className="text-xl font-semibold text-gray-900 dark:text-white">
-                {format(currentDate, 'EEEE, MMM d')}
+                {formatWithLocale(currentDate, 'EEEE, MMM d')}
               </div>
             </div>
 
@@ -354,10 +360,10 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
 
             <div className="leading-tight">
               <div className="text-xl font-semibold text-gray-900 dark:text-white">
-                {format(currentDate, 'EEEE')}
+                {formatWithLocale(currentDate, 'EEEE')}
               </div>
               <div className="text-sm text-gray-700 dark:text-gray-300">
-                {format(currentDate, 'MMMM d')}
+                {formatWithLocale(currentDate, 'MMMM d')}
               </div>
             </div>
 
