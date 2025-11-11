@@ -87,15 +87,15 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
   const getCardClasses = (status: 'available' | 'pending' | 'booked' | 'blocked'): string => {
     switch (status) {
       case 'available':
-        return 'bg-gray-50 dark:bg-[#2C3144] hover:bg-gray-100 dark:hover:bg-[#343a52] border border-gray-200 dark:border-transparent';
+        return 'bg-white dark:bg-[#2C3144] hover:bg-blue-50 dark:hover:bg-[#343a52] border-2 border-gray-300 dark:border-transparent shadow-sm';
       case 'pending':
-        return 'bg-amber-50 dark:bg-amber-600/30 hover:bg-amber-100 dark:hover:bg-amber-600/40 border border-amber-200 dark:border-amber-500/40';
+        return 'bg-amber-50 dark:bg-amber-600/30 hover:bg-amber-100 dark:hover:bg-amber-600/40 border-2 border-amber-400 dark:border-amber-500/40 shadow-md';
       case 'booked':
-        return 'bg-red-50 dark:bg-red-600/30 hover:bg-red-100 dark:hover:bg-red-600/40 border border-red-200 dark:border-red-500/40';
+        return 'bg-red-50 dark:bg-red-600/30 hover:bg-red-100 dark:hover:bg-red-600/40 border-2 border-red-400 dark:border-red-500/40 shadow-md';
       case 'blocked':
-        return 'bg-gray-200 dark:bg-slate-700/60 hover:bg-gray-300 dark:hover:bg-slate-700/70 border border-gray-300 dark:border-transparent';
+        return 'bg-gray-300 dark:bg-slate-700/60 hover:bg-gray-400 dark:hover:bg-slate-700/70 border-2 border-gray-400 dark:border-transparent shadow-sm';
       default:
-        return 'bg-gray-50 dark:bg-[#2C3144] hover:bg-gray-100 dark:hover:bg-[#343a52] border border-gray-200 dark:border-transparent';
+        return 'bg-white dark:bg-[#2C3144] hover:bg-blue-50 dark:hover:bg-[#343a52] border-2 border-gray-300 dark:border-transparent shadow-sm';
     }
   };
 
