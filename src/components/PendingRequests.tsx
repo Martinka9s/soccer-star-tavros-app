@@ -13,7 +13,6 @@ const PendingRequests: React.FC<PendingRequestsProps> = ({ onCountChange }) => {
   const { t } = useTranslation();
   const [pendingBookings, setPendingBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
-  // Track which booking is being processed to avoid duplicate clicks
   const [busyId, setBusyId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -47,20 +46,16 @@ const PendingRequests: React.FC<PendingRequestsProps> = ({ onCountChange }) => {
   const handleApprove = async (booking: Booking) => {
     if (busyId) return;
     setBusyId(booking.id);
-
-    // Optimistic: remove from UI immediately
     safeRemoveFromUI(booking.id);
 
     try {
-      // ✅ Change status to 'booked' and preserve userId
       await bookingService.updateBooking(booking.id, {
         status: 'booked',
-        userId: booking.userId, // Preserve the userId so it shows in user's bookings
+        userId: booking.userId,
       });
     } catch (error: any) {
-      // Ignore "not-found" – another admin may have processed it already
       if (error?.code !== 'not-found') {
-        console.error('Error approving booking (status update):', error);
+        console.error('Error approving booking:', error);
         alert('Failed to approve booking');
         await loadPendingBookings();
       }
@@ -68,7 +63,6 @@ const PendingRequests: React.FC<PendingRequestsProps> = ({ onCountChange }) => {
       return;
     }
 
-    // Notifications should not block approval UX (non-blocking try/catch)
     if (booking.userId) {
       try {
         await notificationService.createNotification(
@@ -85,7 +79,7 @@ const PendingRequests: React.FC<PendingRequestsProps> = ({ onCountChange }) => {
           })
         );
       } catch (e) {
-        console.warn('Notification write failed (non-blocking):', e);
+        console.warn('Notification write failed:', e);
       }
     }
 
@@ -97,13 +91,11 @@ const PendingRequests: React.FC<PendingRequestsProps> = ({ onCountChange }) => {
     if (!window.confirm('Are you sure you want to reject this booking?')) return;
 
     setBusyId(booking.id);
-    // Optimistic: remove from UI immediately
     safeRemoveFromUI(booking.id);
 
     try {
       await bookingService.deleteBooking(booking.id);
     } catch (error: any) {
-      // Ignore "not-found" – already removed elsewhere
       if (error?.code !== 'not-found') {
         console.error('Error rejecting booking:', error);
         alert('Failed to reject booking');
@@ -113,7 +105,6 @@ const PendingRequests: React.FC<PendingRequestsProps> = ({ onCountChange }) => {
       }
     }
 
-    // Non-blocking notification on rejection
     if (booking.userId) {
       try {
         await notificationService.createNotification(
@@ -130,7 +121,7 @@ const PendingRequests: React.FC<PendingRequestsProps> = ({ onCountChange }) => {
           })
         );
       } catch (e) {
-        console.warn('Notification write failed (non-blocking):', e);
+        console.warn('Notification write failed:', e);
       }
     }
 
@@ -139,7 +130,7 @@ const PendingRequests: React.FC<PendingRequestsProps> = ({ onCountChange }) => {
 
   if (loading) {
     return (
-      <div className="text-center py-12 text-gray-400">
+      <div className="text-center py-12 text-gray-600 dark:text-gray-400">
         Loading pending requests...
       </div>
     );
@@ -147,9 +138,9 @@ const PendingRequests: React.FC<PendingRequestsProps> = ({ onCountChange }) => {
 
   if (pendingBookings.length === 0) {
     return (
-      <div className="bg-dark-lighter border border-gray-700 rounded-lg p-12 text-center">
-        <div className="text-gray-400 text-lg">No pending requests</div>
-        <p className="text-gray-500 text-sm mt-2">
+      <div className="bg-slate-50 dark:bg-dark-lighter border border-slate-200 dark:border-gray-700 rounded-lg p-12 text-center">
+        <div className="text-gray-700 dark:text-gray-400 text-lg">No pending requests</div>
+        <p className="text-gray-600 dark:text-gray-500 text-sm mt-2">
           All booking requests have been processed
         </p>
       </div>
@@ -158,7 +149,7 @@ const PendingRequests: React.FC<PendingRequestsProps> = ({ onCountChange }) => {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-2xl font-bold text-white mb-6">
+      <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
         {t('pendingRequests')} ({pendingBookings.length})
       </h2>
 
@@ -168,64 +159,63 @@ const PendingRequests: React.FC<PendingRequestsProps> = ({ onCountChange }) => {
           const durationLabel = `${booking.duration} ${
             booking.duration === 1 ? t('hour') : t('hours')
           }`;
-
           const isBusy = busyId === booking.id;
 
           return (
             <div
               key={booking.id}
-              className="bg-dark-lighter border border-amber-600 rounded-lg p-6 hover:border-amber-500 transition-colors"
+              className="bg-slate-50 dark:bg-dark-lighter border-2 border-amber-400 dark:border-amber-600 rounded-lg p-6 hover:border-amber-500 dark:hover:border-amber-500 transition-colors shadow-sm"
             >
               <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                 <div className="flex-1 space-y-3">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-xl font-semibold text-white">{booking.pitchType}</h3>
+                    <h3 className="text-xl font-semibold text-gray-900 dark:text-white">{booking.pitchType}</h3>
                     <span className="px-3 py-1 bg-amber-500 text-white rounded-full text-xs font-medium">
                       {t('pending')}
                     </span>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-                    <div className="flex items-center space-x-2 text-gray-300">
-                      <CalendarIcon size={16} className="text-gray-400" />
+                    <div className="flex items-center space-x-2 text-gray-700 dark:text-gray-300">
+                      <CalendarIcon size={16} className="text-gray-600 dark:text-gray-400" />
                       <span>{dateLabel}</span>
                     </div>
 
-                    <div className="flex items-center space-x-2 text-gray-300">
-                      <Clock size={16} className="text-gray-400" />
+                    <div className="flex items-center space-x-2 text-gray-700 dark:text-gray-300">
+                      <Clock size={16} className="text-gray-600 dark:text-gray-400" />
                       <span>
                         {booking.startTime} ({durationLabel})
                       </span>
                     </div>
 
-                    {booking.userEmail ? (
-                      <div className="flex items-center space-x-2 text-gray-300">
-                        <UserIcon size={16} className="text-gray-400" />
+                    {booking.userEmail && (
+                      <div className="flex items-center space-x-2 text-gray-700 dark:text-gray-300">
+                        <UserIcon size={16} className="text-gray-600 dark:text-gray-400" />
                         <span>{booking.userEmail}</span>
                       </div>
-                    ) : null}
+                    )}
 
-                    {booking.phoneNumber ? (
-                      <div className="flex items-center space-x-2 text-gray-300">
-                        <span className="text-gray-400">📞</span>
+                    {booking.phoneNumber && (
+                      <div className="flex items-center space-x-2 text-gray-700 dark:text-gray-300">
+                        <span className="text-gray-600 dark:text-gray-400">📞</span>
                         <span>{booking.phoneNumber}</span>
                       </div>
-                    ) : null}
+                    )}
                   </div>
 
-                  {booking.teamName ? (
+                  {booking.teamName && (
                     <div className="text-sm">
-                      <span className="text-gray-400">Team: </span>
-                      <span className="text-white font-medium">{booking.teamName}</span>
+                      <span className="text-gray-600 dark:text-gray-400">Team: </span>
+                      <span className="text-gray-900 dark:text-white font-medium">{booking.teamName}</span>
                     </div>
-                  ) : null}
+                  )}
 
-                  {booking.notes ? (
-                    <div className="p-3 bg-dark rounded text-sm text-gray-300">
-                      <span className="text-gray-400">Notes: </span>
+                  {booking.notes && (
+                    <div className="p-3 bg-slate-100 dark:bg-dark rounded text-sm text-gray-700 dark:text-gray-300">
+                      <span className="text-gray-600 dark:text-gray-400">Notes: </span>
                       {booking.notes}
                     </div>
-                  ) : null}
+                  )}
                 </div>
 
                 <div className="flex lg:flex-col gap-3">
