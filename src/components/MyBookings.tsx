@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Calendar as CalendarIcon, Clock, Users, ChevronLeft, ChevronRight } from 'lucide-react';
 import { format, parseISO, subMonths, addMonths, addDays, isBefore, addMinutes, compareAsc } from 'date-fns';
+import { el } from 'date-fns/locale';
 import { Booking, User } from '../types';
 import { bookingService } from '../services/firebaseService';
 import BookingModal from './BookingModal';
@@ -66,7 +67,7 @@ function byDesc(a: Date, b: Date) {
 }
 
 const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -74,6 +75,11 @@ const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
   const [selectedDate, setSelectedDate] = useState<string>('');
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 4;
+  
+  // Helper to format dates with locale
+  const formatWithLocale = (date: Date, formatStr: string) => {
+    return format(date, formatStr, { locale: i18n.language === 'el' ? el : undefined });
+  };
 
   // Edit modal state
   const [showEditModal, setShowEditModal] = useState(false);
@@ -289,7 +295,7 @@ const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
               <div className="flex items-center space-x-1">
                 <CalendarIcon size={16} />
                 {/* date string is safe for parseISO to render a label */}
-                <span>{format(parseISO(booking.date), 'MMM d, yyyy')}</span>
+                <span>{formatWithLocale(parseISO(booking.date), 'MMM d, yyyy')}</span>
               </div>
               <div className="flex items-center space-x-1">
                 <Clock size={16} />
@@ -390,7 +396,7 @@ const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
                 />
                 <div className="px-4 py-2 bg-slate-100 dark:bg-dark border border-slate-300 dark:border-gray-600 rounded text-gray-900 dark:text-white text-sm hover:border-[#6B2FB5] dark:hover:border-primary transition-colors flex items-center gap-2 pointer-events-none">
                   <CalendarIcon size={16} />
-                  {selectedDate ? format(parseISO(selectedDate), 'MMM d, yyyy') : 'Filter by date'}
+                  {selectedDate ? formatWithLocale(parseISO(selectedDate), 'MMM d, yyyy') : 'Filter by date'}
                 </div>
               </div>
 
@@ -408,7 +414,7 @@ const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
 
         {pastBookings.length === 0 && selectedDate && (
           <div className="bg-slate-50 dark:bg-dark-lighter border border-slate-200 dark:border-gray-700 rounded-lg p-8 text-center text-gray-600 dark:text-gray-400">
-            No bookings found for {format(parseISO(selectedDate), 'MMM d, yyyy')}
+            No bookings found for {formatWithLocale(parseISO(selectedDate), 'MMM d, yyyy')}
           </div>
         )}
 
