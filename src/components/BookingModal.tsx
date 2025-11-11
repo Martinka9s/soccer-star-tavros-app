@@ -37,6 +37,10 @@ const BookingModal: React.FC<BookingModalProps> = ({
   const [status, setStatus] = useState<'pending' | 'booked' | 'blocked'>('pending');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  
+  // NEW: Editable date and time for admin
+  const [editableDate, setEditableDate] = useState('');
+  const [editableTime, setEditableTime] = useState('');
 
   // NEW: Admin team selection
   const [bookingMode, setBookingMode] = useState<BookingMode>('guest');
@@ -66,12 +70,19 @@ const BookingModal: React.FC<BookingModalProps> = ({
   };
 
   useEffect(() => {
+    if (selectedSlot) {
+      setEditableDate(selectedSlot.date);
+      setEditableTime(selectedSlot.time);
+    }
+    
     if (existingBooking) {
       setDuration(existingBooking.duration);
       setPhoneNumber(existingBooking.phoneNumber || '');
       setTeamName(existingBooking.teamName || '');
       setNotes(existingBooking.notes || '');
       setStatus(existingBooking.status as any);
+      setEditableDate(existingBooking.date);
+      setEditableTime(existingBooking.startTime);
 
       // Detect booking mode from existing booking
       if (existingBooking.homeTeam && existingBooking.awayTeam) {
@@ -96,7 +107,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
       setSelectedTeam('');
     }
     setError('');
-  }, [existingBooking, user, isOpen, availableTeams]);
+  }, [existingBooking, user, isOpen, availableTeams, selectedSlot]);
 
   if (!isOpen || !selectedSlot) return null;
 
@@ -181,8 +192,8 @@ const BookingModal: React.FC<BookingModalProps> = ({
     try {
       const bookingData: any = {
         pitchType: selectedSlot.pitch,
-        date: selectedSlot.date,
-        startTime: selectedSlot.time,
+        date: isAdmin && isEditMode ? editableDate : selectedSlot.date,
+        startTime: isAdmin && isEditMode ? editableTime : selectedSlot.time,
         duration,
         status: isAdmin && isBlocked ? 'blocked' : (isAdmin ? status : 'pending'),
         notes: notes.trim(),
@@ -273,13 +284,35 @@ const BookingModal: React.FC<BookingModalProps> = ({
               <span className="text-gray-400">Pitch:</span>
               <span className="ml-2 text-white">{selectedSlot.pitch}</span>
             </div>
+            
+            {/* Date - Editable for admin in edit mode */}
             <div>
               <span className="text-gray-400">Date:</span>
-              <span className="ml-2 text-white">{selectedSlot.date}</span>
+              {isAdmin && isEditMode ? (
+                <input
+                  type="date"
+                  value={editableDate}
+                  onChange={(e) => setEditableDate(e.target.value)}
+                  className="ml-2 px-2 py-1 bg-dark border border-gray-600 rounded text-white text-sm focus:outline-none focus:border-primary"
+                />
+              ) : (
+                <span className="ml-2 text-white">{editableDate}</span>
+              )}
             </div>
-            <div>
+            
+            {/* Time - Editable for admin in edit mode */}
+            <div className="col-span-2">
               <span className="text-gray-400">Time:</span>
-              <span className="ml-2 text-white">{selectedSlot.time}</span>
+              {isAdmin && isEditMode ? (
+                <input
+                  type="time"
+                  value={editableTime}
+                  onChange={(e) => setEditableTime(e.target.value)}
+                  className="ml-2 px-2 py-1 bg-dark border border-gray-600 rounded text-white text-sm focus:outline-none focus:border-primary"
+                />
+              ) : (
+                <span className="ml-2 text-white">{editableTime}</span>
+              )}
             </div>
           </div>
 
