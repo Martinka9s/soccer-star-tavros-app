@@ -186,43 +186,43 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, onAuthClick, activeTab,
                 <div className="relative profile-menu-container md:hidden">
                   <button
                     onClick={() => setShowProfileMenu(!showProfileMenu)}
-                    className="p-2 text-gray-300 hover:text-white transition-colors"
+                    className="p-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
                     aria-label="User menu"
                   >
                     <User size={20} />
                   </button>
                   
                   {showProfileMenu && (
-                    <div className="absolute right-0 mt-2 w-64 bg-gray-800 rounded-lg shadow-xl border border-gray-700 overflow-hidden z-50">
-                      <div className="px-4 py-3 border-b border-gray-700">
+                    <div className="absolute right-0 mt-2 w-64 bg-slate-50 dark:bg-gray-800 rounded-lg shadow-xl border border-slate-200 dark:border-gray-700 overflow-hidden z-50">
+                      <div className="px-4 py-3 border-b border-slate-200 dark:border-gray-700">
                         <div className="flex items-center gap-2 mb-1">
-                          <User size={16} className="text-gray-400" />
-                          <span className="text-xs text-gray-400">Email</span>
+                          <User size={16} className="text-gray-600 dark:text-gray-400" />
+                          <span className="text-xs text-gray-600 dark:text-gray-400">Email</span>
                         </div>
-                        <p className="text-sm text-white break-all">{user.email}</p>
+                        <p className="text-sm text-gray-900 dark:text-white break-all">{user.email}</p>
                         {user.role === 'admin' && (
-                          <span className="inline-block mt-2 text-xs bg-primary px-2 py-1 rounded">Admin</span>
+                          <span className="inline-block mt-2 text-xs bg-[#6B2FB5] dark:bg-primary px-2 py-1 rounded text-white">Admin</span>
                         )}
                       </div>
 
                       {/* Google Calendar - Admin only */}
                       {user.role === 'admin' && (
-                        <div className="px-4 py-3 border-b border-gray-700">
+                        <div className="px-4 py-3 border-b border-slate-200 dark:border-gray-700">
                           <div className="flex items-center gap-2 mb-2">
-                            <Calendar size={16} className="text-gray-400" />
-                            <span className="text-xs text-gray-400">Google Calendar</span>
+                            <Calendar size={16} className="text-gray-600 dark:text-gray-400" />
+                            <span className="text-xs text-gray-600 dark:text-gray-400">Google Calendar</span>
                           </div>
                           {isCalendarConnected ? (
                             <div>
                               <div className="flex items-center gap-2 mb-2">
-                                <span className="text-xs text-green-400">✓ Connected</span>
+                                <span className="text-xs text-green-600 dark:text-green-400">✓ Connected</span>
                               </div>
                               {calendarEmail && (
-                                <p className="text-xs text-gray-400 mb-2 break-all">{calendarEmail}</p>
+                                <p className="text-xs text-gray-600 dark:text-gray-400 mb-2 break-all">{calendarEmail}</p>
                               )}
                               <button
                                 onClick={handleCalendarDisconnect}
-                                className="text-xs text-red-400 hover:text-red-300"
+                                className="text-xs text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
                               >
                                 Disconnect
                               </button>
@@ -230,7 +230,7 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, onAuthClick, activeTab,
                           ) : (
                             <button
                               onClick={handleCalendarConnect}
-                              className="text-xs text-primary hover:text-primary-light"
+                              className="text-xs text-[#6B2FB5] dark:text-primary hover:text-[#5a2596] dark:hover:text-primary-light"
                             >
                               Connect Calendar
                             </button>
@@ -243,7 +243,7 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, onAuthClick, activeTab,
                           setShowProfileMenu(false);
                           onLogout();
                         }}
-                        className="w-full px-4 py-3 flex items-center gap-3 hover:bg-gray-700 transition-colors text-left text-white"
+                        className="w-full px-4 py-3 flex items-center gap-3 hover:bg-slate-100 dark:hover:bg-gray-700 transition-colors text-left text-gray-900 dark:text-white"
                       >
                         <LogOut size={18} />
                         <span>{t('logout')}</span>
@@ -254,11 +254,11 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, onAuthClick, activeTab,
 
                 {/* Profile - Desktop: User pill + calendar + logout */}
                 <div className="hidden md:flex items-center space-x-2">
-                  <div className="flex items-center space-x-2 px-3 py-2 bg-dark rounded-lg">
-                    <User size={18} className="text-gray-400" />
-                    <span className="text-sm text-gray-300">{user.email}</span>
+                  <div className="flex items-center space-x-2 px-3 py-2 bg-slate-100 dark:bg-dark rounded-lg">
+                    <User size={18} className="text-gray-600 dark:text-gray-400" />
+                    <span className="text-sm text-gray-900 dark:text-gray-300">{user.email}</span>
                     {user.role === 'admin' && (
-                      <span className="text-xs bg-primary px-2 py-1 rounded">Admin</span>
+                      <span className="text-xs bg-[#6B2FB5] dark:bg-primary px-2 py-1 rounded text-white">Admin</span>
                     )}
                   </div>
                   
@@ -268,8 +268,8 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, onAuthClick, activeTab,
                       onClick={isCalendarConnected ? handleCalendarDisconnect : handleCalendarConnect}
                       className={`p-2 transition-colors ${
                         isCalendarConnected 
-                          ? 'text-green-400 hover:text-green-300' 
-                          : 'text-gray-300 hover:text-white'
+                          ? 'text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300' 
+                          : 'text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
                       }`}
                       title={isCalendarConnected ? 'Google Calendar Connected' : 'Connect Google Calendar'}
                       aria-label={isCalendarConnected ? 'Google Calendar Connected' : 'Connect Google Calendar'}
@@ -280,7 +280,7 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, onAuthClick, activeTab,
                   
                   <button
                     onClick={onLogout}
-                    className="p-2 text-gray-300 hover:text-white transition-colors"
+                    className="p-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
                     title={t('logout') as string}
                     aria-label={t('logout') as string}
                   >
@@ -302,15 +302,15 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, onAuthClick, activeTab,
 
       {/* Mobile sub-bar (separate row under top bar) */}
       {user && (
-        <div className="md:hidden border-t border-gray-700 bg-dark-lighter">
+        <div className="md:hidden border-t border-slate-200 dark:border-gray-700 bg-slate-50 dark:bg-dark-lighter">
           <div className="container mx-auto px-4 py-2">
             <div className="grid grid-cols-2 gap-2">
               <button
                 onClick={() => onTabChange('calendar')}
                 className={`px-4 py-2 rounded-lg text-center transition-colors text-sm ${
                   activeTab === 'calendar'
-                    ? 'bg-primary text-white'
-                    : 'text-gray-300 bg-dark hover:bg-dark/80 hover:text-white'
+                    ? 'bg-[#6B2FB5] text-white'
+                    : 'text-gray-700 dark:text-gray-300 bg-slate-100 dark:bg-dark hover:bg-slate-200 dark:hover:bg-dark/80 hover:text-gray-900 dark:hover:text-white'
                 }`}
                 aria-current={activeTab === 'calendar' ? 'page' : undefined}
               >
@@ -320,8 +320,8 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, onAuthClick, activeTab,
                 onClick={() => onTabChange('myBookings')}
                 className={`px-4 py-2 rounded-lg text-center transition-colors text-sm relative ${
                   activeTab === 'myBookings'
-                    ? 'bg-primary text-white'
-                    : 'text-gray-300 bg-dark hover:bg-dark/80 hover:text-white'
+                    ? 'bg-[#6B2FB5] text-white'
+                    : 'text-gray-700 dark:text-gray-300 bg-slate-100 dark:bg-dark hover:bg-slate-200 dark:hover:bg-dark/80 hover:text-gray-900 dark:hover:text-white'
                 }`}
                 aria-current={activeTab === 'myBookings' ? 'page' : undefined}
               >
@@ -338,8 +338,8 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, onAuthClick, activeTab,
                   onClick={() => onTabChange('pendingRequests')}
                   className={`w-full px-4 py-2 rounded-lg text-center transition-colors text-sm relative ${
                     activeTab === 'pendingRequests'
-                      ? 'bg-primary text-white'
-                      : 'text-gray-300 bg-dark hover:bg-dark/80 hover:text-white'
+                      ? 'bg-[#6B2FB5] text-white'
+                      : 'text-gray-700 dark:text-gray-300 bg-slate-100 dark:bg-dark hover:bg-slate-200 dark:hover:bg-dark/80 hover:text-gray-900 dark:hover:text-white'
                   }`}
                   aria-current={activeTab === 'pendingRequests' ? 'page' : undefined}
                 >
