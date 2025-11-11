@@ -233,14 +233,14 @@ const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
 
     const cardContent = (
       <div
-        className={`bg-dark-lighter border rounded-lg p-4 transition-colors h-full border-gray-700 ${
-          canEdit ? 'hover:border-primary' : ''
+        className={`bg-slate-50 dark:bg-dark-lighter border rounded-lg p-4 transition-colors h-full border-slate-200 dark:border-gray-700 ${
+          canEdit ? 'hover:border-[#6B2FB5] dark:hover:border-primary' : ''
         }`}
       >
         <div className="flex items-start justify-between mb-3">
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-1">
-              <h3 className="text-lg font-semibold text-white">{booking.pitchType}</h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{booking.pitchType}</h3>
               {isMatch && (
                 <span className="text-xs bg-purple-600 text-white px-2 py-1 rounded-full flex items-center gap-1">
                   <Users size={12} />
@@ -250,11 +250,11 @@ const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
             </div>
 
             {isMatch ? (
-              <div className="mt-2 text-white">
+              <div className="mt-2 text-gray-900 dark:text-white">
                 <div className="space-y-0.5">
                   <span
                     className={`block w-full overflow-hidden text-ellipsis whitespace-nowrap ${
-                      user.teamName === booking.homeTeam ? 'text-primary font-bold' : ''
+                      user.teamName === booking.homeTeam ? 'text-[#6B2FB5] dark:text-primary font-bold' : ''
                     }`}
                     title={booking.homeTeam}
                     aria-label={booking.homeTeam}
@@ -263,7 +263,7 @@ const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
                   </span>
                   <span
                     className={`block w-full overflow-hidden text-ellipsis whitespace-nowrap ${
-                      user.teamName === booking.awayTeam ? 'text-primary font-bold' : ''
+                      user.teamName === booking.awayTeam ? 'text-[#6B2FB5] dark:text-primary font-bold' : ''
                     }`}
                     title={booking.awayTeam}
                     aria-label={booking.awayTeam}
@@ -274,9 +274,9 @@ const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
               </div>
             ) : booking.teamName ? (
               <div className="mt-2">
-                <span className="text-sm text-gray-400">{t('team') || 'Team'}: </span>
+                <span className="text-sm text-gray-600 dark:text-gray-400">{t('team') || 'Team'}: </span>
                 <span
-                  className="text-sm text-white block w-full overflow-hidden text-ellipsis whitespace-nowrap"
+                  className="text-sm text-gray-900 dark:text-white block w-full overflow-hidden text-ellipsis whitespace-nowrap"
                   title={booking.teamName}
                   aria-label={booking.teamName}
                 >
@@ -285,7 +285,7 @@ const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
               </div>
             ) : null}
 
-            <div className="flex items-center space-x-4 mt-3 text-sm text-gray-400">
+            <div className="flex items-center space-x-4 mt-3 text-sm text-gray-600 dark:text-gray-400">
               <div className="flex items-center space-x-1">
                 <CalendarIcon size={16} />
                 {/* date string is safe for parseISO to render a label */}
@@ -313,16 +313,16 @@ const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
 
         {!isMatch && booking.phoneNumber ? (
           <div className="mt-2">
-            <span className="text-sm text-gray-400">{t('phone') || 'Phone'}: </span>
-            <span className="text-sm text-white block w-full overflow-hidden text-ellipsis whitespace-nowrap">
+            <span className="text-sm text-gray-600 dark:text-gray-400">{t('phone') || 'Phone'}: </span>
+            <span className="text-sm text-gray-900 dark:text-white block w-full overflow-hidden text-ellipsis whitespace-nowrap">
               {booking.phoneNumber}
             </span>
           </div>
         ) : null}
 
         {booking.notes ? (
-          <div className="mt-3 p-2 bg-dark rounded text-sm text-gray-300">
-            <span className="text-gray-400">{t('notes') || 'Notes'}: </span>
+          <div className="mt-3 p-2 bg-slate-100 dark:bg-dark rounded text-sm text-gray-700 dark:text-gray-300">
+            <span className="text-gray-600 dark:text-gray-400">{t('notes') || 'Notes'}: </span>
             <span className="block w-full overflow-hidden text-ellipsis whitespace-nowrap">
               {booking.notes}
             </span>
@@ -348,16 +348,16 @@ const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
   };
 
   if (loading) {
-    return <div className="text-center py-12 text-gray-400">Loading your bookings...</div>;
+    return <div className="text-center py-12 text-gray-600 dark:text-gray-400">Loading your bookings...</div>;
   }
 
   return (
     <div className="space-y-8">
       {/* Upcoming Bookings */}
       <div>
-        <h2 className="text-2xl font-bold text-white mb-4">{t('upcomingBookings')}</h2>
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">{t('upcomingBookings')}</h2>
         {upcomingBookings.length === 0 ? (
-          <div className="bg-dark-lighter border border-gray-700 rounded-lg p-8 text-center text-gray-400">
+          <div className="bg-slate-50 dark:bg-dark-lighter border border-slate-200 dark:border-gray-700 rounded-lg p-8 text-center text-gray-600 dark:text-gray-400">
             {t('noBookings')}
           </div>
         ) : (
@@ -370,7 +370,7 @@ const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
       {/* Past Bookings */}
       <div>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
-          <h2 className="text-2xl font-bold text-white">{t('pastBookings')}</h2>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{t('pastBookings')}</h2>
 
           {/* Admin Date Filter */}
           {isAdmin && (
@@ -388,7 +388,7 @@ const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
                     (e.target as HTMLInputElement).showPicker?.();
                   }}
                 />
-                <div className="px-4 py-2 bg-dark border border-gray-600 rounded text-white text-sm hover:border-primary transition-colors flex items-center gap-2 pointer-events-none">
+                <div className="px-4 py-2 bg-slate-100 dark:bg-dark border border-slate-300 dark:border-gray-600 rounded text-gray-900 dark:text-white text-sm hover:border-[#6B2FB5] dark:hover:border-primary transition-colors flex items-center gap-2 pointer-events-none">
                   <CalendarIcon size={16} />
                   {selectedDate ? format(parseISO(selectedDate), 'MMM d, yyyy') : 'Filter by date'}
                 </div>
@@ -397,7 +397,7 @@ const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
               {selectedDate && (
                 <button
                   onClick={() => setSelectedDate('')}
-                  className="px-3 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded text-sm"
+                  className="px-3 py-2 bg-slate-200 dark:bg-gray-600 hover:bg-slate-300 dark:hover:bg-gray-700 text-gray-900 dark:text-white rounded text-sm"
                 >
                   Clear
                 </button>
@@ -407,13 +407,13 @@ const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
         </div>
 
         {pastBookings.length === 0 && selectedDate && (
-          <div className="bg-dark-lighter border border-gray-700 rounded-lg p-8 text-center text-gray-400">
+          <div className="bg-slate-50 dark:bg-dark-lighter border border-slate-200 dark:border-gray-700 rounded-lg p-8 text-center text-gray-600 dark:text-gray-400">
             No bookings found for {format(parseISO(selectedDate), 'MMM d, yyyy')}
           </div>
         )}
 
         {pastBookings.length === 0 && !selectedDate && (
-          <div className="bg-dark-lighter border border-gray-700 rounded-lg p-8 text-center text-gray-400">
+          <div className="bg-slate-50 dark:bg-dark-lighter border border-slate-200 dark:border-gray-700 rounded-lg p-8 text-center text-gray-600 dark:text-gray-400">
             {t('noBookings')}
           </div>
         )}
@@ -430,19 +430,19 @@ const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
                 <button
                   onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                   disabled={currentPage === 1}
-                  className="p-2 bg-dark border border-gray-600 rounded text-gray-300 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="p-2 bg-slate-100 dark:bg-dark border border-slate-300 dark:border-gray-600 rounded text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <ChevronLeft size={20} />
                 </button>
 
-                <span className="text-gray-300">
+                <span className="text-gray-700 dark:text-gray-300">
                   Page {currentPage} of {totalPages}
                 </span>
 
                 <button
                   onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                   disabled={currentPage === totalPages}
-                  className="p-2 bg-dark border border-gray-600 rounded text-gray-300 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="p-2 bg-slate-100 dark:bg-dark border border-slate-300 dark:border-gray-600 rounded text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <ChevronRight size={20} />
                 </button>
