@@ -1,110 +1,55 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+export type UserRole = 'user' | 'admin';
+export type BookingStatus = 'available' | 'pending' | 'booked' | 'blocked';
+export type PitchType = 'Pitch A' | 'Pitch B';
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-:root {
-  font-family: 'Inter', system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
-
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+export interface User {
+  id: string;
+  email: string;
+  role: UserRole;
+  teamName?: string; // NEW: User's team name
+  phoneNumber?: string;
+  createdAt: Date;
 }
 
-/* Dark mode colors (default) */
-.dark {
-  --color-bg: #1a1d2e;
-  --color-bg-lighter: #22263a;
-  --color-bg-card: #2c3144;
-  --color-text-primary: #ffffff;
-  --color-text-secondary: #d1d5db;
-  --color-text-tertiary: #9ca3af;
-  --color-border: #374151;
-  --color-primary: #4f46e5;
-  --color-primary-dark: #4338ca;
+export interface Booking {
+  id: string;
+  pitchType: PitchType;
+  date: string; // YYYY-MM-DD format
+  startTime: string; // HH:mm format
+  duration: number; // in hours
+  status: BookingStatus;
+  
+  // NEW: Match between two teams (when admin creates)
+  homeTeam?: string;
+  awayTeam?: string;
+  homeTeamUserId?: string;
+  awayTeamUserId?: string;
+  
+  // Existing: Single user booking
+  userId?: string;
+  userEmail?: string;
+  teamName?: string;
+  phoneNumber?: string;
+  notes?: string;
+  
+  createdAt: Date;
+  updatedAt: Date;
 }
 
-/* Light mode colors - Your Brand Palette */
-.light {
-  --color-bg: #e2e8f0; /* slate-200 - Page Canvas */
-  --color-bg-lighter: #f8fafc; /* slate-50 - Content Surfaces */
-  --color-bg-card: #f1f5f9; /* slate-100 - Slightly Darker Surfaces */
-  --color-text-primary: #111827; /* gray-900 - Primary Text */
-  --color-text-secondary: #374151; /* gray-700 - Secondary Text */
-  --color-text-tertiary: #6b7280; /* gray-500 - Subtle Text */
-  --color-border: #e2e8f0; /* slate-200/300 - Standard Borders */
-  --color-primary: #6B2FB5; /* Brand Purple */
-  --color-primary-dark: #5a2596; /* Darker Purple for hover */
+export interface Notification {
+  id: string;
+  userId: string;
+  type: 'approved' | 'rejected' | 'cancelled' | 'match_scheduled'; // NEW type
+  bookingId: string;
+  pitchType: PitchType;
+  date: string;
+  startTime: string;
+  message: string;
+  read: boolean;
+  createdAt: Date;
 }
 
-body {
-  margin: 0;
-  min-height: 100vh;
-  background-color: var(--color-bg);
-  color: var(--color-text-primary);
-  transition: background-color 0.3s ease, color 0.3s ease;
-}
-
-/* Scrollbar styling */
-::-webkit-scrollbar {
-  width: 10px;
-}
-
-.dark ::-webkit-scrollbar-track {
-  background: #1a1d2e;
-}
-
-.light ::-webkit-scrollbar-track {
-  background: #f9fafb;
-}
-
-.dark ::-webkit-scrollbar-thumb {
-  background: #4b5563;
-  border-radius: 5px;
-}
-
-.light ::-webkit-scrollbar-thumb {
-  background: #d1d5db;
-  border-radius: 5px;
-}
-
-.dark ::-webkit-scrollbar-thumb:hover {
-  background: #6b7280;
-}
-
-.light ::-webkit-scrollbar-thumb:hover {
-  background: #9ca3af;
-}
-
-/* Input autofill colors */
-.dark input:-webkit-autofill,
-.dark input:-webkit-autofill:hover,
-.dark input:-webkit-autofill:focus {
-  -webkit-text-fill-color: #ffffff;
-  -webkit-box-shadow: 0 0 0px 1000px #22263a inset;
-  transition: background-color 5000s ease-in-out 0s;
-}
-
-.light input:-webkit-autofill,
-.light input:-webkit-autofill:hover,
-.light input:-webkit-autofill:focus {
-  -webkit-text-fill-color: #111827;
-  -webkit-box-shadow: 0 0 0px 1000px #ffffff inset;
-  transition: background-color 5000s ease-in-out 0s;
-}
-
-/* Smooth transitions for theme changes */
-* {
-  transition-property: background-color, border-color, color;
-  transition-duration: 0.2s;
-  transition-timing-function: ease;
-}
-
-/* Don't transition transforms and opacity */
-*:not(input):not(textarea):not(select) {
-  transition-property: background-color, border-color, color;
-}
+export interface TimeSlot {
+  time: string;
+  hour: number;
+  minute: number;
