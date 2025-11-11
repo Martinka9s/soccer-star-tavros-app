@@ -240,7 +240,7 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, onAuthClick, activeTab,
                   )}
                 </div>
 
-                {/* Profile - Desktop: User pill + logout */}
+                {/* Profile - Desktop: User pill + calendar + logout */}
                 <div className="hidden md:flex items-center space-x-2">
                   <div className="flex items-center space-x-2 px-3 py-2 bg-dark rounded-lg">
                     <User size={18} className="text-gray-400" />
@@ -249,6 +249,23 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, onAuthClick, activeTab,
                       <span className="text-xs bg-primary px-2 py-1 rounded">Admin</span>
                     )}
                   </div>
+                  
+                  {/* Google Calendar Button - Admin Only */}
+                  {user.role === 'admin' && (
+                    <button
+                      onClick={isCalendarConnected ? handleCalendarDisconnect : handleCalendarConnect}
+                      className={`p-2 transition-colors ${
+                        isCalendarConnected 
+                          ? 'text-green-400 hover:text-green-300' 
+                          : 'text-gray-300 hover:text-white'
+                      }`}
+                      title={isCalendarConnected ? 'Google Calendar Connected' : 'Connect Google Calendar'}
+                      aria-label={isCalendarConnected ? 'Google Calendar Connected' : 'Connect Google Calendar'}
+                    >
+                      <Calendar size={20} />
+                    </button>
+                  )}
+                  
                   <button
                     onClick={onLogout}
                     className="p-2 text-gray-300 hover:text-white transition-colors"
