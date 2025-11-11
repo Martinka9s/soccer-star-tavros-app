@@ -85,7 +85,7 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, onAuthClick, activeTab,
   };
 
   return (
-    <header className="bg-white dark:bg-dark-lighter border-b border-gray-300 dark:border-gray-700 shadow-sm dark:shadow-none">
+    <header className="bg-slate-50 dark:bg-dark-lighter border-b border-slate-200 dark:border-gray-700 shadow-sm dark:shadow-none">
       {/* Top row */}
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
@@ -103,8 +103,8 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, onAuthClick, activeTab,
                 onClick={() => onTabChange('calendar')}
                 className={`px-4 py-2 rounded-lg transition-colors ${
                   activeTab === 'calendar'
-                    ? 'bg-primary text-white'
-                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark hover:text-gray-900 dark:hover:text-white'
+                    ? 'bg-[#6B2FB5] text-white'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-dark hover:text-gray-900 dark:hover:text-white'
                 }`}
                 aria-current={activeTab === 'calendar' ? 'page' : undefined}
               >
@@ -114,8 +114,8 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, onAuthClick, activeTab,
                 onClick={() => onTabChange('myBookings')}
                 className={`px-4 py-2 rounded-lg transition-colors relative ${
                   activeTab === 'myBookings'
-                    ? 'bg-primary text-white'
-                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark hover:text-gray-900 dark:hover:text-white'
+                    ? 'bg-[#6B2FB5] text-white'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-dark hover:text-gray-900 dark:hover:text-white'
                 }`}
                 aria-current={activeTab === 'myBookings' ? 'page' : undefined}
               >
@@ -129,8 +129,8 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, onAuthClick, activeTab,
                   onClick={() => onTabChange('pendingRequests')}
                   className={`px-4 py-2 rounded-lg transition-colors relative ${
                     activeTab === 'pendingRequests'
-                      ? 'bg-primary text-white'
-                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark hover:text-gray-900 dark:hover:text-white'
+                      ? 'bg-[#6B2FB5] text-white'
+                      : 'text-gray-700 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-dark hover:text-gray-900 dark:hover:text-white'
                   }`}
                   aria-current={activeTab === 'pendingRequests' ? 'page' : undefined}
                 >
@@ -169,10 +169,10 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, onAuthClick, activeTab,
             <button
               onClick={toggleLanguage}
               aria-label="Language toggle EL/EN"
-              className="hidden md:flex relative h-9 w-24 rounded-lg bg-gray-100 dark:bg-dark border border-gray-300 dark:border-gray-700 items-center justify-between px-3 text-sm font-medium"
+              className="hidden md:flex relative h-9 w-24 rounded-lg bg-slate-100 dark:bg-dark border border-slate-300 dark:border-gray-700 items-center justify-between px-3 text-sm font-medium"
             >
               <span
-                className={`absolute top-0.5 bottom-0.5 w-11 rounded-md bg-primary transition-all ${
+                className={`absolute top-0.5 bottom-0.5 w-11 rounded-md bg-[#6B2FB5] transition-all ${
                   isGreek ? 'left-0.5' : 'right-0.5'
                 }`}
               />
