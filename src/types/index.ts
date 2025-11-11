@@ -53,3 +53,4 @@ export interface TimeSlot {
   time: string;
   hour: number;
   minute: number;
+}
