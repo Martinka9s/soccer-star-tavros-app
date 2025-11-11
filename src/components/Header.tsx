@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { LogOut, User } from 'lucide-react';
+import { LogOut, User, Calendar } from 'lucide-react';
 import { User as UserType } from '../types';
 import { useActiveBookings } from '../hooks/useActiveBookings';
+import { googleCalendarService } from '../services/googleCalendarService';
 
 interface HeaderProps {
   user: UserType | null;
@@ -20,6 +21,17 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, onAuthClick, activeTab,
   // Use active bookings count for the red dot indicator
   const { activeCount } = useActiveBookings(user?.id, user?.teamName);
 
+  // Google Calendar connection status (admin only)
+  const [isCalendarConnected, setIsCalendarConnected] = useState(false);
+  const [calendarEmail, setCalendarEmail] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (user?.role === 'admin') {
+      setIsCalendarConnected(googleCalendarService.isConnected());
+      setCalendarEmail(googleCalendarService.getConnectedEmail());
+    }
+  }, [user]);
+
   // Ensure Greek default if nothing stored
   useEffect(() => {
     const lng = i18n.language;
@@ -36,6 +48,20 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, onAuthClick, activeTab,
     try {
       localStorage.setItem('i18nextLng', next);
     } catch {}
+  };
+
+  const handleCalendarConnect = () => {
+    setShowProfileMenu(false);
+    googleCalendarService.connect();
+  };
+
+  const handleCalendarDisconnect = () => {
+    if (window.confirm('Disconnect Google Calendar? Bookings will no longer sync automatically.')) {
+      googleCalendarService.clearTokens();
+      setIsCalendarConnected(false);
+      setCalendarEmail(null);
+      setShowProfileMenu(false);
+    }
   };
 
   // Close profile menu when clicking outside
@@ -166,6 +192,40 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, onAuthClick, activeTab,
                           <span className="inline-block mt-2 text-xs bg-primary px-2 py-1 rounded">Admin</span>
                         )}
                       </div>
+
+                      {/* Google Calendar - Admin only */}
+                      {user.role === 'admin' && (
+                        <div className="px-4 py-3 border-b border-gray-700">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Calendar size={16} className="text-gray-400" />
+                            <span className="text-xs text-gray-400">Google Calendar</span>
+                          </div>
+                          {isCalendarConnected ? (
+                            <div>
+                              <div className="flex items-center gap-2 mb-2">
+                                <span className="text-xs text-green-400">✓ Connected</span>
+                              </div>
+                              {calendarEmail && (
+                                <p className="text-xs text-gray-400 mb-2 break-all">{calendarEmail}</p>
+                              )}
+                              <button
+                                onClick={handleCalendarDisconnect}
+                                className="text-xs text-red-400 hover:text-red-300"
+                              >
+                                Disconnect
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={handleCalendarConnect}
+                              className="text-xs text-primary hover:text-primary-light"
+                            >
+                              Connect Calendar
+                            </button>
+                          )}
+                        </div>
+                      )}
+
                       <button
                         onClick={() => {
                           setShowProfileMenu(false);
