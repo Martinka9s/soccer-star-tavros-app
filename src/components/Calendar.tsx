@@ -87,7 +87,7 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
   const getCardClasses = (status: 'available' | 'pending' | 'booked' | 'blocked'): string => {
     switch (status) {
       case 'available':
-        return 'bg-green-50 dark:bg-[#2C3144] hover:bg-green-100 dark:hover:bg-[#343a52] border-2 border-slate-200 dark:border-transparent shadow-sm';
+        return 'bg-green-100 dark:bg-[#2C3144] hover:bg-green-200 dark:hover:bg-[#343a52] border-2 border-slate-200 dark:border-transparent shadow-sm';
       case 'pending':
         return 'bg-amber-50 dark:bg-amber-600/30 hover:bg-amber-100 dark:hover:bg-amber-600/40 border-2 border-amber-200 dark:border-amber-500/40 shadow-md';
       case 'booked':
@@ -95,7 +95,7 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
       case 'blocked':
         return 'bg-slate-100 dark:bg-slate-700/60 hover:bg-slate-200 dark:hover:bg-slate-700/70 border-2 border-slate-300 dark:border-transparent shadow-sm';
       default:
-        return 'bg-green-50 dark:bg-[#2C3144] hover:bg-green-100 dark:hover:bg-[#343a52] border-2 border-slate-200 dark:border-transparent shadow-sm';
+        return 'bg-green-100 dark:bg-[#2C3144] hover:bg-green-200 dark:hover:bg-[#343a52] border-2 border-slate-200 dark:border-transparent shadow-sm';
     }
   };
 
@@ -282,7 +282,7 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
 
       {/* Legend (above the bar) */}
       <div className="flex flex-wrap justify-center items-center gap-5 mt-1 text-sm">
-        <LegendDot label={t('available')} colorClass="bg-gray-300 dark:bg-[#3a4057]" />
+        <LegendDot label={t('available')} colorClass="bg-green-400 dark:bg-[#3a4057]" />
         <LegendDot label={t('pending')} colorClass="bg-amber-500" />
         <LegendDot label={t('booked')} colorClass="bg-red-600" />
         <LegendDot label={t('blocked')} colorClass="bg-slate-600" />
