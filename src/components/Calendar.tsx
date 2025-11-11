@@ -87,15 +87,15 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
   const getCardClasses = (status: 'available' | 'pending' | 'booked' | 'blocked'): string => {
     switch (status) {
       case 'available':
-        return 'bg-[#2C3144] hover:bg-[#343a52]';
+        return 'bg-gray-50 dark:bg-[#2C3144] hover:bg-gray-100 dark:hover:bg-[#343a52] border border-gray-200 dark:border-transparent';
       case 'pending':
-        return 'bg-amber-600/30 hover:bg-amber-600/40 border border-amber-500/40';
+        return 'bg-amber-50 dark:bg-amber-600/30 hover:bg-amber-100 dark:hover:bg-amber-600/40 border border-amber-200 dark:border-amber-500/40';
       case 'booked':
-        return 'bg-red-600/30 hover:bg-red-600/40 border border-red-500/40';
+        return 'bg-red-50 dark:bg-red-600/30 hover:bg-red-100 dark:hover:bg-red-600/40 border border-red-200 dark:border-red-500/40';
       case 'blocked':
-        return 'bg-slate-700/60 hover:bg-slate-700/70';
+        return 'bg-gray-200 dark:bg-slate-700/60 hover:bg-gray-300 dark:hover:bg-slate-700/70 border border-gray-300 dark:border-transparent';
       default:
-        return 'bg-[#2C3144] hover:bg-[#343a52]';
+        return 'bg-gray-50 dark:bg-[#2C3144] hover:bg-gray-100 dark:hover:bg-[#343a52] border border-gray-200 dark:border-transparent';
     }
   };
 
@@ -276,40 +276,40 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
     <div className="space-y-6">
       {/* Title + Subtitle centered */}
       <div className="text-center">
-        <h1 className="text-4xl font-extrabold text-white">{t('livePitchAvailability')}</h1>
-        <p className="mt-2 text-base text-gray-300">{t('selectDateAndPitch')}</p>
+        <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white">{t('livePitchAvailability')}</h1>
+        <p className="mt-2 text-base text-gray-700 dark:text-gray-300">{t('selectDateAndPitch')}</p>
       </div>
 
       {/* Legend (above the bar) */}
       <div className="flex flex-wrap justify-center items-center gap-5 mt-1 text-sm">
-        <LegendDot label={t('available')} colorClass="bg-[#3a4057]" />
+        <LegendDot label={t('available')} colorClass="bg-gray-300 dark:bg-[#3a4057]" />
         <LegendDot label={t('pending')} colorClass="bg-amber-500" />
         <LegendDot label={t('booked')} colorClass="bg-red-600" />
         <LegendDot label={t('blocked')} colorClass="bg-slate-600" />
       </div>
 
       {/* Banner bar (date + pitch pills only) */}
-      <div className="bg-dark-lighter rounded-xl px-4 py-3">
+      <div className="bg-white dark:bg-dark-lighter border border-gray-200 dark:border-transparent rounded-xl px-4 py-3 shadow-sm dark:shadow-none">
         {/* Mobile (app) layout */}
         <div className="sm:hidden">
           <div className="grid grid-cols-[auto,1fr,auto] items-center">
             <button
               onClick={goToPrevious}
-              className="h-9 w-9 flex items-center justify-center rounded-lg bg-dark text-gray-300 hover:text-white justify-self-start"
+              className="h-9 w-9 flex items-center justify-center rounded-lg bg-gray-100 dark:bg-dark text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white justify-self-start"
               aria-label="Previous day"
             >
               <ChevronLeft size={18} />
             </button>
 
             <div className="text-center">
-              <div className="text-xl font-semibold text-white">
+              <div className="text-xl font-semibold text-gray-900 dark:text-white">
                 {format(currentDate, 'EEEE, MMM d')}
               </div>
             </div>
 
             <button
               onClick={goToNext}
-              className="h-9 w-9 flex items-center justify-center rounded-lg bg-dark text-gray-300 hover:text-white justify-self-end"
+              className="h-9 w-9 flex items-center justify-center rounded-lg bg-gray-100 dark:bg-dark text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white justify-self-end"
               aria-label="Next day"
             >
               <ChevronRight size={18} />
@@ -323,7 +323,7 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
               className={`h-9 px-5 w-full rounded-lg text-sm font-medium transition-colors border ${
                 activePitch === 'Pitch A'
                   ? 'bg-primary text-white border-transparent'
-                  : 'bg-dark text-gray-200 border-gray-700 hover:text-white'
+                  : 'bg-gray-50 dark:bg-dark text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-700 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800'
               }`}
             >
               {t('pitchA')}
@@ -333,7 +333,7 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
               className={`h-9 px-5 w-full rounded-lg text-sm font-medium transition-colors border ${
                 activePitch === 'Pitch B'
                   ? 'bg-primary text-white border-transparent'
-                  : 'bg-dark text-gray-200 border-gray-700 hover:text-white'
+                  : 'bg-gray-50 dark:bg-dark text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-700 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800'
               }`}
             >
               {t('pitchB')}
@@ -346,24 +346,24 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
           <div className="flex items-center gap-4">
             <button
               onClick={goToPrevious}
-              className="h-9 w-9 flex items-center justify-center rounded-lg bg-dark text-gray-300 hover:text-white"
+              className="h-9 w-9 flex items-center justify-center rounded-lg bg-gray-100 dark:bg-dark text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
               aria-label="Previous day"
             >
               <ChevronLeft size={18} />
             </button>
 
             <div className="leading-tight">
-              <div className="text-xl font-semibold text-white">
+              <div className="text-xl font-semibold text-gray-900 dark:text-white">
                 {format(currentDate, 'EEEE')}
               </div>
-              <div className="text-sm text-gray-300">
+              <div className="text-sm text-gray-700 dark:text-gray-300">
                 {format(currentDate, 'MMMM d')}
               </div>
             </div>
 
             <button
               onClick={goToNext}
-              className="h-9 w-9 flex items-center justify-center rounded-lg bg-dark text-gray-300 hover:text-white"
+              className="h-9 w-9 flex items-center justify-center rounded-lg bg-gray-100 dark:bg-dark text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
               aria-label="Next day"
             >
               <ChevronRight size={18} />
@@ -376,7 +376,7 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
               className={`h-9 px-5 rounded-lg text-sm font-medium transition-colors border ${
                 activePitch === 'Pitch A'
                   ? 'bg-primary text-white border-transparent'
-                  : 'bg-dark text-gray-200 border-gray-700 hover:text-white'
+                  : 'bg-gray-50 dark:bg-dark text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-700 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800'
               }`}
             >
               {t('pitchA')}
@@ -386,7 +386,7 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
               className={`h-9 px-5 rounded-lg text-sm font-medium transition-colors border ${
                 activePitch === 'Pitch B'
                   ? 'bg-primary text-white border-transparent'
-                  : 'bg-dark text-gray-200 border-gray-700 hover:text-white'
+                  : 'bg-gray-50 dark:bg-dark text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-700 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800'
               }`}
             >
               {t('pitchB')}
@@ -396,7 +396,7 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
       </div>
 
       {loading ? (
-        <div className="text-center py-12 text-gray-400">Loading...</div>
+        <div className="text-center py-12 text-gray-600 dark:text-gray-400">Loading...</div>
       ) : (
         <>
           {/* Grid of cards */}
@@ -445,7 +445,7 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
                   ? 'bg-amber-500'
                   : status === 'blocked'
                   ? 'bg-slate-600'
-                  : 'bg-[#3a4057]';
+                  : 'bg-gray-400 dark:bg-[#3a4057]';
 
               const showPrimary = status !== 'available' && !!primaryLabel;
               const showSecondary = status !== 'available' && !!secondaryLabel;
@@ -466,13 +466,13 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
 
                   <div className="h-full grid grid-rows-[auto,auto,auto] gap-1.5">
                     {/* Row 1: time only */}
-                    <div className="text-sm font-semibold text-white truncate leading-5" title={slot.display}>
+                    <div className="text-sm font-semibold text-gray-900 dark:text-white truncate leading-5" title={slot.display}>
                       {slot.display}
                     </div>
 
                     {/* Row 2: primary (or placeholder) */}
                     <div
-                      className="text-sm text-white whitespace-nowrap overflow-hidden text-ellipsis leading-5"
+                      className="text-sm text-gray-800 dark:text-white whitespace-nowrap overflow-hidden text-ellipsis leading-5"
                       title={showPrimary ? primaryLabel : ''}
                     >
                       {showPrimary ? primaryLabel : '\u00A0'}
@@ -480,7 +480,7 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
 
                     {/* Row 3: secondary (or placeholder) */}
                     <div
-                      className="text-xs text-gray-300 whitespace-nowrap overflow-hidden text-ellipsis leading-5"
+                      className="text-xs text-gray-600 dark:text-gray-300 whitespace-nowrap overflow-hidden text-ellipsis leading-5"
                       title={showSecondary ? secondaryLabel : ''}
                     >
                       {showSecondary ? secondaryLabel : '\u00A0'}
@@ -514,7 +514,7 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
 
 /** Legend helpers */
 const LegendDot: React.FC<{ label: string; colorClass: string }> = ({ label, colorClass }) => (
-  <div className="flex items-center gap-2 text-sm text-gray-200">
+  <div className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200">
     <span className={`inline-block w-3 h-3 rounded-full ${colorClass}`} />
     <span>{label}</span>
   </div>
