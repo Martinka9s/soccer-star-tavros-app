@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from './hooks/useAuth';
+import { useGoogleCalendarCallback } from './hooks/useGoogleCalendarCallback';
 import { authService, bookingService } from './services/firebaseService';
 import Header from './components/Header';
 import Footer from './components/Footer';
@@ -11,6 +12,9 @@ import './i18n/config';
 
 function App() {
   const { user, loading } = useAuth();
+  
+  // Google Calendar OAuth callback handler
+  useGoogleCalendarCallback();
   
   // Load saved tab from sessionStorage or default to 'calendar'
   const [activeTab, setActiveTab] = useState(() => {
