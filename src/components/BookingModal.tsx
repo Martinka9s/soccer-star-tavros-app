@@ -38,11 +38,9 @@ const BookingModal: React.FC<BookingModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   
-  // NEW: Editable date and time for admin
   const [editableDate, setEditableDate] = useState('');
   const [editableTime, setEditableTime] = useState('');
 
-  // NEW: Admin team selection
   const [bookingMode, setBookingMode] = useState<BookingMode>('guest');
   const [availableTeams, setAvailableTeams] = useState<{ userId: string; teamName: string; email: string }[]>([]);
   const [homeTeam, setHomeTeam] = useState('');
@@ -53,7 +51,6 @@ const BookingModal: React.FC<BookingModalProps> = ({
   const isEditMode = !!existingBooking;
   const isBlocked = existingBooking?.status === 'blocked';
 
-  // Load available teams for admin
   useEffect(() => {
     if (isAdmin && isOpen) {
       loadTeams();
@@ -84,7 +81,6 @@ const BookingModal: React.FC<BookingModalProps> = ({
       setEditableDate(existingBooking.date);
       setEditableTime(existingBooking.startTime);
 
-      // Detect booking mode from existing booking
       if (existingBooking.homeTeam && existingBooking.awayTeam) {
         setBookingMode('match');
         setHomeTeam(existingBooking.homeTeam);
@@ -160,7 +156,6 @@ const BookingModal: React.FC<BookingModalProps> = ({
       return;
     }
 
-    // Validation for admin booking modes
     if (isAdmin && !isBlocked) {
       if (bookingMode === 'match') {
         if (!homeTeam || !awayTeam) {
@@ -199,13 +194,10 @@ const BookingModal: React.FC<BookingModalProps> = ({
         notes: notes.trim(),
       };
 
-      // Handle different booking modes
       if (isAdmin && bookingMode === 'match') {
-        // Match booking
         bookingData.homeTeam = homeTeam;
         bookingData.awayTeam = awayTeam;
         
-        // Find user IDs for both teams
         const homeTeamUser = availableTeams.find(t => t.teamName === homeTeam);
         const awayTeamUser = availableTeams.find(t => t.teamName === awayTeam);
         
@@ -213,7 +205,6 @@ const BookingModal: React.FC<BookingModalProps> = ({
         if (awayTeamUser) bookingData.awayTeamUserId = awayTeamUser.userId;
         
       } else if (isAdmin && bookingMode === 'single-team') {
-        // Single team booking
         const teamUser = availableTeams.find(t => t.teamName === selectedTeam);
         if (teamUser) {
           bookingData.userId = teamUser.userId;
@@ -221,7 +212,6 @@ const BookingModal: React.FC<BookingModalProps> = ({
           bookingData.teamName = selectedTeam;
         }
       } else {
-        // Guest booking or regular user booking
         bookingData.userId = user.id;
         bookingData.userEmail = user.email;
         bookingData.phoneNumber = phoneNumber.trim();
@@ -253,9 +243,9 @@ const BookingModal: React.FC<BookingModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
-      <div className="bg-dark-lighter rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-6 border-b border-gray-700 sticky top-0 bg-dark-lighter">
-          <h2 className="text-xl font-semibold text-white">
+      <div className="bg-slate-50 dark:bg-dark-lighter rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between p-6 border-b border-slate-200 dark:border-gray-700 sticky top-0 bg-slate-50 dark:bg-dark-lighter">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
             {isBlocked
               ? t('blockSlot')
               : isEditMode
@@ -266,7 +256,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
           </h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-white transition-colors"
+            className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
           >
             <X size={24} />
           </button>
@@ -274,52 +264,49 @@ const BookingModal: React.FC<BookingModalProps> = ({
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {error && (
-            <div className="p-3 bg-red-500 bg-opacity-10 border border-red-500 rounded text-red-400 text-sm">
+            <div className="p-3 bg-red-500/10 border border-red-500/60 rounded text-red-600 dark:text-red-400 text-sm">
               {error}
             </div>
           )}
 
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
-              <span className="text-gray-400">Pitch:</span>
-              <span className="ml-2 text-white">{selectedSlot.pitch}</span>
+              <span className="text-gray-700 dark:text-gray-400">Pitch:</span>
+              <span className="ml-2 text-gray-900 dark:text-white">{selectedSlot.pitch}</span>
             </div>
             
-            {/* Date - Editable for admin in edit mode */}
             <div>
-              <span className="text-gray-400">Date:</span>
+              <span className="text-gray-700 dark:text-gray-400">Date:</span>
               {isAdmin && isEditMode ? (
                 <input
                   type="date"
                   value={editableDate}
                   onChange={(e) => setEditableDate(e.target.value)}
-                  className="ml-2 px-2 py-1 bg-dark border border-gray-600 rounded text-white text-sm focus:outline-none focus:border-primary"
+                  className="ml-2 px-2 py-1 bg-white dark:bg-dark border border-slate-300 dark:border-gray-600 rounded text-gray-900 dark:text-white text-sm focus:outline-none focus:border-[#6B2FB5] dark:focus:border-primary"
                 />
               ) : (
-                <span className="ml-2 text-white">{editableDate}</span>
+                <span className="ml-2 text-gray-900 dark:text-white">{editableDate}</span>
               )}
             </div>
             
-            {/* Time - Editable for admin in edit mode */}
             <div className="col-span-2">
-              <span className="text-gray-400">Time:</span>
+              <span className="text-gray-700 dark:text-gray-400">Time:</span>
               {isAdmin && isEditMode ? (
                 <input
                   type="time"
                   value={editableTime}
                   onChange={(e) => setEditableTime(e.target.value)}
-                  className="ml-2 px-2 py-1 bg-dark border border-gray-600 rounded text-white text-sm focus:outline-none focus:border-primary"
+                  className="ml-2 px-2 py-1 bg-white dark:bg-dark border border-slate-300 dark:border-gray-600 rounded text-gray-900 dark:text-white text-sm focus:outline-none focus:border-[#6B2FB5] dark:focus:border-primary"
                 />
               ) : (
-                <span className="ml-2 text-white">{editableTime}</span>
+                <span className="ml-2 text-gray-900 dark:text-white">{editableTime}</span>
               )}
             </div>
           </div>
 
-          {/* Admin Booking Mode Selection */}
           {isAdmin && !isBlocked && !isEditMode && (
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Booking Type
               </label>
               <div className="space-y-2">
@@ -329,9 +316,9 @@ const BookingModal: React.FC<BookingModalProps> = ({
                     value="match"
                     checked={bookingMode === 'match'}
                     onChange={() => setBookingMode('match')}
-                    className="text-primary focus:ring-primary"
+                    className="text-[#6B2FB5] dark:text-primary focus:ring-[#6B2FB5] dark:focus:ring-primary"
                   />
-                  <span className="text-white">Match (2 teams)</span>
+                  <span className="text-gray-900 dark:text-white">Match (2 teams)</span>
                 </label>
                 <label className="flex items-center space-x-2 cursor-pointer">
                   <input
@@ -339,9 +326,9 @@ const BookingModal: React.FC<BookingModalProps> = ({
                     value="single-team"
                     checked={bookingMode === 'single-team'}
                     onChange={() => setBookingMode('single-team')}
-                    className="text-primary focus:ring-primary"
+                    className="text-[#6B2FB5] dark:text-primary focus:ring-[#6B2FB5] dark:focus:ring-primary"
                   />
-                  <span className="text-white">Single Team</span>
+                  <span className="text-gray-900 dark:text-white">Single Team</span>
                 </label>
                 <label className="flex items-center space-x-2 cursor-pointer">
                   <input
@@ -349,9 +336,9 @@ const BookingModal: React.FC<BookingModalProps> = ({
                     value="guest"
                     checked={bookingMode === 'guest'}
                     onChange={() => setBookingMode('guest')}
-                    className="text-primary focus:ring-primary"
+                    className="text-[#6B2FB5] dark:text-primary focus:ring-[#6B2FB5] dark:focus:ring-primary"
                   />
-                  <span className="text-white">Guest / Other</span>
+                  <span className="text-gray-900 dark:text-white">Guest / Other</span>
                 </label>
               </div>
             </div>
@@ -360,13 +347,13 @@ const BookingModal: React.FC<BookingModalProps> = ({
           {!isBlocked && (
             <>
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   {t('selectDuration')}
                 </label>
                 <select
                   value={duration}
                   onChange={(e) => setDuration(Number(e.target.value))}
-                  className="w-full px-4 py-2 bg-dark border border-gray-600 rounded-lg text-white focus:outline-none focus:border-primary"
+                  className="w-full px-4 py-2 bg-white dark:bg-dark border border-slate-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-[#6B2FB5] dark:focus:border-primary"
                   disabled={isEditMode && isAdmin === false}
                 >
                   {availableDurations.map((d) => (
@@ -376,23 +363,22 @@ const BookingModal: React.FC<BookingModalProps> = ({
                   ))}
                 </select>
                 {!isEditMode && availableDurations.length < durationOptions.length && (
-                  <p className="mt-1 text-xs text-amber-400">
+                  <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">
                     Some durations are unavailable due to conflicts
                   </p>
                 )}
               </div>
 
-              {/* Match Mode: Show home and away team dropdowns */}
               {isAdmin && bookingMode === 'match' && (
                 <>
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Home Team *
                     </label>
                     <select
                       value={homeTeam}
                       onChange={(e) => setHomeTeam(e.target.value)}
-                      className="w-full px-4 py-2 bg-dark border border-gray-600 rounded-lg text-white focus:outline-none focus:border-primary"
+                      className="w-full px-4 py-2 bg-white dark:bg-dark border border-slate-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-[#6B2FB5] dark:focus:border-primary"
                       required
                     >
                       <option value="">Select home team</option>
@@ -405,13 +391,13 @@ const BookingModal: React.FC<BookingModalProps> = ({
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Away Team *
                     </label>
                     <select
                       value={awayTeam}
                       onChange={(e) => setAwayTeam(e.target.value)}
-                      className="w-full px-4 py-2 bg-dark border border-gray-600 rounded-lg text-white focus:outline-none focus:border-primary"
+                      className="w-full px-4 py-2 bg-white dark:bg-dark border border-slate-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-[#6B2FB5] dark:focus:border-primary"
                       required
                     >
                       <option value="">Select away team</option>
@@ -425,16 +411,15 @@ const BookingModal: React.FC<BookingModalProps> = ({
                 </>
               )}
 
-              {/* Single Team Mode: Show single team dropdown */}
               {isAdmin && bookingMode === 'single-team' && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Select Team *
                   </label>
                   <select
                     value={selectedTeam}
                     onChange={(e) => setSelectedTeam(e.target.value)}
-                    className="w-full px-4 py-2 bg-dark border border-gray-600 rounded-lg text-white focus:outline-none focus:border-primary"
+                    className="w-full px-4 py-2 bg-white dark:bg-dark border border-slate-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-[#6B2FB5] dark:focus:border-primary"
                     required
                   >
                     <option value="">Select a team</option>
@@ -447,11 +432,10 @@ const BookingModal: React.FC<BookingModalProps> = ({
                 </div>
               )}
 
-              {/* Guest Mode or Regular User: Show phone and team name fields */}
               {(!isAdmin || bookingMode === 'guest') && (
                 <>
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       {t('phoneNumber')} *
                     </label>
                     <input
@@ -459,20 +443,20 @@ const BookingModal: React.FC<BookingModalProps> = ({
                       value={phoneNumber}
                       onChange={(e) => setPhoneNumber(e.target.value)}
                       required={!isAdmin}
-                      className="w-full px-4 py-2 bg-dark border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-primary"
+                      className="w-full px-4 py-2 bg-white dark:bg-dark border border-slate-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-[#6B2FB5] dark:focus:border-primary"
                       placeholder="69XXXXXXXX"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       {t('teamName')}
                     </label>
                     <input
                       type="text"
                       value={teamName}
                       onChange={(e) => setTeamName(e.target.value)}
-                      className="w-full px-4 py-2 bg-dark border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-primary"
+                      className="w-full px-4 py-2 bg-white dark:bg-dark border border-slate-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-[#6B2FB5] dark:focus:border-primary"
                       placeholder="Team name (optional)"
                     />
                   </div>
@@ -480,27 +464,27 @@ const BookingModal: React.FC<BookingModalProps> = ({
               )}
 
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   {t('notes')}
                 </label>
                 <textarea
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   rows={3}
-                  className="w-full px-4 py-2 bg-dark border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-primary resize-none"
+                  className="w-full px-4 py-2 bg-white dark:bg-dark border border-slate-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-[#6B2FB5] dark:focus:border-primary resize-none"
                   placeholder="Additional notes (optional)"
                 />
               </div>
 
               {isAdmin && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     {t('status')}
                   </label>
                   <select
                     value={status}
                     onChange={(e) => setStatus(e.target.value as any)}
-                    className="w-full px-4 py-2 bg-dark border border-gray-600 rounded-lg text-white focus:outline-none focus:border-primary"
+                    className="w-full px-4 py-2 bg-white dark:bg-dark border border-slate-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-[#6B2FB5] dark:focus:border-primary"
                   >
                     <option value="pending">{t('pending')}</option>
                     <option value="booked">{t('booked')}</option>
@@ -515,7 +499,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
             <button
               type="submit"
               disabled={loading || (!isEditMode && availableDurations.length === 0)}
-              className="flex-1 py-3 bg-primary hover:bg-primary-dark text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 py-3 bg-[#6B2FB5] hover:bg-[#5a2596] dark:bg-primary dark:hover:bg-primary-dark text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? '...' : isEditMode ? t('save') : t('submit')}
             </button>
@@ -532,7 +516,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-medium transition-colors"
+              className="px-6 py-3 bg-slate-200 dark:bg-gray-600 hover:bg-slate-300 dark:hover:bg-gray-700 text-gray-900 dark:text-white rounded-lg font-medium transition-colors"
             >
               {t('cancel')}
             </button>
