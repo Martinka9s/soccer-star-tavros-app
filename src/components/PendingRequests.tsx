@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Check, X, Calendar as CalendarIcon, Clock, User as UserIcon } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
+import { el } from 'date-fns/locale';
 import { Booking } from '../types';
 import { bookingService, notificationService } from '../services/firebaseService';
 
@@ -10,10 +11,15 @@ interface PendingRequestsProps {
 }
 
 const PendingRequests: React.FC<PendingRequestsProps> = ({ onCountChange }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [pendingBookings, setPendingBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
+  
+  // Helper to format dates with locale
+  const formatWithLocale = (date: Date, formatStr: string) => {
+    return format(date, formatStr, { locale: i18n.language === 'el' ? el : undefined });
+  };
 
   useEffect(() => {
     void loadPendingBookings();
@@ -155,7 +161,7 @@ const PendingRequests: React.FC<PendingRequestsProps> = ({ onCountChange }) => {
 
       <div className="grid grid-cols-1 gap-4">
         {pendingBookings.map((booking) => {
-          const dateLabel = format(parseISO(booking.date), 'EEEE, MMM d, yyyy');
+          const dateLabel = formatWithLocale(parseISO(booking.date), 'EEEE, MMM d, yyyy');
           const durationLabel = `${booking.duration} ${
             booking.duration === 1 ? t('hour') : t('hours')
           }`;
