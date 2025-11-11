@@ -105,6 +105,7 @@ const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
         });
     } else {
       // Regular user: pseudo-realtime subscription (polling)
+      // ✅ FIXED: Removed 4th argument (phoneNumber)
       const unsubscribe = bookingService.listenBookingsByUserOrTeam(
         user.id,
         user.teamName,
@@ -112,8 +113,7 @@ const MyBookings: React.FC<MyBookingsProps> = ({ user }) => {
           const visible = all.filter((b) => b.status !== 'blocked');
           setBookings(visible);
           setLoading(false);
-        },
-        user.phoneNumber
+        }
       );
 
       return () => unsubscribe();
