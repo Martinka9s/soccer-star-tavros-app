@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { LogOut, User, Calendar } from 'lucide-react';
+import { LogOut, User, Calendar, Sun, Moon } from 'lucide-react';
 import { User as UserType } from '../types';
 import { useActiveBookings } from '../hooks/useActiveBookings';
 import { googleCalendarService } from '../services/googleCalendarService';
+import { useTheme } from '../contexts/ThemeContext';
 
 interface HeaderProps {
   user: UserType | null;
@@ -17,6 +18,7 @@ interface HeaderProps {
 const Header: React.FC<HeaderProps> = ({ user, onLogout, onAuthClick, activeTab, onTabChange, pendingCount = 0 }) => {
   const { t, i18n } = useTranslation();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const { theme, toggleTheme } = useTheme();
   
   // Use active bookings count for the red dot indicator
   const { activeCount } = useActiveBookings(user?.id, user?.teamName);
@@ -143,6 +145,16 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, onAuthClick, activeTab,
 
           {/* Right side controls */}
           <div className="flex items-center space-x-2 md:space-x-4">
+            {/* Theme toggle */}
+            <button
+              onClick={toggleTheme}
+              className="p-2 text-gray-300 hover:text-white transition-colors"
+              aria-label="Toggle theme"
+              title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+            >
+              {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+            </button>
+
             {/* Language toggle - Flag version for mobile */}
             <button
               onClick={toggleLanguage}
