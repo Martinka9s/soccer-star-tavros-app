@@ -6,38 +6,36 @@ const Footer: React.FC = () => {
   const { t } = useTranslation();
 
   return (
-    <footer className="bg-dark-lighter border-t border-gray-700 mt-auto">
+    <footer className="bg-slate-50 dark:bg-dark-lighter border-t border-slate-200 dark:border-gray-700 mt-auto">
       <div className="container mx-auto px-4 py-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {/* Contact Info */}
           <div>
-            <h3 className="text-lg font-semibold text-white mb-4">{t('contact')}</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('contact')}</h3>
             <div className="space-y-3">
               <a
                 href="tel:6984478517"
-                className="flex items-center space-x-2 text-gray-300 hover:text-primary transition-colors"
+                className="flex items-center space-x-2 text-gray-700 dark:text-gray-300 hover:text-[#6B2FB5] dark:hover:text-primary transition-colors"
                 aria-label="Phone"
               >
                 <Phone size={18} />
                 <span>6984478517</span>
               </a>
-
               <a
                 href="https://www.google.com/maps?q=Alekou+Panagouli+1,+Tavros+177+78"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center space-x-2 text-gray-300 hover:text-primary transition-colors"
+                className="flex items-center space-x-2 text-gray-700 dark:text-gray-300 hover:text-[#6B2FB5] dark:hover:text-primary transition-colors"
                 aria-label="Address"
               >
                 <MapPin size={18} />
                 <span>Alekou Panagouli 1, Tavros 177 78</span>
               </a>
-
               <a
                 href="https://soccerstartavros.gr/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center space-x-2 text-gray-300 hover:text-primary transition-colors"
+                className="flex items-center space-x-2 text-gray-700 dark:text-gray-300 hover:text-[#6B2FB5] dark:hover:text-primary transition-colors"
                 aria-label="Website"
               >
                 <Globe size={18} />
@@ -48,33 +46,31 @@ const Footer: React.FC = () => {
 
           {/* Social Media */}
           <div>
-            <h3 className="text-lg font-semibold text-white mb-4">{t('followUs')}</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('followUs')}</h3>
             <div className="flex space-x-4">
               <a
                 href="https://instagram.com"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-2 bg-dark hover:bg-primary text-gray-300 hover:text-white rounded-lg transition-colors"
+                className="p-2 bg-slate-100 dark:bg-dark hover:bg-[#6B2FB5] dark:hover:bg-primary text-gray-700 dark:text-gray-300 hover:text-white dark:hover:text-white rounded-lg transition-colors"
                 aria-label="Instagram"
               >
                 <Instagram size={24} />
               </a>
-
               <a
                 href="https://facebook.com"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-2 bg-dark hover:bg-primary text-gray-300 hover:text-white rounded-lg transition-colors"
+                className="p-2 bg-slate-100 dark:bg-dark hover:bg-[#6B2FB5] dark:hover:bg-primary text-gray-700 dark:text-gray-300 hover:text-white dark:hover:text-white rounded-lg transition-colors"
                 aria-label="Facebook"
               >
                 <Facebook size={24} />
               </a>
-
               <a
                 href="https://youtube.com"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-2 bg-dark hover:bg-primary text-gray-300 hover:text-white rounded-lg transition-colors"
+                className="p-2 bg-slate-100 dark:bg-dark hover:bg-[#6B2FB5] dark:hover:bg-primary text-gray-700 dark:text-gray-300 hover:text-white dark:hover:text-white rounded-lg transition-colors"
                 aria-label="YouTube"
               >
                 <Youtube size={24} />
@@ -84,12 +80,12 @@ const Footer: React.FC = () => {
 
           {/* Additional Info */}
           <div>
-            <h3 className="text-lg font-semibold text-white mb-4">{t('appName')}</h3>
-            <p className="text-gray-400 text-sm">5x5 Football pitch booking system</p>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('appName')}</h3>
+            <p className="text-gray-600 dark:text-gray-400 text-sm">5x5 Football pitch booking system</p>
           </div>
         </div>
 
-        <div className="mt-8 pt-8 border-t border-gray-700 text-center text-gray-400 text-sm">
+        <div className="mt-8 pt-8 border-t border-slate-200 dark:border-gray-700 text-center text-gray-600 dark:text-gray-400 text-sm">
           © {new Date().getFullYear()} Soccer Star Tavros. All rights reserved.
         </div>
       </div>
