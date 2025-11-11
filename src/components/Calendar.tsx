@@ -87,15 +87,15 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
   const getCardClasses = (status: 'available' | 'pending' | 'booked' | 'blocked'): string => {
     switch (status) {
       case 'available':
-        return 'bg-white dark:bg-[#2C3144] hover:bg-blue-50 dark:hover:bg-[#343a52] border-2 border-gray-300 dark:border-transparent shadow-sm';
+        return 'bg-green-50 dark:bg-[#2C3144] hover:bg-green-100 dark:hover:bg-[#343a52] border-2 border-slate-200 dark:border-transparent shadow-sm';
       case 'pending':
-        return 'bg-amber-50 dark:bg-amber-600/30 hover:bg-amber-100 dark:hover:bg-amber-600/40 border-2 border-amber-400 dark:border-amber-500/40 shadow-md';
+        return 'bg-amber-50 dark:bg-amber-600/30 hover:bg-amber-100 dark:hover:bg-amber-600/40 border-2 border-amber-200 dark:border-amber-500/40 shadow-md';
       case 'booked':
-        return 'bg-red-50 dark:bg-red-600/30 hover:bg-red-100 dark:hover:bg-red-600/40 border-2 border-red-400 dark:border-red-500/40 shadow-md';
+        return 'bg-red-50 dark:bg-red-600/30 hover:bg-red-100 dark:hover:bg-red-600/40 border-2 border-red-200 dark:border-red-500/40 shadow-md';
       case 'blocked':
-        return 'bg-gray-300 dark:bg-slate-700/60 hover:bg-gray-400 dark:hover:bg-slate-700/70 border-2 border-gray-400 dark:border-transparent shadow-sm';
+        return 'bg-slate-100 dark:bg-slate-700/60 hover:bg-slate-200 dark:hover:bg-slate-700/70 border-2 border-slate-300 dark:border-transparent shadow-sm';
       default:
-        return 'bg-white dark:bg-[#2C3144] hover:bg-blue-50 dark:hover:bg-[#343a52] border-2 border-gray-300 dark:border-transparent shadow-sm';
+        return 'bg-green-50 dark:bg-[#2C3144] hover:bg-green-100 dark:hover:bg-[#343a52] border-2 border-slate-200 dark:border-transparent shadow-sm';
     }
   };
 
@@ -289,13 +289,13 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
       </div>
 
       {/* Banner bar (date + pitch pills only) */}
-      <div className="bg-white dark:bg-dark-lighter border border-gray-200 dark:border-transparent rounded-xl px-4 py-3 shadow-sm dark:shadow-none">
+      <div className="bg-slate-50 dark:bg-dark-lighter border border-slate-200 dark:border-transparent rounded-xl px-4 py-3 shadow-sm dark:shadow-none">
         {/* Mobile (app) layout */}
         <div className="sm:hidden">
           <div className="grid grid-cols-[auto,1fr,auto] items-center">
             <button
               onClick={goToPrevious}
-              className="h-9 w-9 flex items-center justify-center rounded-lg bg-gray-100 dark:bg-dark text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white justify-self-start"
+              className="h-9 w-9 flex items-center justify-center rounded-lg bg-slate-100 dark:bg-dark text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white justify-self-start"
               aria-label="Previous day"
             >
               <ChevronLeft size={18} />
@@ -309,7 +309,7 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
 
             <button
               onClick={goToNext}
-              className="h-9 w-9 flex items-center justify-center rounded-lg bg-gray-100 dark:bg-dark text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white justify-self-end"
+              className="h-9 w-9 flex items-center justify-center rounded-lg bg-slate-100 dark:bg-dark text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white justify-self-end"
               aria-label="Next day"
             >
               <ChevronRight size={18} />
@@ -322,8 +322,8 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
               onClick={() => setActivePitch('Pitch A')}
               className={`h-9 px-5 w-full rounded-lg text-sm font-medium transition-colors border ${
                 activePitch === 'Pitch A'
-                  ? 'bg-primary text-white border-transparent'
-                  : 'bg-gray-50 dark:bg-dark text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-700 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800'
+                  ? 'bg-[#6B2FB5] text-white border-transparent'
+                  : 'bg-slate-50 dark:bg-dark text-gray-700 dark:text-gray-200 border-slate-300 dark:border-gray-700 hover:text-gray-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-gray-800'
               }`}
             >
               {t('pitchA')}
@@ -332,8 +332,8 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
               onClick={() => setActivePitch('Pitch B')}
               className={`h-9 px-5 w-full rounded-lg text-sm font-medium transition-colors border ${
                 activePitch === 'Pitch B'
-                  ? 'bg-primary text-white border-transparent'
-                  : 'bg-gray-50 dark:bg-dark text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-700 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800'
+                  ? 'bg-[#6B2FB5] text-white border-transparent'
+                  : 'bg-slate-50 dark:bg-dark text-gray-700 dark:text-gray-200 border-slate-300 dark:border-gray-700 hover:text-gray-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-gray-800'
               }`}
             >
               {t('pitchB')}
@@ -346,7 +346,7 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
           <div className="flex items-center gap-4">
             <button
               onClick={goToPrevious}
-              className="h-9 w-9 flex items-center justify-center rounded-lg bg-gray-100 dark:bg-dark text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+              className="h-9 w-9 flex items-center justify-center rounded-lg bg-slate-100 dark:bg-dark text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
               aria-label="Previous day"
             >
               <ChevronLeft size={18} />
@@ -363,7 +363,7 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
 
             <button
               onClick={goToNext}
-              className="h-9 w-9 flex items-center justify-center rounded-lg bg-gray-100 dark:bg-dark text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+              className="h-9 w-9 flex items-center justify-center rounded-lg bg-slate-100 dark:bg-dark text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
               aria-label="Next day"
             >
               <ChevronRight size={18} />
@@ -375,8 +375,8 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
               onClick={() => setActivePitch('Pitch A')}
               className={`h-9 px-5 rounded-lg text-sm font-medium transition-colors border ${
                 activePitch === 'Pitch A'
-                  ? 'bg-primary text-white border-transparent'
-                  : 'bg-gray-50 dark:bg-dark text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-700 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800'
+                  ? 'bg-[#6B2FB5] text-white border-transparent'
+                  : 'bg-slate-50 dark:bg-dark text-gray-700 dark:text-gray-200 border-slate-300 dark:border-gray-700 hover:text-gray-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-gray-800'
               }`}
             >
               {t('pitchA')}
@@ -385,8 +385,8 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
               onClick={() => setActivePitch('Pitch B')}
               className={`h-9 px-5 rounded-lg text-sm font-medium transition-colors border ${
                 activePitch === 'Pitch B'
-                  ? 'bg-primary text-white border-transparent'
-                  : 'bg-gray-50 dark:bg-dark text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-700 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800'
+                  ? 'bg-[#6B2FB5] text-white border-transparent'
+                  : 'bg-slate-50 dark:bg-dark text-gray-700 dark:text-gray-200 border-slate-300 dark:border-gray-700 hover:text-gray-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-gray-800'
               }`}
             >
               {t('pitchB')}
