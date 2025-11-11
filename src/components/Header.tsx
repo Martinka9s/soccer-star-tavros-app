@@ -85,13 +85,13 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, onAuthClick, activeTab,
   };
 
   return (
-    <header className="bg-dark-lighter border-b border-gray-700">
+    <header className="bg-white dark:bg-dark-lighter border-b border-gray-300 dark:border-gray-700 shadow-sm dark:shadow-none">
       {/* Top row */}
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Brand */}
           <div className="flex items-center space-x-4">
-            <a href="/" className="text-xl md:text-2xl font-bold text-white hover:opacity-90" aria-label={t('appName') as string}>
+            <a href="/" className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white hover:opacity-90" aria-label={t('appName') as string}>
               {t('appName')}
             </a>
           </div>
@@ -104,7 +104,7 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, onAuthClick, activeTab,
                 className={`px-4 py-2 rounded-lg transition-colors ${
                   activeTab === 'calendar'
                     ? 'bg-primary text-white'
-                    : 'text-gray-300 hover:bg-dark hover:text-white'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark hover:text-gray-900 dark:hover:text-white'
                 }`}
                 aria-current={activeTab === 'calendar' ? 'page' : undefined}
               >
@@ -115,7 +115,7 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, onAuthClick, activeTab,
                 className={`px-4 py-2 rounded-lg transition-colors relative ${
                   activeTab === 'myBookings'
                     ? 'bg-primary text-white'
-                    : 'text-gray-300 hover:bg-dark hover:text-white'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark hover:text-gray-900 dark:hover:text-white'
                 }`}
                 aria-current={activeTab === 'myBookings' ? 'page' : undefined}
               >
@@ -130,7 +130,7 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, onAuthClick, activeTab,
                   className={`px-4 py-2 rounded-lg transition-colors relative ${
                     activeTab === 'pendingRequests'
                       ? 'bg-primary text-white'
-                      : 'text-gray-300 hover:bg-dark hover:text-white'
+                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark hover:text-gray-900 dark:hover:text-white'
                   }`}
                   aria-current={activeTab === 'pendingRequests' ? 'page' : undefined}
                 >
@@ -148,7 +148,7 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, onAuthClick, activeTab,
             {/* Theme toggle */}
             <button
               onClick={toggleTheme}
-              className="p-2 text-gray-300 hover:text-white transition-colors"
+              className="p-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
               aria-label="Toggle theme"
               title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
             >
@@ -169,15 +169,15 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, onAuthClick, activeTab,
             <button
               onClick={toggleLanguage}
               aria-label="Language toggle EL/EN"
-              className="hidden md:flex relative h-9 w-24 rounded-lg bg-dark border border-gray-700 items-center justify-between px-3 text-sm font-medium"
+              className="hidden md:flex relative h-9 w-24 rounded-lg bg-gray-100 dark:bg-dark border border-gray-300 dark:border-gray-700 items-center justify-between px-3 text-sm font-medium"
             >
               <span
                 className={`absolute top-0.5 bottom-0.5 w-11 rounded-md bg-primary transition-all ${
                   isGreek ? 'left-0.5' : 'right-0.5'
                 }`}
               />
-              <span className={`z-10 ${isGreek ? 'text-white' : 'text-gray-300'}`}>EL</span>
-              <span className={`z-10 ${!isGreek ? 'text-white' : 'text-gray-300'}`}>EN</span>
+              <span className={`z-10 ${isGreek ? 'text-white' : 'text-gray-600 dark:text-gray-300'}`}>EL</span>
+              <span className={`z-10 ${!isGreek ? 'text-white' : 'text-gray-600 dark:text-gray-300'}`}>EN</span>
             </button>
 
             {user ? (
