@@ -80,10 +80,20 @@ function App() {
     const newTab = 'calendar';
     setActiveTab(newTab);
     setPendingCount(0);
+    setIsSidebarOpen(false); // Close sidebar on logout
     try {
       sessionStorage.setItem('activeTab', newTab);
     } catch {}
   };
+
+  // Listen for logout event from sidebar
+  useEffect(() => {
+    const handleSidebarLogout = () => {
+      handleLogout();
+    };
+    window.addEventListener('sidebar-logout', handleSidebarLogout);
+    return () => window.removeEventListener('sidebar-logout', handleSidebarLogout);
+  }, []);
 
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
