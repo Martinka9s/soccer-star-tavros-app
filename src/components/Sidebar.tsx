@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { X, Calendar, Trophy, Bell, ClipboardList, Users, LogOut } from 'lucide-react';
+import { X, Calendar, Trophy, Bell, ClipboardList, Users, LogOut, Home } from 'lucide-react';
 import { User } from '../types';
 import { googleCalendarService } from '../services/googleCalendarService';
 
@@ -101,6 +101,13 @@ const Sidebar: React.FC<SidebarProps> = ({
   };
 
   const menuItems = [
+    {
+      id: 'dashboard',
+      label: t('home', { defaultValue: 'Home' }),
+      icon: Home,
+      requiresAuth: false,
+      show: true,
+    },
     {
       id: 'calendar',
       label: t('calendar'),
