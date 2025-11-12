@@ -1,7 +1,73 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { X, Calendar, Trophy, Bell, ClipboardList, Users } from 'lucide-react';
+import { X, Calendar, Trophy, Bell, ClipboardList, Users, LogOut } from 'lucide-react';
 import { User } from '../types';
+import { googleCalendarService } from '../services/googleCalendarService';
+
+interface SidebarProps {
+  isOpen: boolean;
+  onClose: () => void;
+  user: User | null;
+  activeTab: string;
+  onNavigate: (tab: string) => void;
+  onLoginRequired: () => void;
+  pendingCount?: number;
+}
+
+// Google Calendar Button Component (for admin)
+const GoogleCalendarButton: React.FC = () => {
+  const [isConnected, setIsConnected] = useState(false);
+  const [email, setEmail] = useState<string | null>(null);
+
+  useEffect(() => {
+    setIsConnected(googleCalendarService.isConnected());
+    setEmail(googleCalendarService.getConnectedEmail());
+  }, []);
+
+  const handleConnect = () => {
+    googleCalendarService.connect();
+  };
+
+  const handleDisconnect = () => {
+    if (window.confirm('Disconnect Google Calendar? Bookings will no longer sync automatically.')) {
+      googleCalendarService.clearTokens();
+      setIsConnected(false);
+      setEmail(null);
+    }
+  };
+
+  return (
+    <div>
+      <div className="flex items-center gap-2 mb-2">
+        <Calendar size={16} className="text-gray-400" />
+        <span className="text-xs text-gray-400">Google Calendar</span>
+      </div>
+      {isConnected ? (
+        <div>
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-xs text-green-400">✓ Connected</span>
+          </div>
+          {email && (
+            <p className="text-xs text-gray-400 mb-2 break-all">{email}</p>
+          )}
+          <button
+            onClick={handleDisconnect}
+            className="text-xs text-red-400 hover:text-red-300 transition-colors"
+          >
+            Disconnect
+          </button>
+        </div>
+      ) : (
+        <button
+          onClick={handleConnect}
+          className="text-xs text-[#6B2FB5] hover:text-[#8b4fd9] transition-colors"
+        >
+          Connect Calendar
+        </button>
+      )}
+    </div>
+  );
+};
 
 interface SidebarProps {
   isOpen: boolean;
@@ -146,42 +212,71 @@ const Sidebar: React.FC<SidebarProps> = ({
           })}
         </nav>
 
-        {/* Footer - User info or Login prompt */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-slate-700 dark:border-gray-700 bg-[#1e293b] dark:bg-[#1e293b]">
+        {/* Footer - User info with all functions */}
+        <div className="absolute bottom-0 left-0 right-0 border-t border-slate-700 dark:border-gray-700 bg-[#1e293b] dark:bg-[#1e293b]">
           {user ? (
-            <div className="space-y-2">
-              <div className="text-xs text-gray-400">
-                {t('email')}
+            <div className="p-4 space-y-3">
+              {/* User Email & Admin Badge */}
+              <div>
+                <div className="text-xs text-gray-400 mb-1">
+                  {t('email')}
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="text-sm font-medium text-white break-all flex-1 mr-2">
+                    {user.email}
+                  </div>
+                  {user.role === 'admin' && (
+                    <span className="inline-block text-xs bg-[#6B2FB5] px-2 py-1 rounded text-white flex-shrink-0">
+                      Admin
+                    </span>
+                  )}
+                </div>
               </div>
-              <div className="text-sm font-medium text-white break-all">
-                {user.email}
-              </div>
+
+              {/* Team Name */}
               {user.teamName && (
-                <>
-                  <div className="text-xs text-gray-400">
+                <div>
+                  <div className="text-xs text-gray-400 mb-1">
                     {t('teamName')}
                   </div>
                   <div className="text-sm font-medium text-white">
                     {user.teamName}
                   </div>
-                </>
+                </div>
               )}
+
+              {/* Google Calendar - Admin only */}
               {user.role === 'admin' && (
-                <span className="inline-block text-xs bg-[#6B2FB5] px-2 py-1 rounded text-white">
-                  Admin
-                </span>
+                <div className="pt-2 border-t border-slate-700">
+                  <GoogleCalendarButton />
+                </div>
               )}
+
+              {/* Logout Button */}
+              <button
+                onClick={() => {
+                  onClose();
+                  // Call logout from parent
+                  window.dispatchEvent(new CustomEvent('sidebar-logout'));
+                }}
+                className="w-full px-4 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors flex items-center justify-center space-x-2"
+              >
+                <LogOut size={18} />
+                <span>{t('logout')}</span>
+              </button>
             </div>
           ) : (
-            <button
-              onClick={() => {
-                onClose();
-                onLoginRequired();
-              }}
-              className="w-full px-4 py-3 bg-[#6B2FB5] hover:bg-[#5a2596] text-white rounded-lg font-medium transition-colors"
-            >
-              {t('login')}
-            </button>
+            <div className="p-4">
+              <button
+                onClick={() => {
+                  onClose();
+                  onLoginRequired();
+                }}
+                className="w-full px-4 py-3 bg-[#6B2FB5] hover:bg-[#5a2596] text-white rounded-lg font-medium transition-colors"
+              >
+                {t('login')}
+              </button>
+            </div>
           )}
         </div>
       </aside>
