@@ -8,7 +8,6 @@ import Footer from './components/Footer';
 import Calendar from './components/Calendar';
 import MyBookings from './components/MyBookings';
 import PendingRequests from './components/PendingRequests';
-import NotificationPanel from './components/NotificationPanel';
 import AuthModal from './components/AuthModal';
 import './i18n/config';
 
@@ -146,7 +145,23 @@ function App() {
           </div>
         )}
         {activeTab === 'notifications' && user && (
-          <NotificationPanel user={user} />
+          <div className="max-w-4xl mx-auto">
+            <div className="bg-slate-50 dark:bg-dark-lighter border border-slate-200 dark:border-gray-700 rounded-lg shadow-sm">
+              <div className="p-6 border-b border-slate-200 dark:border-gray-700">
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                  🔔 {t('notifications')}
+                </h2>
+              </div>
+              <div className="p-8 text-center text-gray-600 dark:text-gray-400">
+                <p className="text-lg">
+                  {t('noNotifications')}
+                </p>
+                <p className="text-sm mt-2">
+                  Notification history and updates will appear here.
+                </p>
+              </div>
+            </div>
+          </div>
         )}
       </main>
 
