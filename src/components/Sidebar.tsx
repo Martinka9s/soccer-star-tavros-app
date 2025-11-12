@@ -39,20 +39,20 @@ const GoogleCalendarButton: React.FC = () => {
   return (
     <div>
       <div className="flex items-center gap-2 mb-2">
-        <Calendar size={16} className="text-gray-400" />
-        <span className="text-xs text-gray-400">Google Calendar</span>
+        <Calendar size={16} className="text-gray-500 dark:text-gray-400" />
+        <span className="text-xs text-gray-500 dark:text-gray-400">Google Calendar</span>
       </div>
       {isConnected ? (
         <div>
           <div className="flex items-center gap-2 mb-2">
-            <span className="text-xs text-green-400">✓ Connected</span>
+            <span className="text-xs text-green-600 dark:text-green-400">✓ Connected</span>
           </div>
           {email && (
-            <p className="text-xs text-gray-400 mb-2 break-all">{email}</p>
+            <p className="text-xs text-gray-600 dark:text-gray-400 mb-2 break-all">{email}</p>
           )}
           <button
             onClick={handleDisconnect}
-            className="text-xs text-red-400 hover:text-red-300 transition-colors"
+            className="text-xs text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 transition-colors"
           >
             Disconnect
           </button>
@@ -60,7 +60,7 @@ const GoogleCalendarButton: React.FC = () => {
       ) : (
         <button
           onClick={handleConnect}
-          className="text-xs text-[#6B2FB5] hover:text-[#8b4fd9] transition-colors"
+          className="text-xs text-[#6B2FB5] hover:text-[#5a2596] transition-colors"
         >
           Connect Calendar
         </button>
@@ -159,21 +159,21 @@ const Sidebar: React.FC<SidebarProps> = ({
 
       {/* Sidebar */}
       <aside
-        className={`fixed top-0 left-0 h-full w-80 bg-[#1e293b] dark:bg-[#1e293b] border-r border-slate-700 dark:border-gray-700 shadow-2xl z-50 transform transition-transform duration-300 ease-in-out ${
+        className={`fixed top-0 left-0 h-full w-80 bg-slate-50 dark:bg-[#1e293b] border-r border-slate-200 dark:border-slate-700 shadow-2xl z-50 transform transition-transform duration-300 ease-in-out ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-slate-700 dark:border-gray-700">
+        <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700">
           <div className="flex items-center space-x-3">
             <img src="/sst_logo.PNG" alt="Logo" className="h-10 w-auto" />
-            <h2 className="text-lg font-bold text-white">
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white">
               {t('appName')}
             </h2>
           </div>
           <button
             onClick={onClose}
-            className="p-2 text-gray-300 hover:text-white transition-colors rounded-lg hover:bg-slate-700"
+            className="p-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700"
             aria-label="Close menu"
           >
             <X size={24} />
@@ -195,7 +195,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                 className={`w-full flex items-center justify-between px-4 py-3 rounded-lg transition-all ${
                   isActive
                     ? 'bg-[#6B2FB5] text-white shadow-lg'
-                    : 'text-gray-300 hover:bg-slate-700 hover:text-white'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-gray-900 dark:hover:text-white'
                 }`}
               >
                 <div className="flex items-center space-x-3">
@@ -215,16 +215,16 @@ const Sidebar: React.FC<SidebarProps> = ({
         </nav>
 
         {/* Footer - User info with all functions */}
-        <div className="absolute bottom-0 left-0 right-0 border-t border-slate-700 dark:border-gray-700 bg-[#1e293b] dark:bg-[#1e293b]">
+        <div className="absolute bottom-0 left-0 right-0 border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-[#1e293b]">
           {user ? (
             <div className="p-4 space-y-3">
               {/* User Email & Admin Badge */}
               <div>
-                <div className="text-xs text-gray-400 mb-1">
+                <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">
                   {t('email')}
                 </div>
                 <div className="flex items-center justify-between">
-                  <div className="text-sm font-medium text-white break-all flex-1 mr-2">
+                  <div className="text-sm font-medium text-gray-900 dark:text-white break-all flex-1 mr-2">
                     {user.email}
                   </div>
                   {user.role === 'admin' && (
@@ -238,10 +238,10 @@ const Sidebar: React.FC<SidebarProps> = ({
               {/* Team Name */}
               {user.teamName && (
                 <div>
-                  <div className="text-xs text-gray-400 mb-1">
+                  <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">
                     {t('teamName')}
                   </div>
-                  <div className="text-sm font-medium text-white">
+                  <div className="text-sm font-medium text-gray-900 dark:text-white">
                     {user.teamName}
                   </div>
                 </div>
@@ -249,7 +249,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 
               {/* Google Calendar - Admin only */}
               {user.role === 'admin' && (
-                <div className="pt-2 border-t border-slate-700">
+                <div className="pt-2 border-t border-slate-200 dark:border-slate-700">
                   <GoogleCalendarButton />
                 </div>
               )}
