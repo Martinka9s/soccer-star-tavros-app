@@ -202,11 +202,6 @@ const Sidebar: React.FC<SidebarProps> = ({
                     {item.badge}
                   </span>
                 )}
-
-                {/* Lock icon for auth-required items when logged out */}
-                {item.requiresAuth && !user && (
-                  <span className="text-xs opacity-60">🔒</span>
-                )}
               </button>
             );
           })}
