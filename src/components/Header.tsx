@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { LogOut, User, Calendar, Sun, Moon } from 'lucide-react';
+import { LogOut, User, Calendar, Sun, Moon, Menu } from 'lucide-react';
 import { User as UserType } from '../types';
-import { useActiveBookings } from '../hooks/useActiveBookings';
 import { googleCalendarService } from '../services/googleCalendarService';
 import { useTheme } from '../contexts/ThemeContext';
 
@@ -10,18 +9,13 @@ interface HeaderProps {
   user: UserType | null;
   onLogout: () => void;
   onAuthClick: () => void;
-  activeTab: string;
-  onTabChange: (tab: string) => void;
-  pendingCount?: number;
+  onMenuClick: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ user, onLogout, onAuthClick, activeTab, onTabChange, pendingCount = 0 }) => {
+const Header: React.FC<HeaderProps> = ({ user, onLogout, onAuthClick, onMenuClick }) => {
   const { t, i18n } = useTranslation();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const { theme, toggleTheme } = useTheme();
-  
-  // Use active bookings count for the red dot indicator
-  const { activeCount } = useActiveBookings(user?.id, user?.teamName);
 
   // Google Calendar connection status (admin only)
   const [isCalendarConnected, setIsCalendarConnected] = useState(false);
@@ -78,80 +72,36 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, onAuthClick, activeTab,
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showProfileMenu]);
 
-  // Get bookings label based on user role
-  const getBookingsLabel = () => {
-    if (!user) return t('myBookings');
-    return user.role === 'admin' ? (t('bookings', { defaultValue: 'Bookings' })) : t('myBookings');
-  };
-
   return (
     <header className="bg-slate-50 dark:bg-dark-lighter border-b border-slate-200 dark:border-gray-700 shadow-sm dark:shadow-none">
-      {/* Top row */}
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
-          {/* Brand with Logo */}
-          <div className="flex items-center space-x-4">
-            <a href="/" className="flex items-center space-x-3 hover:opacity-90 transition-opacity" aria-label={t('appName') as string}>
+          {/* Left: Burger Menu + Logo */}
+          <div className="flex items-center space-x-3">
+            {/* Burger Menu */}
+            <button
+              onClick={onMenuClick}
+              className="p-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors rounded-lg hover:bg-slate-100 dark:hover:bg-dark"
+              aria-label="Open menu"
+            >
+              <Menu size={24} />
+            </button>
+
+            {/* Logo + Brand */}
+            <a href="/" className="flex items-center space-x-2 hover:opacity-90 transition-opacity" aria-label={t('appName') as string}>
               <img 
                 src="/sst_logo.PNG" 
                 alt="Soccer Star Logo" 
-                className="h-10 md:h-12 w-auto"
+                className="h-8 md:h-10 w-auto"
               />
-              <span className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
+              <span className="hidden sm:block text-lg md:text-xl font-bold text-gray-900 dark:text-white">
                 {t('appName')}
               </span>
             </a>
           </div>
 
-          {/* Desktop tabs */}
-          {user && (
-            <nav className="hidden md:flex space-x-1">
-              <button
-                onClick={() => onTabChange('calendar')}
-                className={`px-4 py-2 rounded-lg transition-colors ${
-                  activeTab === 'calendar'
-                    ? 'bg-[#6B2FB5] text-white'
-                    : 'text-gray-700 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-dark hover:text-gray-900 dark:hover:text-white'
-                }`}
-                aria-current={activeTab === 'calendar' ? 'page' : undefined}
-              >
-                {t('calendar')}
-              </button>
-              <button
-                onClick={() => onTabChange('myBookings')}
-                className={`px-4 py-2 rounded-lg transition-colors relative ${
-                  activeTab === 'myBookings'
-                    ? 'bg-[#6B2FB5] text-white'
-                    : 'text-gray-700 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-dark hover:text-gray-900 dark:hover:text-white'
-                }`}
-                aria-current={activeTab === 'myBookings' ? 'page' : undefined}
-              >
-                {getBookingsLabel()}
-                {activeCount > 0 && (
-                  <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse" />
-                )}
-              </button>
-              {user.role === 'admin' && (
-                <button
-                  onClick={() => onTabChange('pendingRequests')}
-                  className={`px-4 py-2 rounded-lg transition-colors relative ${
-                    activeTab === 'pendingRequests'
-                      ? 'bg-[#6B2FB5] text-white'
-                      : 'text-gray-700 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-dark hover:text-gray-900 dark:hover:text-white'
-                  }`}
-                  aria-current={activeTab === 'pendingRequests' ? 'page' : undefined}
-                >
-                  {t('pendingRequests')}
-                  {pendingCount > 0 && (
-                    <span className="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-full animate-pulse" />
-                  )}
-                </button>
-              )}
-            </nav>
-          )}
-
-          {/* Right side controls */}
-          <div className="flex items-center space-x-2 md:space-x-4">
+          {/* Right: Theme + Language + User/Login */}
+          <div className="flex items-center space-x-2 md:space-x-3">
             {/* Theme toggle */}
             <button
               onClick={toggleTheme}
@@ -298,7 +248,7 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, onAuthClick, activeTab,
             ) : (
               <button
                 onClick={onAuthClick}
-                className="px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-lg transition-colors text-sm md:text-base"
+                className="px-3 md:px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-lg transition-colors text-sm md:text-base"
               >
                 {t('login')}
               </button>
@@ -306,60 +256,6 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, onAuthClick, activeTab,
           </div>
         </div>
       </div>
-
-      {/* Mobile sub-bar (separate row under top bar) */}
-      {user && (
-        <div className="md:hidden border-t border-slate-200 dark:border-gray-700 bg-slate-50 dark:bg-dark-lighter">
-          <div className="container mx-auto px-4 py-2">
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                onClick={() => onTabChange('calendar')}
-                className={`px-4 py-2 rounded-lg text-center transition-colors text-sm ${
-                  activeTab === 'calendar'
-                    ? 'bg-[#6B2FB5] text-white'
-                    : 'text-gray-700 dark:text-gray-300 bg-slate-100 dark:bg-dark hover:bg-slate-200 dark:hover:bg-dark/80 hover:text-gray-900 dark:hover:text-white'
-                }`}
-                aria-current={activeTab === 'calendar' ? 'page' : undefined}
-              >
-                {t('calendar')}
-              </button>
-              <button
-                onClick={() => onTabChange('myBookings')}
-                className={`px-4 py-2 rounded-lg text-center transition-colors text-sm relative ${
-                  activeTab === 'myBookings'
-                    ? 'bg-[#6B2FB5] text-white'
-                    : 'text-gray-700 dark:text-gray-300 bg-slate-100 dark:bg-dark hover:bg-slate-200 dark:hover:bg-dark/80 hover:text-gray-900 dark:hover:text-white'
-                }`}
-                aria-current={activeTab === 'myBookings' ? 'page' : undefined}
-              >
-                {getBookingsLabel()}
-                {activeCount > 0 && (
-                  <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse" />
-                )}
-              </button>
-            </div>
-
-            {user.role === 'admin' && (
-              <div className="mt-2">
-                <button
-                  onClick={() => onTabChange('pendingRequests')}
-                  className={`w-full px-4 py-2 rounded-lg text-center transition-colors text-sm relative ${
-                    activeTab === 'pendingRequests'
-                      ? 'bg-[#6B2FB5] text-white'
-                      : 'text-gray-700 dark:text-gray-300 bg-slate-100 dark:bg-dark hover:bg-slate-200 dark:hover:bg-dark/80 hover:text-gray-900 dark:hover:text-white'
-                  }`}
-                  aria-current={activeTab === 'pendingRequests' ? 'page' : undefined}
-                >
-                  {t('pendingRequests')}
-                  {pendingCount > 0 && (
-                    <span className="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-full animate-pulse" />
-                  )}
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
     </header>
   );
 };
