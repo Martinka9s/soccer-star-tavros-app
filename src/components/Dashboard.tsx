@@ -54,7 +54,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onBookNowClick }) => {
   return (
     <div className="space-y-12">
       {/* Hero Section with Carousel */}
-      <section className="relative w-full h-[400px] md:h-[500px] rounded-2xl overflow-hidden bg-slate-200 dark:bg-dark-lighter">
+      <section className="relative w-full h-[300px] md:h-[400px] rounded-2xl overflow-hidden bg-slate-200 dark:bg-dark-lighter">
         {/* Carousel Images */}
         <div className="relative w-full h-full">
           {carouselImages.map((image, index) => (
@@ -125,57 +125,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onBookNowClick }) => {
         </div>
       </section>
 
-      {/* Yesterday's Results Section */}
-      <section>
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
-            Yesterday's Results
-          </h2>
-        </div>
-
-        {yesterdayResults.length === 0 ? (
-          <div className="text-center py-12 bg-slate-100 dark:bg-dark-lighter rounded-lg">
-            <p className="text-gray-600 dark:text-gray-400">
-              No results from yesterday
-            </p>
-          </div>
-        ) : (
-          <>
-            <div className="space-y-4">
-              {displayedResults.map((result) => (
-                <div
-                  key={result.id}
-                  className="bg-slate-100 dark:bg-dark-lighter rounded-lg p-6 flex items-center justify-between hover:shadow-lg transition-shadow"
-                >
-                  <div className="text-lg font-semibold text-gray-900 dark:text-white flex-1 text-right pr-6">
-                    {result.homeTeam}
-                  </div>
-                  <div className="bg-slate-700 dark:bg-dark px-6 py-2 rounded-lg">
-                    <span className="text-2xl font-bold text-white">
-                      {result.homeTeamScore} - {result.awayTeamScore}
-                    </span>
-                  </div>
-                  <div className="text-lg font-semibold text-gray-900 dark:text-white flex-1 text-left pl-6">
-                    {result.awayTeam}
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {yesterdayResults.length > 2 && (
-              <button
-                onClick={() => setShowAllResults(!showAllResults)}
-                className="w-full mt-4 py-2 text-[#6B2FB5] dark:text-primary hover:text-[#5a2596] dark:hover:text-primary-light font-medium flex items-center justify-center space-x-1 transition-colors"
-              >
-                <span>{showAllResults ? 'Show less' : 'Show all'}</span>
-                {showAllResults ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
-              </button>
-            )}
-          </>
-        )}
-      </section>
-
-      {/* Next Games Section */}
+      {/* Next Games Section - NOW FIRST */}
       <section>
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
@@ -222,6 +172,56 @@ const Dashboard: React.FC<DashboardProps> = ({ onBookNowClick }) => {
               >
                 <span>{showAllNextGames ? 'Show less' : 'Show all'}</span>
                 {showAllNextGames ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+              </button>
+            )}
+          </>
+        )}
+      </section>
+
+      {/* Yesterday's Results Section - NOW SECOND */}
+      <section>
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
+            Yesterday's Results
+          </h2>
+        </div>
+
+        {yesterdayResults.length === 0 ? (
+          <div className="text-center py-12 bg-slate-100 dark:bg-dark-lighter rounded-lg">
+            <p className="text-gray-600 dark:text-gray-400">
+              No results from yesterday
+            </p>
+          </div>
+        ) : (
+          <>
+            <div className="space-y-4">
+              {displayedResults.map((result) => (
+                <div
+                  key={result.id}
+                  className="bg-slate-100 dark:bg-dark-lighter rounded-lg p-6 flex items-center justify-between hover:shadow-lg transition-shadow"
+                >
+                  <div className="text-lg font-semibold text-gray-900 dark:text-white flex-1 text-right pr-6">
+                    {result.homeTeam}
+                  </div>
+                  <div className="bg-slate-700 dark:bg-dark px-6 py-2 rounded-lg">
+                    <span className="text-2xl font-bold text-white">
+                      {result.homeTeamScore} - {result.awayTeamScore}
+                    </span>
+                  </div>
+                  <div className="text-lg font-semibold text-gray-900 dark:text-white flex-1 text-left pl-6">
+                    {result.awayTeam}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {yesterdayResults.length > 2 && (
+              <button
+                onClick={() => setShowAllResults(!showAllResults)}
+                className="w-full mt-4 py-2 text-[#6B2FB5] dark:text-primary hover:text-[#5a2596] dark:hover:text-primary-light font-medium flex items-center justify-center space-x-1 transition-colors"
+              >
+                <span>{showAllResults ? 'Show less' : 'Show all'}</span>
+                {showAllResults ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
               </button>
             )}
           </>
