@@ -6,6 +6,7 @@ import { authService, bookingService } from './services/firebaseService';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
 import Footer from './components/Footer';
+import Dashboard from './components/Dashboard';
 import Calendar from './components/Calendar';
 import MyBookings from './components/MyBookings';
 import PendingRequests from './components/PendingRequests';
@@ -22,12 +23,12 @@ function App() {
   // Sidebar state
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   
-  // Load saved tab from sessionStorage or default to 'calendar'
+  // Load saved tab from sessionStorage or default to 'dashboard'
   const [activeTab, setActiveTab] = useState(() => {
     try {
-      return sessionStorage.getItem('activeTab') || 'calendar';
+      return sessionStorage.getItem('activeTab') || 'dashboard';
     } catch {
-      return 'calendar';
+      return 'dashboard';
     }
   });
   
@@ -77,7 +78,7 @@ function App() {
 
   const handleLogout = async () => {
     await authService.logout();
-    const newTab = 'calendar';
+    const newTab = 'dashboard';
     setActiveTab(newTab);
     setPendingCount(0);
     setIsSidebarOpen(false); // Close sidebar on logout
@@ -136,6 +137,9 @@ function App() {
       />
 
       <main className="flex-1 container mx-auto px-4 py-8">
+        {activeTab === 'dashboard' && (
+          <Dashboard onBookNowClick={() => handleTabChange('calendar')} />
+        )}
         {activeTab === 'calendar' && (
           <Calendar user={user} onLoginRequired={() => setShowAuthModal(true)} />
         )}
