@@ -158,21 +158,14 @@ function App() {
           </div>
         )}
         {activeTab === 'notifications' && user && (
-          <div className="max-w-4xl mx-auto">
-            <div className="bg-slate-50 dark:bg-dark-lighter border border-slate-200 dark:border-gray-700 rounded-lg shadow-sm">
-              <div className="p-6 border-b border-slate-200 dark:border-gray-700">
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                  🔔 {t('notifications')}
-                </h2>
-              </div>
-              <div className="p-8 text-center text-gray-600 dark:text-gray-400">
-                <p className="text-lg">
-                  {t('noNotifications')}
-                </p>
-                <p className="text-sm mt-2">
-                  Notification history and updates will appear here.
-                </p>
-              </div>
+          <div>
+            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-6">
+              🔔 {t('notifications')}
+            </h2>
+            <div className="bg-slate-50 dark:bg-dark-lighter border border-slate-200 dark:border-gray-700 rounded-lg shadow-sm p-12 text-center">
+              <p className="text-lg text-gray-600 dark:text-gray-400">
+                {t('noNotifications')}
+              </p>
             </div>
           </div>
         )}
