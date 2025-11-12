@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from './hooks/useAuth';
 import { useGoogleCalendarCallback } from './hooks/useGoogleCalendarCallback';
 import { authService, bookingService } from './services/firebaseService';
@@ -13,6 +14,7 @@ import './i18n/config';
 
 function App() {
   const { user, loading } = useAuth();
+  const { t } = useTranslation();
   
   // Google Calendar OAuth callback handler
   useGoogleCalendarCallback();
