@@ -23,6 +23,13 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     
     // Save to localStorage
     localStorage.setItem('theme', theme);
+
+    // Update theme-color meta tag for mobile browser status bar
+    const metaThemeColor = document.querySelector('meta[name="theme-color"]');
+    if (metaThemeColor) {
+      // Dark mode: dark slate, Light mode: light slate
+      metaThemeColor.setAttribute('content', theme === 'dark' ? '#1e293b' : '#f8fafc');
+    }
   }, [theme]);
 
   const toggleTheme = () => {
