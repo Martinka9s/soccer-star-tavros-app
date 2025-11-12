@@ -89,10 +89,17 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, onAuthClick, activeTab,
       {/* Top row */}
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
-          {/* Brand */}
+          {/* Brand with Logo */}
           <div className="flex items-center space-x-4">
-            <a href="/" className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white hover:opacity-90" aria-label={t('appName') as string}>
-              {t('appName')}
+            <a href="/" className="flex items-center space-x-3 hover:opacity-90 transition-opacity" aria-label={t('appName') as string}>
+              <img 
+                src="/sst_logo.PNG" 
+                alt="Soccer Star Logo" 
+                className="h-10 md:h-12 w-auto"
+              />
+              <span className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
+                {t('appName')}
+              </span>
             </a>
           </div>
 
