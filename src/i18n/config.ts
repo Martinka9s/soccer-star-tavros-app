@@ -12,6 +12,7 @@ const resources = {
 
       // Navigation
       calendar: 'Calendar',
+      championships: 'Championships',
       myBookings: 'My Bookings',
       bookings: 'Bookings',
       pendingRequests: 'Pending Requests',
@@ -120,6 +121,7 @@ const resources = {
 
       // Navigation
       calendar: 'Ημερολόγιο',
+      championships: 'Πρωταθλήματα',
       myBookings: 'Οι Κρατήσεις μου',
       bookings: 'Κρατήσεις',
       pendingRequests: 'Αιτήματα σε εκκρεμότητα',
