@@ -4,8 +4,8 @@
   "description": "Book your 5x5 football pitch at Soccer Star Tavros",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#6B2FB5",
+  "background_color": "#1e293b",
+  "theme_color": "#1e293b",
   "orientation": "portrait-primary",
   "icons": [
     {
