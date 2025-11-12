@@ -3,10 +3,12 @@ import { useAuth } from './hooks/useAuth';
 import { useGoogleCalendarCallback } from './hooks/useGoogleCalendarCallback';
 import { authService, bookingService } from './services/firebaseService';
 import Header from './components/Header';
+import Sidebar from './components/Sidebar';
 import Footer from './components/Footer';
 import Calendar from './components/Calendar';
 import MyBookings from './components/MyBookings';
 import PendingRequests from './components/PendingRequests';
+import NotificationPanel from './components/NotificationPanel';
 import AuthModal from './components/AuthModal';
 import './i18n/config';
 
@@ -15,6 +17,9 @@ function App() {
   
   // Google Calendar OAuth callback handler
   useGoogleCalendarCallback();
+  
+  // Sidebar state
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   
   // Load saved tab from sessionStorage or default to 'calendar'
   const [activeTab, setActiveTab] = useState(() => {
@@ -97,20 +102,28 @@ function App() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-dark flex items-center justify-center">
-        <div className="text-white text-xl">Loading...</div>
+      <div className="min-h-screen bg-slate-50 dark:bg-dark flex items-center justify-center">
+        <div className="text-gray-900 dark:text-white text-xl">Loading...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-dark flex flex-col">
+    <div className="min-h-screen bg-slate-50 dark:bg-dark flex flex-col">
       <Header
         user={user}
         onLogout={handleLogout}
         onAuthClick={() => setShowAuthModal(true)}
+        onMenuClick={() => setIsSidebarOpen(true)}
+      />
+
+      <Sidebar
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
+        user={user}
         activeTab={activeTab}
-        onTabChange={handleTabChange}
+        onNavigate={handleTabChange}
+        onLoginRequired={() => setShowAuthModal(true)}
         pendingCount={pendingCount}
       />
 
@@ -121,6 +134,19 @@ function App() {
         {activeTab === 'myBookings' && user && <MyBookings user={user} />}
         {activeTab === 'pendingRequests' && user?.role === 'admin' && (
           <PendingRequests onCountChange={setPendingCount} />
+        )}
+        {activeTab === 'championships' && (
+          <div className="text-center py-12">
+            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-4">
+              🏆 Championships
+            </h2>
+            <p className="text-gray-600 dark:text-gray-400">
+              Coming soon! Championship management and tracking features.
+            </p>
+          </div>
+        )}
+        {activeTab === 'notifications' && user && (
+          <NotificationPanel user={user} />
         )}
       </main>
 
