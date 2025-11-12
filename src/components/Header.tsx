@@ -1,17 +1,13 @@
 import React, { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Sun, Moon, Menu } from 'lucide-react';
-import { User as UserType } from '../types';
 import { useTheme } from '../contexts/ThemeContext';
 
 interface HeaderProps {
-  user: UserType | null;
-  onLogout: () => void;
-  onAuthClick: () => void;
   onMenuClick: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ user, onLogout, onAuthClick, onMenuClick }) => {
+const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
   const { t, i18n } = useTranslation();
   const { theme, toggleTheme } = useTheme();
 
