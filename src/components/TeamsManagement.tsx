@@ -297,25 +297,29 @@ const ChampionshipSection: React.FC<ChampionshipSectionProps> = ({
 
   return (
     <section>
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-4 gap-2">
         <button
           onClick={() => setExpanded(!expanded)}
-          className="flex items-center space-x-2 text-2xl font-bold text-gray-900 dark:text-white hover:text-[#6B2FB5] dark:hover:text-primary transition-colors"
+          className="flex items-center space-x-2 flex-1 min-w-0"
         >
-          <Trophy size={28} className="text-[#6B2FB5]" />
-          <span>{displayTitle}</span>
-          <span className="text-sm font-normal text-gray-600 dark:text-gray-400">
-            ({teams.length} teams)
-          </span>
-          <ChevronDown
-            size={24}
-            className={`transition-transform ${expanded ? 'rotate-180' : ''}`}
-          />
+          <Trophy size={24} className="text-[#6B2FB5] flex-shrink-0" />
+          <div className="flex items-center space-x-2 min-w-0">
+            <span className="text-xl font-bold text-gray-900 dark:text-white whitespace-nowrap">
+              {displayTitle}
+            </span>
+            <span className="text-sm font-normal text-gray-600 dark:text-gray-400 whitespace-nowrap">
+              ({teams.length} teams)
+            </span>
+            <ChevronDown
+              size={20}
+              className={`transition-transform flex-shrink-0 text-gray-600 dark:text-gray-400 ${expanded ? 'rotate-180' : ''}`}
+            />
+          </div>
         </button>
 
         <button
           onClick={() => onResetChampionship(championship)}
-          className="px-3 py-1.5 bg-orange-600 hover:bg-orange-700 text-white text-sm rounded-lg transition-colors font-medium flex items-center space-x-1.5 whitespace-nowrap"
+          className="px-3 py-1.5 bg-orange-600 hover:bg-orange-700 text-white text-sm rounded-lg transition-colors font-medium flex items-center space-x-1.5 whitespace-nowrap flex-shrink-0"
         >
           <RotateCcw size={16} />
           <span>Reset Season</span>
