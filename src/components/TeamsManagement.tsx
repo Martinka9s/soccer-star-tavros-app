@@ -210,9 +210,10 @@ const TeamsManagement: React.FC<TeamsManagementProps> = ({ adminEmail }) => {
         )}
       </section>
 
-      {/* MSL DREAM LEAGUE */}
+      {/* MSL DL (Dream League) */}
       <ChampionshipSection
         championship="MSL DREAM LEAGUE"
+        displayName="MSL DL"
         teams={dreamLeagueTeams}
         editingTeamId={editingTeamId}
         setEditingTeamId={setEditingTeamId}
@@ -261,6 +262,7 @@ const TeamsManagement: React.FC<TeamsManagementProps> = ({ adminEmail }) => {
 // Championship Section Component
 interface ChampionshipSectionProps {
   championship: ChampionshipType;
+  displayName?: string; // Optional display name (e.g., "MSL DL" for "MSL DREAM LEAGUE")
   teams: Team[];
   editingTeamId: string | null;
   setEditingTeamId: (id: string | null) => void;
@@ -273,6 +275,7 @@ interface ChampionshipSectionProps {
 
 const ChampionshipSection: React.FC<ChampionshipSectionProps> = ({
   championship,
+  displayName,
   teams,
   editingTeamId,
   setEditingTeamId,
@@ -290,6 +293,8 @@ const ChampionshipSection: React.FC<ChampionshipSectionProps> = ({
     'MSL B',
   ].filter((c) => c !== championship) as ChampionshipType[];
 
+  const displayTitle = displayName || championship;
+
   return (
     <section>
       <div className="flex items-center justify-between mb-4">
@@ -298,7 +303,7 @@ const ChampionshipSection: React.FC<ChampionshipSectionProps> = ({
           className="flex items-center space-x-2 text-2xl font-bold text-gray-900 dark:text-white hover:text-[#6B2FB5] dark:hover:text-primary transition-colors"
         >
           <Trophy size={28} className="text-[#6B2FB5]" />
-          <span>{championship}</span>
+          <span>{displayTitle}</span>
           <span className="text-sm font-normal text-gray-600 dark:text-gray-400">
             ({teams.length} teams)
           </span>
@@ -310,7 +315,7 @@ const ChampionshipSection: React.FC<ChampionshipSectionProps> = ({
 
         <button
           onClick={() => onResetChampionship(championship)}
-          className="px-3 py-1.5 bg-orange-600 hover:bg-orange-700 text-white text-sm rounded-lg transition-colors font-medium flex items-center space-x-1.5"
+          className="px-3 py-1.5 bg-orange-600 hover:bg-orange-700 text-white text-sm rounded-lg transition-colors font-medium flex items-center space-x-1.5 whitespace-nowrap"
         >
           <RotateCcw size={16} />
           <span>Reset Season</span>
