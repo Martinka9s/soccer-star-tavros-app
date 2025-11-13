@@ -100,21 +100,21 @@ const Dashboard: React.FC<DashboardProps> = ({ onBookNowClick, onJoinChampionshi
         {/* Carousel Controls */}
         <button
           onClick={prevSlide}
-          className="absolute left-4 top-1/2 -translate-y-1/2 p-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-full transition-all z-10"
+          className="absolute left-4 top-1/2 -translate-y-1/2 p-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-full transition-all z-20"
           aria-label="Previous slide"
         >
           <ChevronLeft size={24} className="text-white" />
         </button>
         <button
           onClick={nextSlide}
-          className="absolute right-4 top-1/2 -translate-y-1/2 p-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-full transition-all z-10"
+          className="absolute right-4 top-1/2 -translate-y-1/2 p-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-full transition-all z-20"
           aria-label="Next slide"
         >
           <ChevronRight size={24} className="text-white" />
         </button>
 
         {/* Carousel Indicators */}
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex space-x-2 z-10">
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex space-x-2 z-20">
           {carouselSlides.map((_, index) => (
             <button
               key={index}
@@ -128,7 +128,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onBookNowClick, onJoinChampionshi
         </div>
 
         {/* CTA Content - Dynamic based on current slide */}
-        <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4 z-10">
+        <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4 z-15 pointer-events-none">
           <h1 className="text-4xl md:text-6xl font-bold text-white mb-4 drop-shadow-lg">
             {carouselSlides[currentSlide].title}
           </h1>
@@ -137,7 +137,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onBookNowClick, onJoinChampionshi
           </p>
           <button
             onClick={carouselSlides[currentSlide].buttonAction}
-            className="px-8 py-4 bg-[#6B2FB5] hover:bg-[#5a2596] text-white text-lg font-bold rounded-lg transition-all transform hover:scale-105 shadow-xl"
+            className="px-8 py-4 bg-[#6B2FB5] hover:bg-[#5a2596] text-white text-lg font-bold rounded-lg transition-all transform hover:scale-105 shadow-xl pointer-events-auto"
           >
             <div className="flex items-center space-x-2">
               <CalendarIcon size={24} />
