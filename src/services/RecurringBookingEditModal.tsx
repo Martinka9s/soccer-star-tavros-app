@@ -1,148 +1,246 @@
-import React, { useState } from 'react';
-import { X, Calendar, Repeat } from 'lucide-react';
+// Recurring Booking Service Functions
+// Add these to your firebaseService.ts or create a separate recurringBookingService.ts
 
-interface RecurringBookingEditModalProps {
-  onClose: () => void;
-  onEditThis: () => void;
-  onEditAll: () => void;
-  action: 'edit' | 'delete';
-  bookingDate: string;
-}
+import { 
+  collection, 
+  updateDoc,
+  deleteDoc,
+  doc,
+  getDocs,
+  query,
+  where,
+  writeBatch,
+  serverTimestamp 
+} from 'firebase/firestore';
+import { db } from './firebaseService';
+import { Booking } from '../types';
+import { 
+  generateRecurringGroupId, 
+  getWeeklyRecurringDates,
+  addWeeks 
+} from '../utils/timeUtils';
 
-const RecurringBookingEditModal: React.FC<RecurringBookingEditModalProps> = ({
-  onClose,
-  onEditThis,
-  onEditAll,
-  action,
-  bookingDate,
-}) => {
-  const [selectedOption, setSelectedOption] = useState<'this' | 'all'>('this');
-
-  const handleConfirm = () => {
-    if (selectedOption === 'this') {
-      onEditThis();
-    } else {
-      onEditAll();
+export const recurringBookingService = {
+  /**
+   * Create a recurring booking series
+   * @param bookingData - Base booking data
+   * @param endDate - Optional end date, defaults to 1 year from start
+   * @returns Array of created booking IDs
+   */
+  async createRecurringBooking(
+    bookingData: Omit<Booking, 'id' | 'createdAt' | 'updatedAt'>,
+    endDate?: string
+  ): Promise<string[]> {
+    try {
+      const recurringGroupId = generateRecurringGroupId();
+      const startDate = bookingData.date;
+      
+      // Calculate end date (1 year if not specified)
+      const finalEndDate = endDate || addWeeks(startDate, 52);
+      
+      // Get all weekly dates
+      const dates = getWeeklyRecurringDates(startDate, finalEndDate);
+      
+      // Create bookings in batches (Firestore limit: 500 per batch)
+      const bookingIds: string[] = [];
+      const batchSize = 500;
+      
+      for (let i = 0; i < dates.length; i += batchSize) {
+        const batchDates = dates.slice(i, i + batchSize);
+        const batch = writeBatch(db);
+        
+        for (const date of batchDates) {
+          const bookingRef = doc(collection(db, 'bookings'));
+          batch.set(bookingRef, {
+            ...bookingData,
+            date,
+            isRecurring: true,
+            recurringPattern: 'weekly',
+            recurringGroupId,
+            recurringEndDate: finalEndDate,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+          });
+          bookingIds.push(bookingRef.id);
+        }
+        
+        await batch.commit();
+      }
+      
+      return bookingIds;
+    } catch (error) {
+      console.error('Error creating recurring booking:', error);
+      throw new Error('Failed to create recurring booking series');
     }
-  };
+  },
 
-  const actionText = action === 'edit' ? 'Edit' : 'Delete';
-  const actionTextLower = action === 'edit' ? 'edit' : 'delete';
+  /**
+   * Get all bookings in a recurring series
+   */
+  async getRecurringSeriesBookings(recurringGroupId: string): Promise<Booking[]> {
+    try {
+      const q = query(
+        collection(db, 'bookings'),
+        where('recurringGroupId', '==', recurringGroupId)
+      );
+      const snapshot = await getDocs(q);
+      
+      return snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        createdAt: doc.data().createdAt?.toDate() || new Date(),
+        updatedAt: doc.data().updatedAt?.toDate() || new Date(),
+      } as Booking));
+    } catch (error) {
+      console.error('Error getting recurring series:', error);
+      throw new Error('Failed to load recurring bookings');
+    }
+  },
 
-  return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-dark-lighter rounded-2xl shadow-2xl max-w-md w-full">
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-slate-200 dark:border-gray-700">
-          <div className="flex items-center space-x-3">
-            <div className="p-2 bg-[#6B2FB5] rounded-lg">
-              <Repeat size={24} className="text-white" />
-            </div>
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-              {actionText} Recurring Booking
-            </h2>
-          </div>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-slate-200 dark:hover:bg-dark rounded-lg transition-colors"
-            aria-label="Close"
-          >
-            <X size={24} className="text-gray-700 dark:text-gray-300" />
-          </button>
-        </div>
+  /**
+   * Get future bookings in a recurring series (from a specific date)
+   */
+  async getFutureRecurringBookings(
+    recurringGroupId: string,
+    fromDate: string
+  ): Promise<Booking[]> {
+    try {
+      const q = query(
+        collection(db, 'bookings'),
+        where('recurringGroupId', '==', recurringGroupId),
+        where('date', '>=', fromDate)
+      );
+      const snapshot = await getDocs(q);
+      
+      return snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        createdAt: doc.data().createdAt?.toDate() || new Date(),
+        updatedAt: doc.data().updatedAt?.toDate() || new Date(),
+      } as Booking));
+    } catch (error) {
+      console.error('Error getting future recurring bookings:', error);
+      throw new Error('Failed to load future bookings');
+    }
+  },
 
-        {/* Content */}
-        <div className="p-6 space-y-4">
-          <p className="text-gray-600 dark:text-gray-400">
-            This is a recurring booking. Would you like to {actionTextLower}:
-          </p>
+  /**
+   * Update a single booking in a recurring series
+   */
+  async updateSingleRecurringBooking(
+    bookingId: string,
+    updates: Partial<Booking>
+  ): Promise<void> {
+    try {
+      // Remove recurring fields if editing just this one
+      const cleanUpdates = { ...updates };
+      delete cleanUpdates.isRecurring;
+      delete cleanUpdates.recurringGroupId;
+      
+      await updateDoc(doc(db, 'bookings', bookingId), {
+        ...cleanUpdates,
+        updatedAt: serverTimestamp(),
+      });
+    } catch (error) {
+      console.error('Error updating single recurring booking:', error);
+      throw new Error('Failed to update booking');
+    }
+  },
 
-          {/* Option 1: This Event */}
-          <label className="flex items-start space-x-3 p-4 border-2 rounded-lg cursor-pointer transition-all hover:bg-slate-50 dark:hover:bg-dark ${
-            selectedOption === 'this'
-              ? 'border-[#6B2FB5] bg-purple-50 dark:bg-purple-900/20'
-              : 'border-slate-300 dark:border-gray-600'
-          }">
-            <input
-              type="radio"
-              name="recurringOption"
-              value="this"
-              checked={selectedOption === 'this'}
-              onChange={() => setSelectedOption('this')}
-              className="mt-1"
-            />
-            <div className="flex-1">
-              <div className="flex items-center space-x-2 mb-1">
-                <Calendar size={18} className="text-gray-600 dark:text-gray-400" />
-                <span className="font-semibold text-gray-900 dark:text-white">
-                  This event only
-                </span>
-              </div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                Only {actionTextLower} the booking on {new Date(bookingDate).toLocaleDateString()}
-              </p>
-            </div>
-          </label>
+  /**
+   * Update all future bookings in a recurring series
+   */
+  async updateFutureRecurringBookings(
+    recurringGroupId: string,
+    fromDate: string,
+    updates: Partial<Booking>
+  ): Promise<void> {
+    try {
+      const futureBookings = await this.getFutureRecurringBookings(recurringGroupId, fromDate);
+      
+      // Update in batches
+      const batchSize = 500;
+      for (let i = 0; i < futureBookings.length; i += batchSize) {
+        const batch = writeBatch(db);
+        const batchBookings = futureBookings.slice(i, i + batchSize);
+        
+        for (const booking of batchBookings) {
+          batch.update(doc(db, 'bookings', booking.id), {
+            ...updates,
+            updatedAt: serverTimestamp(),
+          });
+        }
+        
+        await batch.commit();
+      }
+    } catch (error) {
+      console.error('Error updating future recurring bookings:', error);
+      throw new Error('Failed to update recurring series');
+    }
+  },
 
-          {/* Option 2: All Future Events */}
-          <label className={`flex items-start space-x-3 p-4 border-2 rounded-lg cursor-pointer transition-all hover:bg-slate-50 dark:hover:bg-dark ${
-            selectedOption === 'all'
-              ? 'border-[#6B2FB5] bg-purple-50 dark:bg-purple-900/20'
-              : 'border-slate-300 dark:border-gray-600'
-          }`}>
-            <input
-              type="radio"
-              name="recurringOption"
-              value="all"
-              checked={selectedOption === 'all'}
-              onChange={() => setSelectedOption('all')}
-              className="mt-1"
-            />
-            <div className="flex-1">
-              <div className="flex items-center space-x-2 mb-1">
-                <Repeat size={18} className="text-gray-600 dark:text-gray-400" />
-                <span className="font-semibold text-gray-900 dark:text-white">
-                  This and all future events
-                </span>
-              </div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                {actionText} all bookings from {new Date(bookingDate).toLocaleDateString()} onwards
-              </p>
-            </div>
-          </label>
+  /**
+   * Delete a single booking in a recurring series
+   */
+  async deleteSingleRecurringBooking(bookingId: string): Promise<void> {
+    try {
+      await deleteDoc(doc(db, 'bookings', bookingId));
+    } catch (error) {
+      console.error('Error deleting single recurring booking:', error);
+      throw new Error('Failed to delete booking');
+    }
+  },
 
-          {/* Info Box */}
-          <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-            <p className="text-sm text-blue-800 dark:text-blue-300">
-              💡 <strong>Tip:</strong> Editing "This event only" will break it from the recurring series.
-            </p>
-          </div>
+  /**
+   * Delete all future bookings in a recurring series
+   */
+  async deleteFutureRecurringBookings(
+    recurringGroupId: string,
+    fromDate: string
+  ): Promise<void> {
+    try {
+      const futureBookings = await this.getFutureRecurringBookings(recurringGroupId, fromDate);
+      
+      // Delete in batches
+      const batchSize = 500;
+      for (let i = 0; i < futureBookings.length; i += batchSize) {
+        const batch = writeBatch(db);
+        const batchBookings = futureBookings.slice(i, i + batchSize);
+        
+        for (const booking of batchBookings) {
+          batch.delete(doc(db, 'bookings', booking.id));
+        }
+        
+        await batch.commit();
+      }
+    } catch (error) {
+      console.error('Error deleting future recurring bookings:', error);
+      throw new Error('Failed to delete recurring series');
+    }
+  },
 
-          {/* Buttons */}
-          <div className="flex space-x-3 pt-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 px-6 py-3 border border-slate-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-slate-100 dark:hover:bg-dark transition-colors font-medium"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              onClick={handleConfirm}
-              className={`flex-1 px-6 py-3 text-white rounded-lg transition-colors font-medium ${
-                action === 'delete'
-                  ? 'bg-red-600 hover:bg-red-700'
-                  : 'bg-[#6B2FB5] hover:bg-[#5a2596]'
-              }`}
-            >
-              {actionText}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+  /**
+   * Delete entire recurring series
+   */
+  async deleteRecurringSeries(recurringGroupId: string): Promise<void> {
+    try {
+      const allBookings = await this.getRecurringSeriesBookings(recurringGroupId);
+      
+      // Delete in batches
+      const batchSize = 500;
+      for (let i = 0; i < allBookings.length; i += batchSize) {
+        const batch = writeBatch(db);
+        const batchBookings = allBookings.slice(i, i + batchSize);
+        
+        for (const booking of batchBookings) {
+          batch.delete(doc(db, 'bookings', booking.id));
+        }
+        
+        await batch.commit();
+      }
+    } catch (error) {
+      console.error('Error deleting recurring series:', error);
+      throw new Error('Failed to delete recurring series');
+    }
+  },
 };
-
-export default RecurringBookingEditModal;
