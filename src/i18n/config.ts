@@ -16,7 +16,7 @@ const resources = {
       championships: 'Championships',
       myBookings: 'My Bookings',
       bookings: 'Bookings',
-      pendingRequests: 'Pending requests',
+      pendingRequests: 'Pending Requests',
       teams: 'Teams',
 
       // Calendar
@@ -30,22 +30,22 @@ const resources = {
       livePitchAvailability: 'Live pitch availability',
       selectDateAndPitch: 'Check available slots & book easily',
 
-      // Booking status
+      // Booking Status
       available: 'Available',
       pending: 'Pending',
       booked: 'Booked',
       blocked: 'Blocked',
 
       // Booking Modal
-      bookSlot: 'Book slot',
-      createBooking: 'Create booking',
-      editBooking: 'Edit booking',
-      blockSlot: 'Block slot',
-      selectDuration: 'Select duration',
+      bookSlot: 'Book Slot',
+      createBooking: 'Create Booking',
+      editBooking: 'Edit Booking',
+      blockSlot: 'Block Slot',
+      selectDuration: 'Select Duration',
       hours: 'hours',
       hour: 'hour',
-      phoneNumber: 'Phone number',
-      teamName: 'Team name',
+      phoneNumber: 'Phone Number',
+      teamName: 'Team Name',
       notes: 'Notes',
       submit: 'Submit',
       cancel: 'Cancel',
@@ -95,7 +95,7 @@ const resources = {
       // Footer
       contact: 'Contact',
       location: 'Location',
-      followUs: 'Follow us',
+      followUs: 'Follow Us',
 
       // Messages
       bookingSuccess: 'Booking request submitted successfully!',
@@ -111,6 +111,21 @@ const resources = {
       // Time
       am: 'AM',
       pm: 'PM',
+
+      // Dashboard
+      nextGames: 'Next games',
+      yesterdayResults: "Yesterday's results",
+      noUpcomingGames: 'No upcoming games scheduled',
+      noResultsYesterday: 'No results from yesterday',
+      showAll: 'Show all',
+      showLess: 'Show less',
+      bookAPitch: 'Book a pitch',
+      joinTheChampionship: 'Join the Championship',
+      registerYourTeam: 'Register your team and compete for glory!',
+      joinNow: 'Join now',
+      professionalFootballFacilities: 'Professional Football Facilities',
+      stateOfTheArtPitches: 'State-of-the-art pitches for the best experience',
+      learnMore: 'Learn more',
     }
   },
   gr: {
@@ -156,7 +171,7 @@ const resources = {
       hours: 'ώρες',
       hour: 'ώρα',
       phoneNumber: 'Τηλέφωνο',
-      teamName: 'Όνομα Ομάδας',
+      teamName: 'Όνομα ομάδας',
       notes: 'Σημειώσεις',
       submit: 'Υποβολή',
       cancel: 'Ακύρωση',
@@ -222,6 +237,21 @@ const resources = {
       // Time
       am: 'ΠΜ',
       pm: 'ΜΜ',
+
+      // Dashboard
+      nextGames: 'Επόμενα παιχνίδια',
+      yesterdayResults: 'Αποτελέσματα χθες',
+      noUpcomingGames: 'Δεν υπάρχουν προγραμματισμένα παιχνίδια',
+      noResultsYesterday: 'Δεν υπάρχουν αποτελέσματα από χθες',
+      showAll: 'Δείτε όλα',
+      showLess: 'Δείτε λιγότερα',
+      bookAPitch: 'Κάντε κράτηση',
+      joinTheChampionship: 'Εγγραφείτε στο Πρωτάθλημα',
+      registerYourTeam: 'Εγγράψτε την ομάδα σας και διαγωνιστείτε για τη δόξα!',
+      joinNow: 'Εγγραφή τώρα',
+      professionalFootballFacilities: 'Επαγγελματικές Εγκαταστάσεις Ποδοσφαίρου',
+      stateOfTheArtPitches: 'Γήπεδα τελευταίας τεχνολογίας για την καλύτερη εμπειρία',
+      learnMore: 'Μάθετε περισσότερα',
     }
   }
 };
