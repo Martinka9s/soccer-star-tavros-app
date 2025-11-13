@@ -240,16 +240,16 @@ const resources = {
 
       // Dashboard
       nextGames: 'Επόμενα παιχνίδια',
-      yesterdayResults: 'Αποτελέσματα χθες',
+      yesterdayResults: 'Χθεσινά αποτελέσματα',
       noUpcomingGames: 'Δεν υπάρχουν προγραμματισμένα παιχνίδια',
-      noResultsYesterday: 'Δεν υπάρχουν αποτελέσματα από χθες',
+      noResultsYesterday: 'Δεν υπάρχουν χθεσινά αποτελέσματα',
       showAll: 'Δείτε όλα',
       showLess: 'Δείτε λιγότερα',
       bookAPitch: 'Κάντε κράτηση',
-      joinTheChampionship: 'Εγγραφείτε στο Πρωτάθλημα',
+      joinTheChampionship: 'Εγγραφείτε στο πρωτάθλημα',
       registerYourTeam: 'Εγγράψτε την ομάδα σας και διαγωνιστείτε για τη δόξα!',
       joinNow: 'Εγγραφή τώρα',
-      professionalFootballFacilities: 'Επαγγελματικές Εγκαταστάσεις Ποδοσφαίρου',
+      professionalFootballFacilities: 'Επαγγελματικές εγκαταστάσεις ποδοσφαίρου',
       stateOfTheArtPitches: 'Γήπεδα τελευταίας τεχνολογίας για την καλύτερη εμπειρία',
       learnMore: 'Μάθετε περισσότερα',
     }
