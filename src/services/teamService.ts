@@ -444,3 +444,38 @@ export const teamService = {
     }
   },
 };
+
+// Inside teamService in firebaseService.ts
+async approveTeam(teamId: string, championship: ChampionshipType, adminEmail: string): Promise<void> {
+  try {
+    const teamDoc = await getDoc(doc(db, 'teams', teamId));
+    if (!teamDoc.exists()) throw new Error('Team not found');
+    
+    const team = teamDoc.data();
+    
+    // Update team
+    await updateDoc(doc(db, 'teams', teamId), {
+      status: 'approved',
+      championship,
+      approvedBy: adminEmail,
+      approvedAt: serverTimestamp(),
+      lastModified: serverTimestamp(),
+    });
+
+    // Update user
+    await updateDoc(doc(db, 'users', team.userId), {
+      teamId,
+      teamName: team.name,
+    });
+
+    // ✅ NEW: Send notification
+    await notificationService.notifyTeamApproval(
+      team.userId,
+      team.name,
+      championship
+    );
+  } catch (error) {
+    console.error('Error approving team:', error);
+    throw new Error('Failed to approve team');
+  }
+},
