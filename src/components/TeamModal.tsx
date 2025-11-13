@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, Trophy } from 'lucide-react';
 
 interface TeamModalProps {
@@ -16,6 +17,7 @@ const TeamModal: React.FC<TeamModalProps> = ({
   existingTeamName = '',
   existingPhone = '',
 }) => {
+  const { t } = useTranslation();
   const [teamName, setTeamName] = useState(existingTeamName);
   const [phoneNumber, setPhoneNumber] = useState(existingPhone);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -56,7 +58,7 @@ const TeamModal: React.FC<TeamModalProps> = ({
               <Trophy size={24} className="text-white" />
             </div>
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-              Join Championship
+              {t('joinChampionship', { defaultValue: 'Join Championship' })}
             </h2>
           </div>
           <button
@@ -71,13 +73,15 @@ const TeamModal: React.FC<TeamModalProps> = ({
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           <p className="text-gray-600 dark:text-gray-400">
-            Register your team to compete in our championships. An admin will review your request and assign you to the appropriate league.
+            {t('joinChampionshipDesc', { 
+              defaultValue: 'Register your team to compete in our championships. An admin will review your request and assign you to the appropriate league.'
+            })}
           </p>
 
           {/* Email (read-only) */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Email
+              {t('email')}
             </label>
             <input
               type="email"
@@ -90,13 +94,13 @@ const TeamModal: React.FC<TeamModalProps> = ({
           {/* Team Name */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Team Name <span className="text-red-500">*</span>
+              {t('teamName')} <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
               value={teamName}
               onChange={(e) => setTeamName(e.target.value)}
-              placeholder="Enter your team name"
+              placeholder={t('enterTeamName', { defaultValue: 'Enter your team name' })}
               required
               className="w-full px-4 py-3 bg-white dark:bg-dark border border-slate-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#6B2FB5] focus:border-transparent text-gray-900 dark:text-white placeholder-gray-400"
             />
@@ -105,13 +109,13 @@ const TeamModal: React.FC<TeamModalProps> = ({
           {/* Phone Number */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Phone Number <span className="text-red-500">*</span>
+              {t('phoneNumber', { defaultValue: 'Phone Number' })} <span className="text-red-500">*</span>
             </label>
             <input
               type="tel"
               value={phoneNumber}
               onChange={(e) => setPhoneNumber(e.target.value)}
-              placeholder="Enter your phone number"
+              placeholder={t('enterPhone', { defaultValue: 'Enter your phone number' })}
               required
               className="w-full px-4 py-3 bg-white dark:bg-dark border border-slate-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#6B2FB5] focus:border-transparent text-gray-900 dark:text-white placeholder-gray-400"
             />
@@ -127,7 +131,9 @@ const TeamModal: React.FC<TeamModalProps> = ({
           {/* Info Box */}
           <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
             <p className="text-sm text-blue-800 dark:text-blue-300">
-              📋 Your request will be reviewed by an admin who will assign you to one of our championships: MSL DREAM LEAGUE, MSL A, or MSL B.
+              📋 {t('championshipReviewInfo', {
+                defaultValue: 'Your request will be reviewed by an admin who will assign you to one of our championships: MSL DREAM LEAGUE, MSL A, or MSL B.'
+              })}
             </p>
           </div>
 
@@ -138,14 +144,14 @@ const TeamModal: React.FC<TeamModalProps> = ({
               onClick={onClose}
               className="flex-1 px-6 py-3 border border-slate-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-slate-100 dark:hover:bg-dark transition-colors font-medium"
             >
-              Cancel
+              {t('cancel', { defaultValue: 'Cancel' })}
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
               className="flex-1 px-6 py-3 bg-[#6B2FB5] hover:bg-[#5a2596] text-white rounded-lg transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isSubmitting ? 'Submitting...' : 'Submit Request'}
+              {isSubmitting ? t('submitting', { defaultValue: 'Submitting...' }) : t('submitRequest', { defaultValue: 'Submit Request' })}
             </button>
           </div>
         </form>
