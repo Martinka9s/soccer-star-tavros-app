@@ -16,7 +16,6 @@ const PendingRequests: React.FC<PendingRequestsProps> = ({ onCountChange }) => {
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
   
-  // Helper to format dates with locale
   const formatWithLocale = (date: Date, formatStr: string) => {
     return format(date, formatStr, { locale: i18n.language === 'el' ? el : undefined });
   };
@@ -55,37 +54,36 @@ const PendingRequests: React.FC<PendingRequestsProps> = ({ onCountChange }) => {
     safeRemoveFromUI(booking.id);
 
     try {
+      // ✅ Update booking status to 'booked'
       await bookingService.updateBooking(booking.id, {
         status: 'booked',
-        userId: booking.userId,
       });
+
+      // ✅ Send notification to user
+      if (booking.userId) {
+        try {
+          await notificationService.createNotification(
+            booking.userId,
+            'approved',
+            booking.id,
+            booking.pitchType,
+            booking.date,
+            booking.startTime,
+            t('bookingApproved', {
+              pitch: booking.pitchType,
+              date: booking.date,
+              time: booking.startTime,
+            })
+          );
+        } catch (e) {
+          console.warn('Notification write failed:', e);
+        }
+      }
     } catch (error: any) {
       if (error?.code !== 'not-found') {
         console.error('Error approving booking:', error);
         alert('Failed to approve booking');
         await loadPendingBookings();
-      }
-      setBusyId(null);
-      return;
-    }
-
-    if (booking.userId) {
-      try {
-        await notificationService.createNotification(
-          booking.userId,
-          'approved',
-          booking.id,
-          booking.pitchType,
-          booking.date,
-          booking.startTime,
-          t('bookingApproved', {
-            pitch: booking.pitchType,
-            date: booking.date,
-            time: booking.startTime,
-          })
-        );
-      } catch (e) {
-        console.warn('Notification write failed:', e);
       }
     }
 
@@ -94,40 +92,39 @@ const PendingRequests: React.FC<PendingRequestsProps> = ({ onCountChange }) => {
 
   const handleReject = async (booking: Booking) => {
     if (busyId) return;
-    if (!window.confirm('Are you sure you want to reject this booking?')) return;
+    if (!window.confirm(t('confirmReject') || 'Are you sure you want to reject this booking?')) return;
 
     setBusyId(booking.id);
     safeRemoveFromUI(booking.id);
 
     try {
       await bookingService.deleteBooking(booking.id);
+
+      // ✅ Send rejection notification
+      if (booking.userId) {
+        try {
+          await notificationService.createNotification(
+            booking.userId,
+            'rejected',
+            booking.id,
+            booking.pitchType,
+            booking.date,
+            booking.startTime,
+            t('bookingRejected', {
+              pitch: booking.pitchType,
+              date: booking.date,
+              time: booking.startTime,
+            })
+          );
+        } catch (e) {
+          console.warn('Notification write failed:', e);
+        }
+      }
     } catch (error: any) {
       if (error?.code !== 'not-found') {
         console.error('Error rejecting booking:', error);
         alert('Failed to reject booking');
         await loadPendingBookings();
-        setBusyId(null);
-        return;
-      }
-    }
-
-    if (booking.userId) {
-      try {
-        await notificationService.createNotification(
-          booking.userId,
-          'rejected',
-          booking.id,
-          booking.pitchType,
-          booking.date,
-          booking.startTime,
-          t('bookingRejected', {
-            pitch: booking.pitchType,
-            date: booking.date,
-            time: booking.startTime,
-          })
-        );
-      } catch (e) {
-        console.warn('Notification write failed:', e);
       }
     }
 
@@ -137,7 +134,7 @@ const PendingRequests: React.FC<PendingRequestsProps> = ({ onCountChange }) => {
   if (loading) {
     return (
       <div className="text-center py-12 text-gray-600 dark:text-gray-400">
-        Loading pending requests...
+        {t('loading') || 'Loading...'}
       </div>
     );
   }
@@ -145,9 +142,9 @@ const PendingRequests: React.FC<PendingRequestsProps> = ({ onCountChange }) => {
   if (pendingBookings.length === 0) {
     return (
       <div className="bg-slate-50 dark:bg-dark-lighter border border-slate-200 dark:border-gray-700 rounded-lg p-12 text-center">
-        <div className="text-gray-700 dark:text-gray-400 text-lg">No pending requests</div>
+        <div className="text-gray-700 dark:text-gray-400 text-lg">{t('noPendingRequests')}</div>
         <p className="text-gray-600 dark:text-gray-500 text-sm mt-2">
-          All booking requests have been processed
+          {t('allRequestsProcessed')}
         </p>
       </div>
     );
@@ -211,14 +208,14 @@ const PendingRequests: React.FC<PendingRequestsProps> = ({ onCountChange }) => {
 
                   {booking.teamName && (
                     <div className="text-sm">
-                      <span className="text-gray-600 dark:text-gray-400">Team: </span>
+                      <span className="text-gray-600 dark:text-gray-400">{t('teamName')}: </span>
                       <span className="text-gray-900 dark:text-white font-medium">{booking.teamName}</span>
                     </div>
                   )}
 
                   {booking.notes && (
                     <div className="p-3 bg-slate-100 dark:bg-dark rounded text-sm text-gray-700 dark:text-gray-300">
-                      <span className="text-gray-600 dark:text-gray-400">Notes: </span>
+                      <span className="text-gray-600 dark:text-gray-400">{t('notes')}: </span>
                       {booking.notes}
                     </div>
                   )}
@@ -235,7 +232,7 @@ const PendingRequests: React.FC<PendingRequestsProps> = ({ onCountChange }) => {
                     }`}
                   >
                     <Check size={20} />
-                    <span>{isBusy ? t('processing') ?? 'Processing…' : t('approve')}</span>
+                    <span>{isBusy ? t('processing') || 'Processing...' : t('approve')}</span>
                   </button>
 
                   <button
@@ -248,7 +245,7 @@ const PendingRequests: React.FC<PendingRequestsProps> = ({ onCountChange }) => {
                     }`}
                   >
                     <X size={20} />
-                    <span>{isBusy ? t('processing') ?? 'Processing…' : t('reject')}</span>
+                    <span>{isBusy ? t('processing') || 'Processing...' : t('reject')}</span>
                   </button>
                 </div>
               </div>
