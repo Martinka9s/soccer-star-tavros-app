@@ -123,3 +123,13 @@ export interface SeasonArchive {
   archivedAt: Date;
   archivedBy: string; // admin email
 }
+
+export interface Notification {
+  id: string;
+  userId: string;
+  message: string;
+  read: boolean;
+  type?: 'booking' | 'team_approved' | 'general';  // ← Add this if not already there
+  bookingId?: string;
+  createdAt: Date;
+}
