@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Trophy, Calendar, Award } from 'lucide-react';
 import { Team, ChampionshipType } from '../types';
 import { teamService } from '../services/firebaseService';
 
 const Championships: React.FC = () => {
+  const { t } = useTranslation();
   const [teams, setTeams] = useState<Team[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedChampionship, setSelectedChampionship] = useState<ChampionshipType>('MSL DREAM LEAGUE');
@@ -43,7 +45,7 @@ const Championships: React.FC = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="text-gray-600 dark:text-gray-400">Loading championships...</div>
+        <div className="text-gray-600 dark:text-gray-400">{t('loading', { defaultValue: 'Loading...' })}</div>
       </div>
     );
   }
@@ -54,10 +56,10 @@ const Championships: React.FC = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-            Championships
+            {t('championships', { defaultValue: 'Championships' })}
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
-            View standings and match schedules
+            {t('championshipsDesc', { defaultValue: 'View standings and match schedules' })}
           </p>
         </div>
       </div>
@@ -104,7 +106,7 @@ const Championships: React.FC = () => {
         <div className="px-6 py-4 bg-[#6B2FB5] border-b border-purple-600">
           <h2 className="text-xl font-bold text-white flex items-center">
             <Award size={24} className="mr-2" />
-            Standings
+            {t('standings', { defaultValue: 'Standings' })}
           </h2>
         </div>
 
@@ -112,7 +114,7 @@ const Championships: React.FC = () => {
           <div className="p-12 text-center">
             <Trophy size={48} className="mx-auto text-gray-400 mb-4" />
             <p className="text-gray-600 dark:text-gray-400">
-              No teams in this championship yet
+              {t('noTeamsInChampionship', { defaultValue: 'No teams in this championship yet' })}
             </p>
           </div>
         ) : (
@@ -222,21 +224,21 @@ const Championships: React.FC = () => {
       {sortedTeams.length > 0 && (
         <div className="bg-slate-100 dark:bg-dark-lighter rounded-lg p-4">
           <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-            Legend
+            {t('legend', { defaultValue: 'Legend' })}
           </h3>
           <div className="flex flex-wrap gap-4 text-xs text-gray-600 dark:text-gray-400">
-            <span><strong>Pld:</strong> Played</span>
-            <span><strong>W:</strong> Won</span>
-            <span><strong>D:</strong> Draw</span>
-            <span><strong>L:</strong> Lost</span>
-            <span><strong>GF:</strong> Goals For</span>
-            <span><strong>GA:</strong> Goals Against</span>
-            <span><strong>GD:</strong> Goal Difference</span>
-            <span><strong>Pts:</strong> Points</span>
+            <span><strong>{t('pld', { defaultValue: 'Pld' })}:</strong> {t('played', { defaultValue: 'Played' })}</span>
+            <span><strong>{t('w', { defaultValue: 'W' })}:</strong> {t('won', { defaultValue: 'Won' })}</span>
+            <span><strong>{t('d', { defaultValue: 'D' })}:</strong> {t('draw', { defaultValue: 'Draw' })}</span>
+            <span><strong>{t('l', { defaultValue: 'L' })}:</strong> {t('lost', { defaultValue: 'Lost' })}</span>
+            <span><strong>{t('gf', { defaultValue: 'GF' })}:</strong> {t('goalsFor', { defaultValue: 'Goals For' })}</span>
+            <span><strong>{t('ga', { defaultValue: 'GA' })}:</strong> {t('goalsAgainst', { defaultValue: 'Goals Against' })}</span>
+            <span><strong>{t('gd', { defaultValue: 'GD' })}:</strong> {t('goalDifference', { defaultValue: 'Goal Difference' })}</span>
+            <span><strong>{t('pts', { defaultValue: 'Pts' })}:</strong> {t('points', { defaultValue: 'Points' })}</span>
           </div>
           <div className="mt-2 pt-2 border-t border-slate-300 dark:border-gray-600">
             <span className="text-xs text-gray-600 dark:text-gray-400">
-              🟢 <strong>Top 3</strong> highlighted in green
+              🟢 <strong>{t('top3', { defaultValue: 'Top 3' })}</strong> {t('highlightedInGreen', { defaultValue: 'highlighted in green' })}
             </span>
           </div>
         </div>
@@ -247,13 +249,13 @@ const Championships: React.FC = () => {
         <div className="px-6 py-4 bg-[#6B2FB5] border-b border-purple-600">
           <h2 className="text-xl font-bold text-white flex items-center">
             <Calendar size={24} className="mr-2" />
-            Upcoming Matches
+            {t('upcomingMatches', { defaultValue: 'Upcoming Matches' })}
           </h2>
         </div>
         <div className="p-12 text-center">
           <Calendar size={48} className="mx-auto text-gray-400 mb-4" />
           <p className="text-gray-600 dark:text-gray-400">
-            Match schedule coming soon
+            {t('matchScheduleComingSoon', { defaultValue: 'Match schedule coming soon' })}
           </p>
         </div>
       </div>
