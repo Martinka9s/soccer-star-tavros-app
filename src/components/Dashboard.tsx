@@ -18,27 +18,27 @@ const Dashboard: React.FC<DashboardProps> = ({ onBookNowClick, onJoinChampionshi
   const carouselSlides = [
     {
       type: 'book-pitch',
-      image: '/sst_logo.PNG', // Replace with actual image
+      image: '/sst_logo.PNG',
       title: t('appName'),
       subtitle: t('livePitchAvailability'),
-      buttonText: 'Book a pitch',
+      buttonText: t('bookAPitch'),
       buttonAction: onBookNowClick,
     },
     {
       type: 'join-championship',
-      image: '/sst_logo.PNG', // Replace with actual championship image
-      title: 'Join the Championship',
-      subtitle: 'Register your team and compete for glory!',
-      buttonText: 'Join now',
+      image: '/sst_logo.PNG',
+      title: t('joinTheChampionship'),
+      subtitle: t('registerYourTeam'),
+      buttonText: t('joinNow'),
       buttonAction: onJoinChampionshipClick,
     },
     {
       type: 'info',
-      image: '/sst_logo.PNG', // Replace with actual promo image
-      title: 'Professional Football Facilities',
-      subtitle: 'State-of-the-art pitches for the best experience',
-      buttonText: 'Learn more',
-      buttonAction: onBookNowClick, // Can change this later
+      image: '/sst_logo.PNG',
+      title: t('professionalFootballFacilities'),
+      subtitle: t('stateOfTheArtPitches'),
+      buttonText: t('learnMore'),
+      buttonAction: onBookNowClick,
     },
   ];
 
@@ -59,16 +59,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onBookNowClick, onJoinChampionshi
   };
 
   // TODO: Replace with actual data fetched from Firebase
-  // Fetch yesterday's completed matches with scores
-  const yesterdayResults: Booking[] = [
-    // Mock data - will be replaced with Firebase query
-  ];
-
-  // TODO: Replace with actual data fetched from Firebase
-  // Fetch tomorrow's scheduled matches
-  const nextGames: Booking[] = [
-    // Mock data - will be replaced with Firebase query
-  ];
+  const yesterdayResults: Booking[] = [];
+  const nextGames: Booking[] = [];
 
   const displayedResults = showAllResults ? yesterdayResults : yesterdayResults.slice(0, 2);
   const displayedNextGames = showAllNextGames ? nextGames : nextGames.slice(0, 2);
@@ -127,7 +119,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onBookNowClick, onJoinChampionshi
           ))}
         </div>
 
-        {/* CTA Content - Dynamic based on current slide */}
+        {/* CTA Content */}
         <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4 z-15 pointer-events-none">
           <h1 className="text-4xl md:text-6xl font-bold text-white mb-4 drop-shadow-lg">
             {carouselSlides[currentSlide].title}
@@ -147,18 +139,18 @@ const Dashboard: React.FC<DashboardProps> = ({ onBookNowClick, onJoinChampionshi
         </div>
       </section>
 
-      {/* Next Games Section - NOW FIRST */}
+      {/* Next Games Section */}
       <section>
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
-            Next games
+            {t('nextGames')}
           </h2>
         </div>
 
         {nextGames.length === 0 ? (
           <div className="text-center py-12 bg-slate-100 dark:bg-dark-lighter rounded-lg">
             <p className="text-gray-600 dark:text-gray-400">
-              No upcoming games scheduled
+              {t('noUpcomingGames')}
             </p>
           </div>
         ) : (
@@ -192,7 +184,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onBookNowClick, onJoinChampionshi
                 onClick={() => setShowAllNextGames(!showAllNextGames)}
                 className="w-full mt-4 py-2 text-[#6B2FB5] dark:text-primary hover:text-[#5a2596] dark:hover:text-primary-light font-medium flex items-center justify-center space-x-1 transition-colors"
               >
-                <span>{showAllNextGames ? 'Show less' : 'Show all'}</span>
+                <span>{showAllNextGames ? t('showLess') : t('showAll')}</span>
                 {showAllNextGames ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
               </button>
             )}
@@ -200,18 +192,18 @@ const Dashboard: React.FC<DashboardProps> = ({ onBookNowClick, onJoinChampionshi
         )}
       </section>
 
-      {/* Yesterday's Results Section - NOW SECOND */}
+      {/* Yesterday's Results Section */}
       <section>
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
-            Yesterday's results
+            {t('yesterdayResults')}
           </h2>
         </div>
 
         {yesterdayResults.length === 0 ? (
           <div className="text-center py-12 bg-slate-100 dark:bg-dark-lighter rounded-lg">
             <p className="text-gray-600 dark:text-gray-400">
-              No results from yesterday
+              {t('noResultsYesterday')}
             </p>
           </div>
         ) : (
@@ -242,7 +234,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onBookNowClick, onJoinChampionshi
                 onClick={() => setShowAllResults(!showAllResults)}
                 className="w-full mt-4 py-2 text-[#6B2FB5] dark:text-primary hover:text-[#5a2596] dark:hover:text-primary-light font-medium flex items-center justify-center space-x-1 transition-colors"
               >
-                <span>{showAllResults ? 'Show less' : 'Show all'}</span>
+                <span>{showAllResults ? t('showLess') : t('showAll')}</span>
                 {showAllResults ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
               </button>
             )}
