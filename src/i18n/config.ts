@@ -222,13 +222,13 @@ const resources = {
   }
 };
 
-// Read saved language if present; otherwise default to Greek ('el')
-const getInitialLang = (): 'el' | 'en' => {
+// Read saved language if present; otherwise default to Greek ('gr')
+const getInitialLang = (): 'gr' | 'en' => {
   try {
     const saved = typeof window !== 'undefined' ? localStorage.getItem('i18nextLng') : null;
-    if (saved === 'el' || saved === 'en') return saved;
+    if (saved === 'gr' || saved === 'en') return saved;
   } catch {}
-  return 'el';
+  return 'gr';
 };
 
 i18n
@@ -236,7 +236,7 @@ i18n
   .init({
     resources,
     lng: getInitialLang(),   // preselect Greek on first load, or saved choice
-    fallbackLng: 'el',       // fall back to Greek
+    fallbackLng: 'gr',       // fall back to Greek
     interpolation: { escapeValue: false },
   });
 
