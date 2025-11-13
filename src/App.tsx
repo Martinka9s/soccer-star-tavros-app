@@ -69,8 +69,8 @@ function App() {
     } catch {}
   };
 
-  const handleRegister = async (email: string, password: string, teamName: string) => {
-    await authService.register(email, password, teamName);
+  const handleRegister = async (email: string, password: string) => {
+    await authService.register(email, password);
     setShowAuthModal(false);
     const newTab = 'myBookings';
     setActiveTab(newTab);
