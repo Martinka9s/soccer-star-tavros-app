@@ -10,37 +10,37 @@ export interface User {
   role: UserRole;
   teamName?: string;
   phoneNumber?: string;
-  teamId?: string; // Link to approved Team
+  teamId?: string;
   createdAt: Date;
 }
 
 export interface Booking {
   id: string;
   pitchType: PitchType;
-  date: string; // YYYY-MM-DD format
-  startTime: string; // HH:mm format (now supports 5-minute intervals)
-  duration: number; // in hours
+  date: string;
+  startTime: string;
+  duration: number;
   status: BookingStatus;
   
-  // Match between two teams (when admin creates)
+  // Match between two teams
   homeTeam?: string;
   awayTeam?: string;
   homeTeamUserId?: string;
   awayTeamUserId?: string;
   
-  // Match scores (entered by admin after match ends)
+  // Match scores
   homeTeamScore?: number;
   awayTeamScore?: number;
   matchCompleted?: boolean;
   
-  // Championship assignment (for matches)
+  // Championship assignment
   championship?: ChampionshipType;
   
   // Recurring booking fields
   isRecurring?: boolean;
-  recurringPattern?: 'weekly'; // Can add 'daily', 'monthly' later
-  recurringGroupId?: string; // Same ID for all bookings in the series
-  recurringEndDate?: string; // When to stop creating recurring bookings (optional)
+  recurringPattern?: 'weekly';
+  recurringGroupId?: string;
+  recurringEndDate?: string;
   
   // Single user booking
   userId?: string;
@@ -56,7 +56,7 @@ export interface Booking {
 export interface Notification {
   id: string;
   userId: string;
-  type: 'approved' | 'rejected' | 'cancelled' | 'match_scheduled' | 'team_approved' | 'team_declined';
+  type: 'approved' | 'rejected' | 'cancelled' | 'match_scheduled' | 'team_approved' | 'team_declined' | 'booking' | 'general';
   bookingId?: string;
   teamId?: string;
   pitchType?: PitchType;
@@ -73,63 +73,50 @@ export interface TimeSlot {
   minute: number;
 }
 
-// Team with championship assignment and stats
 export interface Team {
   id: string;
   name: string;
   userId: string;
   userEmail: string;
   phoneNumber: string;
-  championship?: ChampionshipType; // Set when approved
+  championship?: ChampionshipType;
   status: TeamStatus;
   stats: {
-    points: number;        // Pts
-    played: number;        // Pla
-    wins: number;          // W
-    draws: number;         // D
-    losses: number;        // L
-    goalsFor: number;      // GF
-    goalsAgainst: number;  // GA
-    goalDifference: number; // GD
+    points: number;
+    played: number;
+    wins: number;
+    draws: number;
+    losses: number;
+    goalsFor: number;
+    goalsAgainst: number;
+    goalDifference: number;
   };
   createdAt: Date;
   approvedAt?: Date;
-  reviewedBy?: string; // admin email who approved/declined
+  reviewedBy?: string;
   lastModified: Date;
 }
 
-// Championship Standings (calculated view from Team stats)
 export interface ChampionshipStanding {
   rank: number;
   teamName: string;
-  points: number;        // Pts (Points)
-  played: number;        // Pla
-  wins: number;          // W
-  draws: number;         // D
-  losses: number;        // L
-  goalsFor: number;      // GF
-  goalsAgainst: number;  // GA
-  goalDifference: number; // GD
+  points: number;
+  played: number;
+  wins: number;
+  draws: number;
+  losses: number;
+  goalsFor: number;
+  goalsAgainst: number;
+  goalDifference: number;
 }
 
-// Historical season data (archived when championship is reset)
 export interface SeasonArchive {
   id: string;
   championship: ChampionshipType;
-  seasonYear: string; // "2024-2025"
+  seasonYear: string;
   teams: Team[];
   finalStandings: ChampionshipStanding[];
   totalMatches: number;
   archivedAt: Date;
-  archivedBy: string; // admin email
-}
-
-export interface Notification {
-  id: string;
-  userId: string;
-  message: string;
-  read: boolean;
-  type?: 'booking' | 'team_approved' | 'general';  // ← Add this if not already there
-  bookingId?: string;
-  createdAt: Date;
+  archivedBy: string;
 }
