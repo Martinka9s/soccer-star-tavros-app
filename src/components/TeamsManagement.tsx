@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Trophy, Check, X, Trash2, MoveHorizontal, RotateCcw, ChevronDown } from 'lucide-react';
+import { Trophy, Check, X, Trash2, MoveHorizontal, RotateCcw, ChevronDown, Edit2, RotateCw } from 'lucide-react';
 import { Team, ChampionshipType } from '../types';
 import { teamService } from '../services/firebaseService';
 
@@ -11,6 +11,8 @@ const TeamsManagement: React.FC<TeamsManagementProps> = ({ adminEmail }) => {
   const [teams, setTeams] = useState<Team[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedChampionship, setSelectedChampionship] = useState<ChampionshipType | ''>('');
+  const [editingTeamId, setEditingTeamId] = useState<string | null>(null);
+  const [moveToChampionship, setMoveToChampionship] = useState<ChampionshipType | ''>('');
 
   // Fetch teams from Firebase
   useEffect(() => {
@@ -34,12 +36,13 @@ const TeamsManagement: React.FC<TeamsManagementProps> = ({ adminEmail }) => {
   const dreamLeagueTeams = teams.filter(t => t.status === 'approved' && t.championship === 'MSL DREAM LEAGUE');
   const mslATeams = teams.filter(t => t.status === 'approved' && t.championship === 'MSL A');
   const mslBTeams = teams.filter(t => t.status === 'approved' && t.championship === 'MSL B');
+  const inactiveTeams = teams.filter(t => t.status === 'declined' || t.status === 'inactive');
 
   const handleApprove = async (teamId: string, championship: ChampionshipType) => {
     try {
       await teamService.approveTeam(teamId, championship, adminEmail);
       alert('Team approved successfully!');
-      await loadTeams(); // Reload teams
+      await loadTeams();
     } catch (error: any) {
       console.error('Error approving team:', error);
       alert(error.message || 'Failed to approve team');
@@ -47,11 +50,11 @@ const TeamsManagement: React.FC<TeamsManagementProps> = ({ adminEmail }) => {
   };
 
   const handleDecline = async (teamId: string) => {
-    if (!window.confirm('Are you sure you want to decline this team registration?')) return;
+    if (!window.confirm('Decline this team registration? They will be moved to Inactive Teams.')) return;
     try {
       await teamService.declineTeam(teamId, adminEmail);
-      alert('Team declined');
-      await loadTeams(); // Reload teams
+      alert('Team declined and moved to Inactive Teams');
+      await loadTeams();
     } catch (error: any) {
       console.error('Error declining team:', error);
       alert(error.message || 'Failed to decline team');
@@ -63,22 +66,36 @@ const TeamsManagement: React.FC<TeamsManagementProps> = ({ adminEmail }) => {
     try {
       await teamService.moveTeam(teamId, newChampionship);
       alert('Team moved successfully! Stats have been reset.');
-      await loadTeams(); // Reload teams
+      setEditingTeamId(null);
+      setMoveToChampionship('');
+      await loadTeams();
     } catch (error: any) {
       console.error('Error moving team:', error);
       alert(error.message || 'Failed to move team');
     }
   };
 
-  const handleRemoveTeam = async (teamId: string) => {
-    if (!window.confirm('Are you sure you want to remove this team?')) return;
+  const handleDeactivateTeam = async (teamId: string) => {
+    if (!window.confirm('Deactivate this team? They will be moved to Inactive Teams.')) return;
     try {
-      await teamService.removeTeam(teamId);
-      alert('Team removed successfully');
-      await loadTeams(); // Reload teams
+      await teamService.deactivateTeam(teamId);
+      alert('Team deactivated and moved to Inactive Teams');
+      setEditingTeamId(null);
+      await loadTeams();
     } catch (error: any) {
-      console.error('Error removing team:', error);
-      alert(error.message || 'Failed to remove team');
+      console.error('Error deactivating team:', error);
+      alert(error.message || 'Failed to deactivate team');
+    }
+  };
+
+  const handleReactivateTeam = async (teamId: string, championship: ChampionshipType) => {
+    try {
+      await teamService.approveTeam(teamId, championship, adminEmail);
+      alert('Team reactivated successfully!');
+      await loadTeams();
+    } catch (error: any) {
+      console.error('Error reactivating team:', error);
+      alert(error.message || 'Failed to reactivate team');
     }
   };
 
@@ -91,7 +108,7 @@ const TeamsManagement: React.FC<TeamsManagementProps> = ({ adminEmail }) => {
     try {
       await teamService.resetChampionship(championship, adminEmail);
       alert(`${championship} has been reset for the new season!`);
-      await loadTeams(); // Reload teams
+      await loadTeams();
     } catch (error: any) {
       console.error('Error resetting championship:', error);
       alert(error.message || 'Failed to reset championship');
@@ -197,8 +214,12 @@ const TeamsManagement: React.FC<TeamsManagementProps> = ({ adminEmail }) => {
       <ChampionshipSection
         championship="MSL DREAM LEAGUE"
         teams={dreamLeagueTeams}
+        editingTeamId={editingTeamId}
+        setEditingTeamId={setEditingTeamId}
+        moveToChampionship={moveToChampionship}
+        setMoveToChampionship={setMoveToChampionship}
         onMoveTeam={handleMoveTeam}
-        onRemoveTeam={handleRemoveTeam}
+        onDeactivateTeam={handleDeactivateTeam}
         onResetChampionship={handleResetChampionship}
       />
 
@@ -206,8 +227,12 @@ const TeamsManagement: React.FC<TeamsManagementProps> = ({ adminEmail }) => {
       <ChampionshipSection
         championship="MSL A"
         teams={mslATeams}
+        editingTeamId={editingTeamId}
+        setEditingTeamId={setEditingTeamId}
+        moveToChampionship={moveToChampionship}
+        setMoveToChampionship={setMoveToChampionship}
         onMoveTeam={handleMoveTeam}
-        onRemoveTeam={handleRemoveTeam}
+        onDeactivateTeam={handleDeactivateTeam}
         onResetChampionship={handleResetChampionship}
       />
 
@@ -215,9 +240,19 @@ const TeamsManagement: React.FC<TeamsManagementProps> = ({ adminEmail }) => {
       <ChampionshipSection
         championship="MSL B"
         teams={mslBTeams}
+        editingTeamId={editingTeamId}
+        setEditingTeamId={setEditingTeamId}
+        moveToChampionship={moveToChampionship}
+        setMoveToChampionship={setMoveToChampionship}
         onMoveTeam={handleMoveTeam}
-        onRemoveTeam={handleRemoveTeam}
+        onDeactivateTeam={handleDeactivateTeam}
         onResetChampionship={handleResetChampionship}
+      />
+
+      {/* Inactive Teams Section */}
+      <InactiveTeamsSection
+        teams={inactiveTeams}
+        onReactivate={handleReactivateTeam}
       />
     </div>
   );
@@ -227,21 +262,27 @@ const TeamsManagement: React.FC<TeamsManagementProps> = ({ adminEmail }) => {
 interface ChampionshipSectionProps {
   championship: ChampionshipType;
   teams: Team[];
+  editingTeamId: string | null;
+  setEditingTeamId: (id: string | null) => void;
+  moveToChampionship: ChampionshipType | '';
+  setMoveToChampionship: (championship: ChampionshipType | '') => void;
   onMoveTeam: (teamId: string, newChampionship: ChampionshipType) => void;
-  onRemoveTeam: (teamId: string) => void;
+  onDeactivateTeam: (teamId: string) => void;
   onResetChampionship: (championship: ChampionshipType) => void;
 }
 
 const ChampionshipSection: React.FC<ChampionshipSectionProps> = ({
   championship,
   teams,
+  editingTeamId,
+  setEditingTeamId,
+  moveToChampionship,
+  setMoveToChampionship,
   onMoveTeam,
-  onRemoveTeam,
+  onDeactivateTeam,
   onResetChampionship,
 }) => {
   const [expanded, setExpanded] = useState(true);
-  const [selectedTeamId, setSelectedTeamId] = useState('');
-  const [targetChampionship, setTargetChampionship] = useState<ChampionshipType | ''>('');
 
   const otherChampionships: ChampionshipType[] = [
     'MSL DREAM LEAGUE',
@@ -284,82 +325,225 @@ const ChampionshipSection: React.FC<ChampionshipSectionProps> = ({
             </div>
           ) : (
             <div className="space-y-3">
-              {teams.map((team) => (
-                <div
-                  key={team.id}
-                  className="bg-slate-100 dark:bg-dark-lighter rounded-lg p-6 hover:shadow-lg transition-shadow"
-                >
-                  <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
-                    <div className="flex-1">
-                      <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">
-                        {team.name}
-                      </h3>
-                      <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
-                        <p>👤 {team.userEmail}</p>
-                        <p>📞 {team.phoneNumber}</p>
-                        <div className="flex flex-wrap gap-2 mt-2">
-                          <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 rounded text-xs">
-                            Pts: {team.stats.points}
-                          </span>
-                          <span className="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300 rounded text-xs">
-                            Pla: {team.stats.played}
-                          </span>
-                          <span className="px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 rounded text-xs">
-                            W: {team.stats.wins}
-                          </span>
-                          <span className="px-2 py-1 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 rounded text-xs">
-                            D: {team.stats.draws}
-                          </span>
-                          <span className="px-2 py-1 bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 rounded text-xs">
-                            L: {team.stats.losses}
-                          </span>
+              {teams.map((team) => {
+                const isEditing = editingTeamId === team.id;
+
+                return (
+                  <div
+                    key={team.id}
+                    className="bg-slate-100 dark:bg-dark-lighter rounded-lg p-6 hover:shadow-lg transition-shadow"
+                  >
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
+                      <div className="flex-1">
+                        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">
+                          {team.name}
+                        </h3>
+                        <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+                          <p>👤 {team.userEmail}</p>
+                          <p>📞 {team.phoneNumber}</p>
+                          <div className="flex flex-wrap gap-2 mt-2">
+                            <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 rounded text-xs">
+                              Pts: {team.stats.points}
+                            </span>
+                            <span className="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300 rounded text-xs">
+                              Pla: {team.stats.played}
+                            </span>
+                            <span className="px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 rounded text-xs">
+                              W: {team.stats.wins}
+                            </span>
+                            <span className="px-2 py-1 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 rounded text-xs">
+                              D: {team.stats.draws}
+                            </span>
+                            <span className="px-2 py-1 bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 rounded text-xs">
+                              L: {team.stats.losses}
+                            </span>
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    <div className="flex flex-col space-y-2 md:ml-4">
-                      <div className="flex space-x-2">
-                        <select
-                          value={selectedTeamId === team.id ? targetChampionship : ''}
-                          onChange={(e) => {
-                            setSelectedTeamId(team.id);
-                            setTargetChampionship(e.target.value as ChampionshipType);
-                          }}
-                          className="px-3 py-2 bg-white dark:bg-dark border border-slate-300 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white"
-                        >
-                          <option value="">Move to...</option>
-                          {otherChampionships.map((ch) => (
-                            <option key={ch} value={ch}>
-                              {ch}
-                            </option>
-                          ))}
-                        </select>
-
-                        {selectedTeamId === team.id && targetChampionship && (
+                      <div className="flex flex-col space-y-2 md:ml-4">
+                        {!isEditing ? (
                           <button
-                            onClick={() => {
-                              onMoveTeam(team.id, targetChampionship as ChampionshipType);
-                              setSelectedTeamId('');
-                              setTargetChampionship('');
-                            }}
-                            className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm"
+                            onClick={() => setEditingTeamId(team.id)}
+                            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium flex items-center justify-center space-x-2"
                           >
-                            <MoveHorizontal size={18} />
+                            <Edit2 size={18} />
+                            <span>Edit</span>
                           </button>
+                        ) : (
+                          <>
+                            <select
+                              value={moveToChampionship}
+                              onChange={(e) => setMoveToChampionship(e.target.value as ChampionshipType)}
+                              className="px-3 py-2 bg-white dark:bg-dark border border-slate-300 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white"
+                            >
+                              <option value="">Move to...</option>
+                              {otherChampionships.map((ch) => (
+                                <option key={ch} value={ch}>
+                                  {ch}
+                                </option>
+                              ))}
+                            </select>
+
+                            {moveToChampionship && (
+                              <button
+                                onClick={() => {
+                                  onMoveTeam(team.id, moveToChampionship as ChampionshipType);
+                                }}
+                                className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors font-medium flex items-center justify-center space-x-2"
+                              >
+                                <MoveHorizontal size={18} />
+                                <span>Move Team</span>
+                              </button>
+                            )}
+
+                            <button
+                              onClick={() => onDeactivateTeam(team.id)}
+                              className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg transition-colors font-medium flex items-center justify-center space-x-2"
+                            >
+                              <Trash2 size={18} />
+                              <span>Deactivate</span>
+                            </button>
+
+                            <button
+                              onClick={() => {
+                                setEditingTeamId(null);
+                                setMoveToChampionship('');
+                              }}
+                              className="px-4 py-2 border border-slate-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-slate-200 dark:hover:bg-dark transition-colors font-medium"
+                            >
+                              Cancel
+                            </button>
+                          </>
                         )}
                       </div>
-
-                      <button
-                        onClick={() => onRemoveTeam(team.id)}
-                        className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors font-medium flex items-center justify-center space-x-1 text-sm"
-                      >
-                        <Trash2 size={16} />
-                        <span>Remove</span>
-                      </button>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
+            </div>
+          )}
+        </>
+      )}
+    </section>
+  );
+};
+
+// Inactive Teams Section Component
+interface InactiveTeamsSectionProps {
+  teams: Team[];
+  onReactivate: (teamId: string, championship: ChampionshipType) => void;
+}
+
+const InactiveTeamsSection: React.FC<InactiveTeamsSectionProps> = ({
+  teams,
+  onReactivate,
+}) => {
+  const [expanded, setExpanded] = useState(false);
+  const [reactivatingTeamId, setReactivatingTeamId] = useState<string | null>(null);
+  const [selectedChampionship, setSelectedChampionship] = useState<ChampionshipType | ''>('');
+
+  return (
+    <section>
+      <div className="flex items-center justify-between mb-4">
+        <button
+          onClick={() => setExpanded(!expanded)}
+          className="flex items-center space-x-2 text-2xl font-bold text-gray-900 dark:text-white hover:text-[#6B2FB5] dark:hover:text-primary transition-colors"
+        >
+          <Trash2 size={28} className="text-gray-500" />
+          <span>Inactive Teams</span>
+          <span className="text-sm font-normal text-gray-600 dark:text-gray-400">
+            ({teams.length} teams)
+          </span>
+          <ChevronDown
+            size={24}
+            className={`transition-transform ${expanded ? 'rotate-180' : ''}`}
+          />
+        </button>
+      </div>
+
+      {expanded && (
+        <>
+          {teams.length === 0 ? (
+            <div className="bg-slate-100 dark:bg-dark-lighter rounded-lg p-8 text-center">
+              <p className="text-gray-600 dark:text-gray-400">No inactive teams</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {teams.map((team) => {
+                const isReactivating = reactivatingTeamId === team.id;
+
+                return (
+                  <div
+                    key={team.id}
+                    className="bg-slate-100 dark:bg-dark-lighter rounded-lg p-6 opacity-75 hover:opacity-100 transition-all"
+                  >
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
+                      <div className="flex-1">
+                        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">
+                          {team.name}
+                          <span className="ml-2 px-2 py-1 bg-gray-500 text-white text-xs rounded">
+                            {team.status === 'declined' ? 'Declined' : 'Inactive'}
+                          </span>
+                        </h3>
+                        <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+                          <p>👤 {team.userEmail}</p>
+                          <p>📞 {team.phoneNumber}</p>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col space-y-2 md:ml-4">
+                        {!isReactivating ? (
+                          <button
+                            onClick={() => setReactivatingTeamId(team.id)}
+                            className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors font-medium flex items-center justify-center space-x-2"
+                          >
+                            <RotateCw size={18} />
+                            <span>Reactivate</span>
+                          </button>
+                        ) : (
+                          <>
+                            <select
+                              value={selectedChampionship}
+                              onChange={(e) => setSelectedChampionship(e.target.value as ChampionshipType)}
+                              className="px-4 py-2 bg-white dark:bg-dark border border-slate-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white"
+                            >
+                              <option value="">Select Championship</option>
+                              <option value="MSL DREAM LEAGUE">MSL DREAM LEAGUE</option>
+                              <option value="MSL A">MSL A</option>
+                              <option value="MSL B">MSL B</option>
+                            </select>
+
+                            <button
+                              onClick={() => {
+                                if (selectedChampionship) {
+                                  onReactivate(team.id, selectedChampionship as ChampionshipType);
+                                  setReactivatingTeamId(null);
+                                  setSelectedChampionship('');
+                                }
+                              }}
+                              disabled={!selectedChampionship}
+                              className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              Confirm Reactivate
+                            </button>
+
+                            <button
+                              onClick={() => {
+                                setReactivatingTeamId(null);
+                                setSelectedChampionship('');
+                              }}
+                              className="px-4 py-2 border border-slate-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-slate-200 dark:hover:bg-dark transition-colors font-medium"
+                            >
+                              Cancel
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
         </>
