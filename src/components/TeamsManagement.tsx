@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
-import { Trophy, Check, X, Edit2, Trash2, MoveHorizontal, RotateCcw, ChevronDown } from 'lucide-react';
+import { Trophy, Check, X, Trash2, MoveHorizontal, RotateCcw, ChevronDown } from 'lucide-react';
 import { Team, ChampionshipType } from '../types';
 
 interface TeamsManagementProps {
@@ -8,11 +7,8 @@ interface TeamsManagementProps {
 }
 
 const TeamsManagement: React.FC<TeamsManagementProps> = () => {
-  const { t } = useTranslation();
   const [teams, setTeams] = useState<Team[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
-  const [showMoveModal, setShowMoveModal] = useState(false);
   const [selectedChampionship, setSelectedChampionship] = useState<ChampionshipType | ''>('');
 
   // TODO: Fetch teams from Firebase
