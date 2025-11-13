@@ -11,11 +11,13 @@ const resources = {
       register: 'Register',
 
       // Navigation
+      home: 'Home',
       calendar: 'Calendar',
       championships: 'Championships',
       myBookings: 'My Bookings',
       bookings: 'Bookings',
-      pendingRequests: 'Pending Requests',
+      pendingRequests: 'Pending requests',
+      teams: 'Teams',
 
       // Calendar
       today: 'Today',
@@ -28,22 +30,22 @@ const resources = {
       livePitchAvailability: 'Live pitch availability',
       selectDateAndPitch: 'Check available slots & book easily',
 
-      // Booking Status
+      // Booking status
       available: 'Available',
       pending: 'Pending',
       booked: 'Booked',
       blocked: 'Blocked',
 
       // Booking Modal
-      bookSlot: 'Book Slot',
-      createBooking: 'Create Booking',
-      editBooking: 'Edit Booking',
-      blockSlot: 'Block Slot',
-      selectDuration: 'Select Duration',
+      bookSlot: 'Book slot',
+      createBooking: 'Create booking',
+      editBooking: 'Edit booking',
+      blockSlot: 'Block slot',
+      selectDuration: 'Select duration',
       hours: 'hours',
       hour: 'hour',
-      phoneNumber: 'Phone Number',
-      teamName: 'Team Name',
+      phoneNumber: 'Phone number',
+      teamName: 'Team name',
       notes: 'Notes',
       submit: 'Submit',
       cancel: 'Cancel',
@@ -64,7 +66,7 @@ const resources = {
       signIn: 'Sign in',
       loginRequired: 'Please login to book a slot',
 
-      // NEW: Auth error/help texts
+      // Auth error/help texts
       auth_email_in_use: 'Email already in use. Try logging in or reset your password.',
       auth_invalid_email: 'Invalid email address.',
       auth_weak_password: 'Password must be at least 6 characters long and include one uppercase letter, one lowercase letter, and one number.',
@@ -93,7 +95,7 @@ const resources = {
       // Footer
       contact: 'Contact',
       location: 'Location',
-      followUs: 'Follow Us',
+      followUs: 'Follow us',
 
       // Messages
       bookingSuccess: 'Booking request submitted successfully!',
@@ -111,7 +113,7 @@ const resources = {
       pm: 'PM',
     }
   },
-  el: {
+  gr: {
     translation: {
       // Header
       appName: 'Soccer Star Tavros',
@@ -120,11 +122,13 @@ const resources = {
       register: 'Εγγραφή',
 
       // Navigation
+      home: 'Αρχική',
       calendar: 'Ημερολόγιο',
       championships: 'Πρωταθλήματα',
-      myBookings: 'Οι Κρατήσεις μου',
+      myBookings: 'Οι κρατήσεις μου',
       bookings: 'Κρατήσεις',
       pendingRequests: 'Αιτήματα σε εκκρεμότητα',
+      teams: 'Ομάδες',
 
       // Calendar
       today: 'Σήμερα',
@@ -173,7 +177,7 @@ const resources = {
       signIn: 'Σύνδεση',
       loginRequired: 'Παρακαλώ συνδεθείτε για να κάνετε κράτηση',
 
-      // NEW: Auth error/help texts (EL)
+      // Auth error/help texts
       auth_email_in_use: 'Το email χρησιμοποιείται ήδη. Δοκιμάστε σύνδεση ή επαναφορά κωδικού.',
       auth_invalid_email: 'Μη έγκυρο email.',
       auth_weak_password: 'Ο κωδικός πρέπει να έχει τουλάχιστον 6 χαρακτήρες, 1 κεφαλαίο, 1 πεζό γράμμα και 1 αριθμό.',
@@ -235,8 +239,8 @@ i18n
   .use(initReactI18next)
   .init({
     resources,
-    lng: getInitialLang(),   // preselect Greek on first load, or saved choice
-    fallbackLng: 'gr',       // fall back to Greek
+    lng: getInitialLang(),
+    fallbackLng: 'gr',
     interpolation: { escapeValue: false },
   });
 
