@@ -28,19 +28,16 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [showModal, setShowModal] = useState(false);
 
-  // visual pitch toggle (pill buttons on the right)
   const [activePitch, setActivePitch] = useState<PitchType>('Pitch A');
 
   const dateString = format(currentDate, 'yyyy-MM-dd');
   
-  // Helper to format dates with locale
   const formatWithLocale = (date: Date, formatStr: string) => {
     return format(date, formatStr, { locale: i18n.language === 'el' ? el : undefined });
   };
 
   useEffect(() => {
     loadBookings();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dateString]);
 
   const loadBookings = async () => {
@@ -55,16 +52,15 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
     }
   };
 
-  // Slots from 09:00 up to 00:00–01:00 (last slot starts at midnight)
   const timeSlots = Array.from({ length: 16 }, (_, i) => {
-    const startHour24 = 9 + i;                 // 9..24
-    const endHour24 = (startHour24 + 1) % 24;  // 10..01
+    const startHour24 = 9 + i;
+    const endHour24 = (startHour24 + 1) % 24;
     const start = `${(startHour24 % 24).toString().padStart(2, '0')}:00`;
     const labelStart = start;
     const labelEnd = `${endHour24.toString().padStart(2, '0')}:00`;
     return {
-      time: start,                              // start time in 24h
-      display: `${labelStart} - ${labelEnd}`,   // e.g., 23:00 - 00:00, 00:00 - 01:00
+      time: start,
+      display: `${labelStart} - ${labelEnd}`,
     };
   });
 
@@ -90,18 +86,20 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
     return { status: 'available' };
   };
 
-  const getCardClasses = (status: 'available' | 'pending' | 'booked' | 'blocked'): string => {
+  const getCardClasses = (status: 'available' | 'pending' | 'booked' | 'blocked', isClickable: boolean): string => {
+    const baseClasses = isClickable ? 'cursor-pointer' : 'cursor-default';
+    
     switch (status) {
       case 'available':
-        return 'bg-green-100 dark:bg-[#2C3144] hover:bg-green-200 dark:hover:bg-[#343a52] border-2 border-slate-200 dark:border-transparent shadow-sm';
+        return `${baseClasses} bg-green-100 dark:bg-[#2C3144] ${isClickable ? 'hover:bg-green-200 dark:hover:bg-[#343a52]' : ''} border-2 border-slate-200 dark:border-transparent shadow-sm`;
       case 'pending':
-        return 'bg-amber-50 dark:bg-amber-600/30 hover:bg-amber-100 dark:hover:bg-amber-600/40 border-2 border-amber-200 dark:border-amber-500/40 shadow-md';
+        return `${baseClasses} bg-amber-50 dark:bg-amber-600/30 ${isClickable ? 'hover:bg-amber-100 dark:hover:bg-amber-600/40' : ''} border-2 border-amber-200 dark:border-amber-500/40 shadow-md`;
       case 'booked':
-        return 'bg-red-50 dark:bg-red-600/30 hover:bg-red-100 dark:hover:bg-red-600/40 border-2 border-red-200 dark:border-red-500/40 shadow-md';
+        return `${baseClasses} bg-red-50 dark:bg-red-600/30 ${isClickable ? 'hover:bg-red-100 dark:hover:bg-red-600/40' : ''} border-2 border-red-200 dark:border-red-500/40 shadow-md`;
       case 'blocked':
-        return 'bg-slate-100 dark:bg-slate-700/60 hover:bg-slate-200 dark:hover:bg-slate-700/70 border-2 border-slate-300 dark:border-transparent shadow-sm';
+        return `${baseClasses} bg-slate-100 dark:bg-slate-700/60 ${isClickable ? 'hover:bg-slate-200 dark:hover:bg-slate-700/70' : ''} border-2 border-slate-300 dark:border-transparent shadow-sm`;
       default:
-        return 'bg-green-100 dark:bg-[#2C3144] hover:bg-green-200 dark:hover:bg-[#343a52] border-2 border-slate-200 dark:border-transparent shadow-sm';
+        return `${baseClasses} bg-green-100 dark:bg-[#2C3144] ${isClickable ? 'hover:bg-green-200 dark:hover:bg-[#343a52]' : ''} border-2 border-slate-200 dark:border-transparent shadow-sm`;
     }
   };
 
@@ -109,16 +107,20 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
     const today = startOfDay(new Date());
     const selectedDate = startOfDay(parseISO(dateString + 'T00:00:00'));
 
-    // Only block past dates for regular users
-    if (isBefore(selectedDate, today) && user?.role !== 'admin') {
-      alert(t('pastDateError'));
+    const { status, booking } = getSlotStatus(pitch, time);
+
+    // ✅ NON-LOGGED USERS: Can see bookings but only interact with available slots
+    if (!user) {
+      if (status === 'available') {
+        onLoginRequired();
+      }
+      // For booked/pending/blocked slots, do nothing (just display info)
       return;
     }
 
-    const { status, booking } = getSlotStatus(pitch, time);
-
-    if (!user) {
-      onLoginRequired();
+    // Only block past dates for regular users
+    if (isBefore(selectedDate, today) && user?.role !== 'admin') {
+      alert(t('pastDateError'));
       return;
     }
 
@@ -142,7 +144,6 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
       if (bookingData.delete && selectedBooking) {
         await bookingService.deleteBooking(selectedBooking.id);
 
-        // Send cancellation notification
         if (selectedBooking.userId && user?.role === 'admin') {
           await notificationService.createNotification(
             selectedBooking.userId,
@@ -159,7 +160,6 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
           );
         }
 
-        // If it was a match, notify both teams
         if (selectedBooking.homeTeam && selectedBooking.awayTeam) {
           if (selectedBooking.homeTeamUserId) {
             await notificationService.createNotification(
@@ -185,10 +185,8 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
           }
         }
       } else if (selectedBooking) {
-        // Update existing booking
         await bookingService.updateBooking(selectedBooking.id, bookingData);
       } else {
-        // Create new booking
         const bookingId = await bookingService.createBooking({
           ...bookingData,
           pitchType: selectedSlot.pitch,
@@ -196,9 +194,7 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
           startTime: selectedSlot.time,
         });
 
-        // Send notifications based on booking type
         if (bookingData.homeTeam && bookingData.awayTeam) {
-          // Match booking - notify both teams
           if (bookingData.homeTeamUserId) {
             await notificationService.createMatchNotification(
               bookingData.homeTeamUserId,
@@ -208,7 +204,7 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
               selectedSlot.time,
               bookingData.homeTeam,
               bookingData.awayTeam,
-              true // isHomeTeam
+              true
             );
           }
           if (bookingData.awayTeamUserId) {
@@ -220,11 +216,10 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
               selectedSlot.time,
               bookingData.homeTeam,
               bookingData.awayTeam,
-              false // isHomeTeam (away team)
+              false
             );
           }
         } else if (bookingData.userId && bookingData.userId !== user?.id) {
-          // Single team booking by admin - notify the team owner
           await notificationService.createNotification(
             bookingData.userId,
             'approved',
@@ -235,7 +230,6 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
             `Booking confirmed for ${bookingData.teamName || 'your team'} on ${selectedSlot.date} at ${selectedSlot.time}`
           );
         }
-        // Guest bookings (no userId or userId === admin) don't get notifications
       }
 
       await loadBookings();
@@ -251,14 +245,12 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
   const goToPrevious = () => setCurrentDate(subDays(currentDate, 1));
   const goToNext = () => setCurrentDate(addDays(currentDate, 1));
 
-  // ---------- Visibility + formatting helpers ----------
   const canSeePrivateDetails = (booking: Booking, viewer: User | null) => {
-    const isFriendlyNoTeam =
-      !booking.homeTeam && !booking.awayTeam && !booking.teamName;
-    if (!isFriendlyNoTeam) return true;      // matches or team bookings → public
+    const isFriendlyNoTeam = !booking.homeTeam && !booking.awayTeam && !booking.teamName;
+    if (!isFriendlyNoTeam) return true;
     if (!viewer) return false;
     if (viewer.role === 'admin') return true;
-    return booking.userId === viewer.id;     // only the booker sees it
+    return booking.userId === viewer.id;
   };
 
   const maskEmail = (email: string) => {
@@ -268,25 +260,21 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
     return `${local}@${domainFirst}…`;
   };
 
-  // NEW: who can see contact info for single-team bookings
   const canSeeContactInfo = (booking: Booking, viewer: User | null) => {
     if (!viewer) return false;
     if (viewer.role === 'admin') return true;
-    if (booking.userId && booking.userId === viewer.id) return true; // owner
-    if (booking.teamName && viewer.teamName && booking.teamName === viewer.teamName) return true; // same team
+    if (booking.userId && booking.userId === viewer.id) return true;
+    if (booking.teamName && viewer.teamName && booking.teamName === viewer.teamName) return true;
     return false;
   };
-  // ----------------------------------------------------
 
   return (
     <div className="space-y-6">
-      {/* Title + Subtitle centered */}
       <div className="text-center">
         <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white">{t('livePitchAvailability')}</h1>
         <p className="mt-2 text-base text-gray-700 dark:text-gray-300">{t('selectDateAndPitch')}</p>
       </div>
 
-      {/* Legend (above the bar) */}
       <div className="flex flex-wrap justify-center items-center gap-5 mt-1 text-sm">
         <LegendDot label={t('available')} colorClass="bg-green-400 dark:bg-[#3a4057]" />
         <LegendDot label={t('pending')} colorClass="bg-amber-500" />
@@ -294,9 +282,7 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
         <LegendDot label={t('blocked')} colorClass="bg-slate-600" />
       </div>
 
-      {/* Banner bar (date + pitch pills only) */}
       <div className="bg-slate-50 dark:bg-dark-lighter border border-slate-200 dark:border-transparent rounded-xl px-4 py-3 shadow-sm dark:shadow-none">
-        {/* Mobile (app) layout */}
         <div className="sm:hidden">
           <div className="grid grid-cols-[auto,1fr,auto] items-center">
             <button
@@ -322,7 +308,6 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
             </button>
           </div>
 
-          {/* Pitch pills */}
           <div className="mt-3 grid grid-cols-2 gap-2">
             <button
               onClick={() => setActivePitch('Pitch A')}
@@ -347,7 +332,6 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
           </div>
         </div>
 
-        {/* Desktop/Web layout */}
         <div className="hidden sm:flex items-center justify-between">
           <div className="flex items-center gap-4">
             <button
@@ -405,38 +389,31 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
         <div className="text-center py-12 text-gray-600 dark:text-gray-400">Loading...</div>
       ) : (
         <>
-          {/* Grid of cards */}
           <div className="grid grid-cols-2 md:grid-cols-2 xl:grid-cols-4 gap-4">
             {timeSlots.map((slot) => {
               const { status, booking } = getSlotStatus(activePitch, slot.time);
 
-              // Compute primary/secondary labels with privacy
+              // ✅ Determine if slot is clickable
+              const isClickable = user ? (user.role === 'admin' || status === 'available') : status === 'available';
+
               let primaryLabel = '';
               let secondaryLabel = '';
 
               if (booking) {
                 if (booking.homeTeam && booking.awayTeam) {
-                  // Match → teams are public; no contact info
                   primaryLabel = `${booking.homeTeam} vs ${booking.awayTeam}`;
                   secondaryLabel = '';
                 } else if (booking.teamName && booking.teamName.trim()) {
-                  // Single-team → team public; contact only if allowed
                   primaryLabel = booking.teamName;
                   if (canSeeContactInfo(booking, user)) {
-                    secondaryLabel =
-                      booking.phoneNumber ||
-                      (booking.userEmail ? maskEmail(booking.userEmail) : '');
+                    secondaryLabel = booking.phoneNumber || (booking.userEmail ? maskEmail(booking.userEmail) : '');
                   } else {
                     secondaryLabel = '';
                   }
                 } else {
-                  // Guest/friendly (no team) — keep private unless owner/admin
                   if (canSeePrivateDetails(booking, user)) {
-                    primaryLabel = booking.userEmail
-                      ? maskEmail(booking.userEmail)
-                      : (booking.phoneNumber || '');
-                    secondaryLabel =
-                      booking.phoneNumber && booking.userEmail ? booking.phoneNumber : '';
+                    primaryLabel = booking.userEmail ? maskEmail(booking.userEmail) : (booking.phoneNumber || '');
+                    secondaryLabel = booking.phoneNumber && booking.userEmail ? booking.phoneNumber : '';
                   } else {
                     primaryLabel = '';
                     secondaryLabel = '';
@@ -445,13 +422,10 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
               }
 
               const statusBadgeColor =
-                status === 'booked'
-                  ? 'bg-red-600'
-                  : status === 'pending'
-                  ? 'bg-amber-500'
-                  : status === 'blocked'
-                  ? 'bg-slate-600'
-                  : 'bg-gray-400 dark:bg-[#3a4057]';
+                status === 'booked' ? 'bg-red-600' :
+                status === 'pending' ? 'bg-amber-500' :
+                status === 'blocked' ? 'bg-slate-600' :
+                'bg-gray-400 dark:bg-[#3a4057]';
 
               const showPrimary = status !== 'available' && !!primaryLabel;
               const showSecondary = status !== 'available' && !!secondaryLabel;
@@ -460,10 +434,10 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
                 <button
                   key={`${activePitch}-${slot.time}`}
                   onClick={() => handleSlotClick(activePitch, slot.time)}
-                  className={`relative text-left rounded-xl p-3 transition-colors ${getCardClasses(status)} h-24`}
+                  className={`relative text-left rounded-xl p-3 transition-colors ${getCardClasses(status, isClickable)} h-24`}
                   title={`${activePitch} - ${slot.display} - ${t(status)}`}
+                  disabled={!isClickable}
                 >
-                  {/* tiny colored dot (no text) */}
                   <span
                     className={`absolute right-2 top-2 inline-block w-2.5 h-2.5 rounded-full ${statusBadgeColor}`}
                     aria-label={t(status)}
@@ -471,12 +445,10 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
                   />
 
                   <div className="h-full grid grid-rows-[auto,auto,auto] gap-1.5">
-                    {/* Row 1: time only */}
                     <div className="text-sm font-semibold text-gray-900 dark:text-white truncate leading-5" title={slot.display}>
                       {slot.display}
                     </div>
 
-                    {/* Row 2: primary (or placeholder) */}
                     <div
                       className="text-sm text-gray-800 dark:text-white whitespace-nowrap overflow-hidden text-ellipsis leading-5"
                       title={showPrimary ? primaryLabel : ''}
@@ -484,7 +456,6 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
                       {showPrimary ? primaryLabel : '\u00A0'}
                     </div>
 
-                    {/* Row 3: secondary (or placeholder) */}
                     <div
                       className="text-xs text-gray-600 dark:text-gray-300 whitespace-nowrap overflow-hidden text-ellipsis leading-5"
                       title={showSecondary ? secondaryLabel : ''}
@@ -518,7 +489,6 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
   );
 };
 
-/** Legend helpers */
 const LegendDot: React.FC<{ label: string; colorClass: string }> = ({ label, colorClass }) => (
   <div className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200">
     <span className={`inline-block w-3 h-3 rounded-full ${colorClass}`} />
