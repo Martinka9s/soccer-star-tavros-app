@@ -3,7 +3,6 @@
 
 import { 
   collection, 
-  addDoc, 
   updateDoc,
   deleteDoc,
   doc,
@@ -86,11 +85,11 @@ export const recurringBookingService = {
       );
       const snapshot = await getDocs(q);
       
-      return snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        createdAt: doc.data().createdAt?.toDate() || new Date(),
-        updatedAt: doc.data().updatedAt?.toDate() || new Date(),
+      return snapshot.docs.map(docSnap => ({
+        id: docSnap.id,
+        ...docSnap.data(),
+        createdAt: docSnap.data().createdAt?.toDate() || new Date(),
+        updatedAt: docSnap.data().updatedAt?.toDate() || new Date(),
       } as Booking));
     } catch (error) {
       console.error('Error getting recurring series:', error);
@@ -113,11 +112,11 @@ export const recurringBookingService = {
       );
       const snapshot = await getDocs(q);
       
-      return snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        createdAt: doc.data().createdAt?.toDate() || new Date(),
-        updatedAt: doc.data().updatedAt?.toDate() || new Date(),
+      return snapshot.docs.map(docSnap => ({
+        id: docSnap.id,
+        ...docSnap.data(),
+        createdAt: docSnap.data().createdAt?.toDate() || new Date(),
+        updatedAt: docSnap.data().updatedAt?.toDate() || new Date(),
       } as Booking));
     } catch (error) {
       console.error('Error getting future recurring bookings:', error);
