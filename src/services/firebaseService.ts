@@ -109,8 +109,8 @@ async function ensureUserDoc(uid: string, email: string | null | undefined): Pro
 // --- AUTH SERVICE ------------------------------------------------------------
 
 export const authService = {
-  /** Register user with team name; create users/{uid} with role 'user' */
-  async register(email: string, password: string, teamName: string): Promise<User> {
+  /** Register user WITHOUT team name - team registration is now optional via "Join Championship" */
+  async register(email: string, password: string): Promise<User> {
     const cred = await createUserWithEmailAndPassword(auth, email, password);
     const uid = cred.user.uid;
 
@@ -122,19 +122,22 @@ export const authService = {
         id: uid,
         email,
         role,
-        teamName: teamName.trim(),
         createdAt: serverTimestamp(),
       },
       { merge: true }
     );
 
-    return {
-      id: uid,
-      email,
-      role,
-      teamName: teamName.trim(),
-      createdAt: new Date(),
-    };
+    try {
+      return await ensureUserDoc(cred.user.uid, cred.user.email || email);
+    } catch (e) {
+      console.warn('Firestore unavailable during registration; using provisional user', e);
+      return {
+        id: cred.user.uid,
+        email: cred.user.email || email,
+        role: 'user',
+        createdAt: new Date(),
+      };
+    }
   },
 
   /** Login + ensure/fetch profile; if Firestore fails, return provisional user */
@@ -588,4 +591,4 @@ export const notificationService = {
   },
 };
 
-  export * from './teamService';
+export * from './teamService';
