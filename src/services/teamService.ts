@@ -1,5 +1,4 @@
 // Team Service Functions for Firebase
-// Add these to your existing firebaseService.ts file
 
 import { 
   collection, 
@@ -14,7 +13,7 @@ import {
   writeBatch,
   Timestamp 
 } from 'firebase/firestore';
-import { db } from './firebase'; // Adjust import path as needed
+import { db } from './firebaseService'; // Import db from firebaseService
 import { Team, ChampionshipType, SeasonArchive } from '../types';
 
 export const teamService = {
