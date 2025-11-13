@@ -258,6 +258,52 @@ export const teamService = {
   },
 
   /**
+   * Deactivate team (soft delete - changes status to 'inactive')
+   */
+  async deactivateTeam(teamId: string): Promise<void> {
+    try {
+      await updateDoc(doc(db, 'teams', teamId), {
+        status: 'inactive',
+        lastModified: Timestamp.now(),
+      });
+    } catch (error) {
+      console.error('Error deactivating team:', error);
+      throw new Error('Failed to deactivate team');
+    }
+  },
+
+  /**
+   * Archive team (soft delete)
+   */
+  async archiveTeam(teamId: string): Promise<void> {
+    try {
+      await updateDoc(doc(db, 'teams', teamId), {
+        status: 'archived',
+        lastModified: Timestamp.now(),
+      });
+    } catch (error) {
+      console.error('Error archiving team:', error);
+      throw new Error('Failed to archive team');
+    }
+  },
+
+  /**
+   * Restore archived team
+   */
+  async restoreTeam(teamId: string, championship: ChampionshipType): Promise<void> {
+    try {
+      await updateDoc(doc(db, 'teams', teamId), {
+        status: 'approved',
+        championship,
+        lastModified: Timestamp.now(),
+      });
+    } catch (error) {
+      console.error('Error restoring team:', error);
+      throw new Error('Failed to restore team');
+    }
+  },
+
+  /**
    * Update team stats (called when match results are entered)
    */
   async updateTeamStats(
