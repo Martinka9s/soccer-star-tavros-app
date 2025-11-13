@@ -12,7 +12,7 @@ import MyBookings from './components/MyBookings';
 import PendingRequests from './components/PendingRequests';
 import TeamsManagement from './components/TeamsManagement';
 import AuthModal from './components/AuthModal';
-import TeamRegistrationModal from './components/TeamRegistrationModal';
+import TeamModal from './components/TeamModal';
 import './i18n/config';
 
 function App() {
@@ -206,7 +206,7 @@ function App() {
       )}
 
       {showTeamRegistrationModal && user && (
-        <TeamRegistrationModal
+        <TeamModal
           onClose={() => setShowTeamRegistrationModal(false)}
           onSubmit={handleTeamRegistration}
           userEmail={user.email}
