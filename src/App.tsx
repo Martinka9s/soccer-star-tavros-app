@@ -117,10 +117,18 @@ function App() {
 
   const handleTeamRegistration = async (teamName: string, phoneNumber: string) => {
     if (!user) return;
-    // TODO: Call Firebase service to create team request
-    console.log('Team registration:', { userId: user.id, userEmail: user.email, teamName, phoneNumber });
-    // For now just close modal
-    setShowTeamRegistrationModal(false);
+    
+    try {
+      // Import teamService at the top of file first
+      const { teamService } = await import('./services/firebaseService');
+      await teamService.createTeamRequest(user.id, user.email, teamName, phoneNumber);
+      alert('Team registration submitted! An admin will review your request.');
+      setShowTeamRegistrationModal(false);
+    } catch (error: any) {
+      console.error('Error submitting team registration:', error);
+      alert(error.message || 'Failed to submit team registration');
+      throw error;
+    }
   };
 
   if (loading) {
@@ -169,7 +177,7 @@ function App() {
           <PendingRequests onCountChange={setPendingCount} />
         )}
         {activeTab === 'teams' && user?.role === 'admin' && (
-          <TeamsManagement />
+          <TeamsManagement adminEmail={user.email} />
         )}
         {activeTab === 'championships' && (
           <div className="text-center py-12">
