@@ -192,7 +192,7 @@ function App() {
         {activeTab === 'notifications' && user && (
           <div>
             <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-6">
-              🔔 {t('notifications')}
+               {t('notifications')}
             </h2>
             <div className="bg-slate-50 dark:bg-dark-lighter border border-slate-200 dark:border-gray-700 rounded-lg shadow-sm p-12 text-center">
               <p className="text-lg text-gray-600 dark:text-gray-400">
