@@ -592,3 +592,4 @@ export const notificationService = {
 };
 
 export * from './teamService';
+export * from './recurringBookingService';
