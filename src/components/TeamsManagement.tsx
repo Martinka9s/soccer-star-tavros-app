@@ -287,6 +287,7 @@ const ChampionshipSection: React.FC<ChampionshipSectionProps> = ({
   onDeactivateTeam,
   onResetChampionship,
 }) => {
+  const { t } = useTranslation();
   const [expanded, setExpanded] = useState(true);
 
   const otherChampionships: ChampionshipType[] = [
