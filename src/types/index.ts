@@ -2,7 +2,7 @@ export type UserRole = 'user' | 'admin';
 export type BookingStatus = 'available' | 'pending' | 'booked' | 'blocked';
 export type PitchType = 'Pitch A' | 'Pitch B';
 export type ChampionshipType = 'MSL DREAM LEAGUE' | 'MSL A' | 'MSL B';
-export type TeamStatus = 'pending' | 'approved' | 'declined';
+export type TeamStatus = 'pending' | 'approved' | 'declined' | 'inactive';
 
 export interface User {
   id: string;
