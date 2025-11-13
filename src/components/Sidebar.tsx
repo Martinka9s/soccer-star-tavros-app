@@ -139,6 +139,13 @@ const Sidebar: React.FC<SidebarProps> = ({
       badge: pendingCount > 0 ? pendingCount : undefined,
     },
     {
+      id: 'teams',
+      label: t('teams', { defaultValue: 'Teams' }),
+      icon: Trophy,
+      requiresAuth: true,
+      show: user?.role === 'admin',
+    },
+    {
       id: 'notifications',
       label: t('notifications'),
       icon: Bell,
