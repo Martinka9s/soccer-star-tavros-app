@@ -94,7 +94,8 @@ const BookingModal: React.FC<BookingModalProps> = ({
     } else {
       setDuration(1);
       setPhoneNumber(user.phoneNumber || '');
-      setTeamName('');
+      // ✅ PRE-SELECT USER'S TEAM NAME
+      setTeamName(user.teamName || '');
       setNotes('');
       setStatus('pending');
       setBookingMode('guest');
@@ -450,14 +451,14 @@ const BookingModal: React.FC<BookingModalProps> = ({
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      {t('teamName')}
+                      {t('teamName')} {user.teamName && '(editable)'}
                     </label>
                     <input
                       type="text"
                       value={teamName}
                       onChange={(e) => setTeamName(e.target.value)}
                       className="w-full px-4 py-2 bg-white dark:bg-dark border border-slate-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-[#6B2FB5] dark:focus:border-primary"
-                      placeholder="Team name (optional)"
+                      placeholder={user.teamName ? "Edit team name or leave as is" : "Team name (optional)"}
                     />
                   </div>
                 </>
