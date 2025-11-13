@@ -59,9 +59,11 @@ const PendingRequests: React.FC<PendingRequestsProps> = ({ onCountChange }) => {
         status: 'booked',
       });
 
-      // ✅ Send notification to user
+      // ✅ Send helpful notification to user
       if (booking.userId) {
         try {
+          const message = `${t('bookingApprovedMessage')} ${booking.pitchType} on ${booking.date} at ${booking.startTime}.`;
+          
           await notificationService.createNotification(
             booking.userId,
             'approved',
@@ -69,11 +71,7 @@ const PendingRequests: React.FC<PendingRequestsProps> = ({ onCountChange }) => {
             booking.pitchType,
             booking.date,
             booking.startTime,
-            t('bookingApproved', {
-              pitch: booking.pitchType,
-              date: booking.date,
-              time: booking.startTime,
-            })
+            message
           );
         } catch (e) {
           console.warn('Notification write failed:', e);
