@@ -10,7 +10,9 @@ import Dashboard from './components/Dashboard';
 import Calendar from './components/Calendar';
 import MyBookings from './components/MyBookings';
 import PendingRequests from './components/PendingRequests';
+import TeamsManagement from './components/TeamsManagement';
 import AuthModal from './components/AuthModal';
+import TeamRegistrationModal from './components/TeamRegistrationModal';
 import './i18n/config';
 
 function App() {
@@ -33,6 +35,7 @@ function App() {
   });
   
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showTeamRegistrationModal, setShowTeamRegistrationModal] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
 
   // Fetch pending bookings count for admin
@@ -112,6 +115,14 @@ function App() {
     }
   };
 
+  const handleTeamRegistration = async (teamName: string, phoneNumber: string) => {
+    if (!user) return;
+    // TODO: Call Firebase service to create team request
+    console.log('Team registration:', { userId: user.id, userEmail: user.email, teamName, phoneNumber });
+    // For now just close modal
+    setShowTeamRegistrationModal(false);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-dark flex items-center justify-center">
@@ -138,7 +149,18 @@ function App() {
 
       <main className="flex-1 container mx-auto px-4 py-8">
         {activeTab === 'dashboard' && (
-          <Dashboard onBookNowClick={() => handleTabChange('calendar')} />
+          <Dashboard 
+            onBookNowClick={() => handleTabChange('calendar')}
+            onJoinChampionshipClick={() => {
+              if (!user) {
+                setShowAuthModal(true);
+              } else {
+                // TODO: Check if user already has approved team
+                setShowTeamRegistrationModal(true);
+              }
+            }}
+            user={user}
+          />
         )}
         {activeTab === 'calendar' && (
           <Calendar user={user} onLoginRequired={() => setShowAuthModal(true)} />
@@ -146,6 +168,9 @@ function App() {
         {activeTab === 'myBookings' && user && <MyBookings user={user} />}
         {activeTab === 'pendingRequests' && user?.role === 'admin' && (
           <PendingRequests onCountChange={setPendingCount} />
+        )}
+        {activeTab === 'teams' && user?.role === 'admin' && (
+          <TeamsManagement />
         )}
         {activeTab === 'championships' && (
           <div className="text-center py-12">
@@ -178,6 +203,16 @@ function App() {
           onClose={() => setShowAuthModal(false)}
           onLogin={handleLogin}
           onRegister={handleRegister}
+        />
+      )}
+
+      {showTeamRegistrationModal && user && (
+        <TeamRegistrationModal
+          onClose={() => setShowTeamRegistrationModal(false)}
+          onSubmit={handleTeamRegistration}
+          userEmail={user.email}
+          existingTeamName={user.teamName}
+          existingPhone={user.phoneNumber}
         />
       )}
     </div>
