@@ -91,6 +91,11 @@ const resources = {
       userEmail: 'User email',
       status: 'Status',
       actions: 'Actions',
+      noPendingRequests: 'No pending requests',
+      allRequestsProcessed: 'All booking requests have been processed',
+      processing: 'Processing...',
+      confirmReject: 'Are you sure you want to reject this booking?',
+      loading: 'Loading...',
 
       // Footer
       contact: 'Contact',
@@ -217,6 +222,11 @@ const resources = {
       userEmail: 'Email χρήστη',
       status: 'Κατάσταση',
       actions: 'Ενέργειες',
+      noPendingRequests: 'Δεν υπάρχουν αιτήματα σε εκκρεμότητα',
+      allRequestsProcessed: 'Όλα τα αιτήματα κράτησης έχουν διεκπεραιωθεί',
+      processing: 'Επεξεργασία...',
+      confirmReject: 'Είστε σίγουροι ότι θέλετε να απορρίψετε αυτή την κράτηση;',
+      loading: 'Φόρτωση...',
 
       // Footer
       contact: 'Επικοινωνία',
