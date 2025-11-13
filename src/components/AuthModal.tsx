@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { X, Eye, EyeOff, Mail, Lock, Users } from 'lucide-react';
-import { authService } from '../services/firebaseService';
+import { X, Mail, Lock, User } from 'lucide-react';
 
 interface AuthModalProps {
   onClose: () => void;
   onLogin: (email: string, password: string) => Promise<void>;
-  onRegister: (email: string, password: string, teamName: string) => Promise<void>;
+  onRegister: (email: string, password: string) => Promise<void>;
 }
 
 const AuthModal: React.FC<AuthModalProps> = ({ onClose, onLogin, onRegister }) => {
@@ -14,236 +13,126 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose, onLogin, onRegister }) =
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [teamName, setTeamName] = useState('');
-  const [showPw, setShowPw] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [errorCode, setErrorCode] = useState<string | null>(null);
-  const [info, setInfo] = useState<string | null>(null);
-
-  const friendly = (code?: string) => {
-    switch (code) {
-      case 'auth/email-already-in-use':
-        return t('auth_email_in_use') || 'Email already in use. Try logging in or reset your password.';
-      case 'auth/invalid-email':
-        return t('auth_invalid_email') || 'Invalid email address.';
-      case 'auth/weak-password':
-        return t('auth_weak_password') || 'Password must be at least 6 characters long and include one uppercase letter, one lowercase letter, and one number.';
-      case 'auth/user-not-found':
-      case 'auth/wrong-password':
-      case 'auth/invalid-credential':
-        return 'Invalid email or password. Please check your credentials and try again.';
-      case 'auth/too-many-requests':
-        return 'Too many failed login attempts. Please try again later or reset your password.';
-      case 'auth/user-disabled':
-        return 'This account has been disabled. Please contact support.';
-      default:
-        if (code === 'Team name is required') return code;
-        return t(isLogin ? 'loginError' : 'registerError') || 'Something went wrong. Please try again.';
-    }
-  };
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setErrorCode(null);
-    setInfo(null);
-    setLoading(true);
+    setError('');
+    setIsSubmitting(true);
 
     try {
       if (isLogin) {
-        await onLogin(email.trim(), password);
+        await onLogin(email, password);
       } else {
-        if (!teamName.trim()) {
-          setErrorCode('Team name is required');
-          setLoading(false);
-          return;
-        }
-        await onRegister(email.trim(), password, teamName.trim());
+        await onRegister(email, password);
       }
-      // Don't close here - let parent handle it on success
+      onClose();
     } catch (err: any) {
-      console.error('Auth error:', err);
-      setErrorCode(err?.code || err?.message || 'unknown');
+      setError(err.message || (isLogin ? t('loginError') : t('registerError')));
     } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleReset = async () => {
-    setErrorCode(null);
-    setInfo(null);
-    if (!email) {
-      setErrorCode('auth/invalid-email');
-      return;
-    }
-    try {
-      await authService.sendReset(email.trim());
-      setInfo(t('reset_sent') || 'Password reset email sent. Check your inbox.');
-    } catch (err: any) {
-      console.error('Reset error:', err);
-      setErrorCode(err?.code || err?.message || 'unknown');
+      setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
-      <div className="bg-slate-50 dark:bg-dark-lighter rounded-lg shadow-xl max-w-md w-full">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-slate-50 dark:bg-dark-lighter rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+        {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-slate-200 dark:border-gray-700">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-            {t(isLogin ? 'loginTitle' : 'registerTitle')}
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+            {isLogin ? t('login') : t('register')}
           </h2>
           <button
             onClick={onClose}
-            className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+            className="p-2 hover:bg-slate-200 dark:hover:bg-dark rounded-lg transition-colors"
             aria-label="Close"
           >
-            <X size={24} />
+            <X size={24} className="text-gray-700 dark:text-gray-300" />
           </button>
         </div>
 
+        {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          {errorCode && (
-            <div className="p-3 bg-red-500/10 border border-red-500/60 rounded text-red-600 dark:text-red-300 text-sm">
-              {friendly(errorCode)}
-              {(errorCode === 'auth/email-already-in-use' && !isLogin) && (
-                <div className="mt-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsLogin(true);
-                      setErrorCode(null);
-                    }}
-                    className="underline hover:text-red-700 dark:hover:text-red-200"
-                  >
-                    {t('signIn')}
-                  </button>
-                  <span className="mx-1 text-red-500 dark:text-red-400">·</span>
-                  <button 
-                    type="button" 
-                    onClick={handleReset} 
-                    className="underline hover:text-red-700 dark:hover:text-red-200"
-                  >
-                    {t('send_reset_link') || 'Reset password'}
-                  </button>
-                </div>
-              )}
-              {(errorCode === 'auth/invalid-credential' || errorCode === 'auth/wrong-password') && isLogin && (
-                <div className="mt-2">
-                  <button 
-                    type="button" 
-                    onClick={handleReset} 
-                    className="underline hover:text-red-700 dark:hover:text-red-200"
-                  >
-                    {t('send_reset_link') || 'Forgot password?'}
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
-
-          {info && (
-            <div className="p-3 bg-emerald-500/10 border border-emerald-500/60 rounded text-emerald-700 dark:text-emerald-300 text-sm">
-              {info}
-            </div>
-          )}
-
+          {/* Email */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               {t('email')}
             </label>
             <div className="relative">
-              <Mail className="absolute left-3 top-2.5 h-5 w-5 text-gray-500 dark:text-gray-400" />
+              <Mail
+                size={20}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+              />
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full pl-10 pr-3 py-2 bg-white dark:bg-dark border border-slate-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-[#6B2FB5] dark:focus:border-primary"
-                placeholder="your@email.com"
-                autoComplete="email"
+                className="w-full pl-10 pr-4 py-3 bg-white dark:bg-dark border border-slate-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#6B2FB5] focus:border-transparent text-gray-900 dark:text-white"
+                placeholder={t('emailPlaceholder')}
               />
             </div>
           </div>
 
+          {/* Password */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               {t('password')}
             </label>
             <div className="relative">
-              <Lock className="absolute left-3 top-2.5 h-5 w-5 text-gray-500 dark:text-gray-400" />
+              <Lock
+                size={20}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+              />
               <input
-                type={showPw ? 'text' : 'password'}
+                type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 minLength={6}
-                className="w-full pl-10 pr-10 py-2 bg-white dark:bg-dark border border-slate-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-[#6B2FB5] dark:focus:border-primary"
-                placeholder="••••••••"
-                autoComplete={isLogin ? 'current-password' : 'new-password'}
+                className="w-full pl-10 pr-4 py-3 bg-white dark:bg-dark border border-slate-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#6B2FB5] focus:border-transparent text-gray-900 dark:text-white"
+                placeholder={t('passwordPlaceholder')}
               />
-              <button
-                type="button"
-                onClick={() => setShowPw((s) => !s)}
-                className="absolute right-3 top-2.5 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
-                aria-label={showPw ? 'Hide password' : 'Show password'}
-              >
-                {showPw ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-              </button>
             </div>
-            {isLogin && (
-              <div className="mt-1 text-right">
-                <button 
-                  type="button" 
-                  onClick={handleReset} 
-                  className="text-sm text-[#6B2FB5] dark:text-primary hover:text-[#5a2596] dark:hover:text-primary-light transition-colors"
-                >
-                  {t('send_reset_link') || 'Forgot password?'}
-                </button>
-              </div>
-            )}
           </div>
 
-          {!isLogin && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                {t('teamName')}
-              </label>
-              <div className="relative">
-                <Users className="absolute left-3 top-2.5 h-5 w-5 text-gray-500 dark:text-gray-400" />
-                <input
-                  type="text"
-                  value={teamName}
-                  onChange={(e) => setTeamName(e.target.value)}
-                  required={!isLogin}
-                  className="w-full pl-10 pr-3 py-2 bg-white dark:bg-dark border border-slate-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-[#6B2FB5] dark:focus:border-primary"
-                  placeholder="e.g., Eagles FC"
-                />
-              </div>
+          {/* Error Message */}
+          {error && (
+            <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+              <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
             </div>
           )}
 
+          {/* Info for Registration */}
+          {!isLogin && (
+            <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+              <p className="text-sm text-blue-800 dark:text-blue-300">
+                💡 After registration, you can join a championship by clicking "Join Championship" on the dashboard!
+              </p>
+            </div>
+          )}
+
+          {/* Submit Button */}
           <button
             type="submit"
-            disabled={loading}
-            className="w-full py-3 bg-[#6B2FB5] hover:bg-[#5a2596] dark:bg-primary dark:hover:bg-primary-dark text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={isSubmitting}
+            className="w-full py-3 bg-[#6B2FB5] hover:bg-[#5a2596] text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? '...' : t(isLogin ? 'signIn' : 'signUp')}
+            {isSubmitting ? t('loading') : isLogin ? t('login') : t('register')}
           </button>
 
-          <div className="text-center text-sm">
-            <span className="text-gray-600 dark:text-gray-400">
-              {t(isLogin ? 'noAccount' : 'hasAccount')}{' '}
-            </span>
+          {/* Toggle Login/Register */}
+          <div className="text-center pt-4 border-t border-slate-200 dark:border-gray-700">
             <button
               type="button"
               onClick={() => {
                 setIsLogin(!isLogin);
-                setErrorCode(null);
-                setInfo(null);
-                setTeamName('');
+                setError('');
               }}
-              className="text-[#6B2FB5] dark:text-primary hover:text-[#5a2596] dark:hover:text-primary-light transition-colors font-medium"
+              className="text-[#6B2FB5] dark:text-primary hover:text-[#5a2596] dark:hover:text-primary-light transition-colors"
             >
-              {t(isLogin ? 'signUp' : 'signIn')}
+              {isLogin ? t('noAccount') : t('haveAccount')}
             </button>
           </div>
         </form>
