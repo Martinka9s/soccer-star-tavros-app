@@ -1,221 +1,157 @@
-import { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
-import { useAuth } from './hooks/useAuth';
-import { useGoogleCalendarCallback } from './hooks/useGoogleCalendarCallback';
-import { authService, bookingService } from './services/firebaseService';
-import Header from './components/Header';
-import Sidebar from './components/Sidebar';
-import Footer from './components/Footer';
-import Dashboard from './components/Dashboard';
-import Calendar from './components/Calendar';
-import MyBookings from './components/MyBookings';
-import PendingRequests from './components/PendingRequests';
-import TeamsManagement from './components/TeamsManagement';
-import AuthModal from './components/AuthModal';
-import TeamModal from './components/TeamModal';
-import './i18n/config';
+import React, { useState } from 'react';
+import { X, Trophy } from 'lucide-react';
 
-function App() {
-  const { user, loading } = useAuth();
-  const { t } = useTranslation();
-  
-  // Google Calendar OAuth callback handler
-  useGoogleCalendarCallback();
-  
-  // Sidebar state
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  
-  // Load saved tab from sessionStorage or default to 'dashboard'
-  const [activeTab, setActiveTab] = useState(() => {
-    try {
-      return sessionStorage.getItem('activeTab') || 'dashboard';
-    } catch {
-      return 'dashboard';
-    }
-  });
-  
-  const [showAuthModal, setShowAuthModal] = useState(false);
-  const [showTeamRegistrationModal, setShowTeamRegistrationModal] = useState(false);
-  const [pendingCount, setPendingCount] = useState(0);
-
-  // Fetch pending bookings count for admin
-  useEffect(() => {
-    if (user?.role === 'admin') {
-      const fetchPendingCount = async () => {
-        try {
-          const pendingBookings = await bookingService.getPendingBookings();
-          setPendingCount(pendingBookings.length);
-        } catch (error) {
-          console.error('Error fetching pending count:', error);
-        }
-      };
-      fetchPendingCount();
-      
-      // Refresh every 30 seconds
-      const interval = setInterval(fetchPendingCount, 30000);
-      return () => clearInterval(interval);
-    } else {
-      setPendingCount(0);
-    }
-  }, [user]);
-
-  const handleLogin = async (email: string, password: string) => {
-    await authService.login(email, password);
-    setShowAuthModal(false);
-    const newTab = 'myBookings';
-    setActiveTab(newTab);
-    try {
-      sessionStorage.setItem('activeTab', newTab);
-    } catch {}
-  };
-
-  const handleRegister = async (email: string, password: string, teamName: string) => {
-    await authService.register(email, password, teamName);
-    setShowAuthModal(false);
-    const newTab = 'myBookings';
-    setActiveTab(newTab);
-    try {
-      sessionStorage.setItem('activeTab', newTab);
-    } catch {}
-  };
-
-  const handleLogout = async () => {
-    await authService.logout();
-    const newTab = 'dashboard';
-    setActiveTab(newTab);
-    setPendingCount(0);
-    setIsSidebarOpen(false); // Close sidebar on logout
-    try {
-      sessionStorage.setItem('activeTab', newTab);
-    } catch {}
-  };
-
-  // Listen for logout event from sidebar
-  useEffect(() => {
-    const handleSidebarLogout = () => {
-      handleLogout();
-    };
-    window.addEventListener('sidebar-logout', handleSidebarLogout);
-    return () => window.removeEventListener('sidebar-logout', handleSidebarLogout);
-  }, []);
-
-  const handleTabChange = (tab: string) => {
-    setActiveTab(tab);
-    
-    // Save to sessionStorage
-    try {
-      sessionStorage.setItem('activeTab', tab);
-    } catch {}
-    
-    // Refresh pending count when navigating away from pending requests
-    if (tab !== 'pendingRequests' && user?.role === 'admin') {
-      bookingService.getPendingBookings().then(bookings => {
-        setPendingCount(bookings.length);
-      });
-    }
-  };
-
-  const handleTeamRegistration = async (teamName: string, phoneNumber: string) => {
-    if (!user) return;
-    // TODO: Call Firebase service to create team request
-    console.log('Team registration:', { userId: user.id, userEmail: user.email, teamName, phoneNumber });
-    // For now just close modal
-    setShowTeamRegistrationModal(false);
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-slate-50 dark:bg-dark flex items-center justify-center">
-        <div className="text-gray-900 dark:text-white text-xl">Loading...</div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="min-h-screen bg-slate-50 dark:bg-dark flex flex-col">
-      <Header
-        onMenuClick={() => setIsSidebarOpen(true)}
-      />
-
-      <Sidebar
-        isOpen={isSidebarOpen}
-        onClose={() => setIsSidebarOpen(false)}
-        user={user}
-        activeTab={activeTab}
-        onNavigate={handleTabChange}
-        onLoginRequired={() => setShowAuthModal(true)}
-        pendingCount={pendingCount}
-      />
-
-      <main className="flex-1 container mx-auto px-4 py-8">
-        {activeTab === 'dashboard' && (
-          <Dashboard 
-            onBookNowClick={() => handleTabChange('calendar')}
-            onJoinChampionshipClick={() => {
-              if (!user) {
-                setShowAuthModal(true);
-              } else {
-                // TODO: Check if user already has approved team
-                setShowTeamRegistrationModal(true);
-              }
-            }}
-          />
-        )}
-        {activeTab === 'calendar' && (
-          <Calendar user={user} onLoginRequired={() => setShowAuthModal(true)} />
-        )}
-        {activeTab === 'myBookings' && user && <MyBookings user={user} />}
-        {activeTab === 'pendingRequests' && user?.role === 'admin' && (
-          <PendingRequests onCountChange={setPendingCount} />
-        )}
-        {activeTab === 'teams' && user?.role === 'admin' && (
-          <TeamsManagement />
-        )}
-        {activeTab === 'championships' && (
-          <div className="text-center py-12">
-            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-4">
-              🏆 Championships
-            </h2>
-            <p className="text-gray-600 dark:text-gray-400">
-              Coming soon! Championship management and tracking features.
-            </p>
-          </div>
-        )}
-        {activeTab === 'notifications' && user && (
-          <div>
-            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-6">
-              🔔 {t('notifications')}
-            </h2>
-            <div className="bg-slate-50 dark:bg-dark-lighter border border-slate-200 dark:border-gray-700 rounded-lg shadow-sm p-12 text-center">
-              <p className="text-lg text-gray-600 dark:text-gray-400">
-                {t('noNotifications')}
-              </p>
-            </div>
-          </div>
-        )}
-      </main>
-
-      <Footer />
-
-      {showAuthModal && (
-        <AuthModal
-          onClose={() => setShowAuthModal(false)}
-          onLogin={handleLogin}
-          onRegister={handleRegister}
-        />
-      )}
-
-      {showTeamRegistrationModal && user && (
-        <TeamModal
-          onClose={() => setShowTeamRegistrationModal(false)}
-          onSubmit={handleTeamRegistration}
-          userEmail={user.email}
-          existingTeamName={user.teamName}
-          existingPhone={user.phoneNumber}
-        />
-      )}
-    </div>
-  );
+interface TeamModalProps {
+  onClose: () => void;
+  onSubmit: (teamName: string, phoneNumber: string) => Promise<void>;
+  userEmail: string;
+  existingTeamName?: string;
+  existingPhone?: string;
 }
 
-export default App;
+const TeamModal: React.FC<TeamModalProps> = ({
+  onClose,
+  onSubmit,
+  userEmail,
+  existingTeamName = '',
+  existingPhone = '',
+}) => {
+  const [teamName, setTeamName] = useState(existingTeamName);
+  const [phoneNumber, setPhoneNumber] = useState(existingPhone);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+
+    if (!teamName.trim()) {
+      setError('Team name is required');
+      return;
+    }
+
+    if (!phoneNumber.trim()) {
+      setError('Phone number is required');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await onSubmit(teamName.trim(), phoneNumber.trim());
+      onClose();
+    } catch (err: any) {
+      setError(err.message || 'Failed to submit registration');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-slate-50 dark:bg-dark-lighter rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b border-slate-200 dark:border-gray-700">
+          <div className="flex items-center space-x-3">
+            <div className="p-2 bg-[#6B2FB5] rounded-lg">
+              <Trophy size={24} className="text-white" />
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+              Join Championship
+            </h2>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-slate-200 dark:hover:bg-dark rounded-lg transition-colors"
+            aria-label="Close"
+          >
+            <X size={24} className="text-gray-700 dark:text-gray-300" />
+          </button>
+        </div>
+
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+          <p className="text-gray-600 dark:text-gray-400">
+            Register your team to compete in our championships. An admin will review your request and assign you to the appropriate league.
+          </p>
+
+          {/* Email (read-only) */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Email
+            </label>
+            <input
+              type="email"
+              value={userEmail}
+              disabled
+              className="w-full px-4 py-3 bg-slate-100 dark:bg-dark border border-slate-300 dark:border-gray-600 rounded-lg text-gray-500 dark:text-gray-400"
+            />
+          </div>
+
+          {/* Team Name */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Team Name <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={teamName}
+              onChange={(e) => setTeamName(e.target.value)}
+              placeholder="Enter your team name"
+              required
+              className="w-full px-4 py-3 bg-white dark:bg-dark border border-slate-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#6B2FB5] focus:border-transparent text-gray-900 dark:text-white placeholder-gray-400"
+            />
+          </div>
+
+          {/* Phone Number */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Phone Number <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="tel"
+              value={phoneNumber}
+              onChange={(e) => setPhoneNumber(e.target.value)}
+              placeholder="Enter your phone number"
+              required
+              className="w-full px-4 py-3 bg-white dark:bg-dark border border-slate-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#6B2FB5] focus:border-transparent text-gray-900 dark:text-white placeholder-gray-400"
+            />
+          </div>
+
+          {/* Error Message */}
+          {error && (
+            <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+              <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+            </div>
+          )}
+
+          {/* Info Box */}
+          <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+            <p className="text-sm text-blue-800 dark:text-blue-300">
+              📋 Your request will be reviewed by an admin who will assign you to one of our championships: MSL DREAM LEAGUE, MSL A, or MSL B.
+            </p>
+          </div>
+
+          {/* Buttons */}
+          <div className="flex space-x-3">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 px-6 py-3 border border-slate-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-slate-100 dark:hover:bg-dark transition-colors font-medium"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="flex-1 px-6 py-3 bg-[#6B2FB5] hover:bg-[#5a2596] text-white rounded-lg transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isSubmitting ? 'Submitting...' : 'Submit Request'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+export default TeamModal;
