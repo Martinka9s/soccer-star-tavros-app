@@ -18,7 +18,7 @@ export interface Booking {
   id: string;
   pitchType: PitchType;
   date: string; // YYYY-MM-DD format
-  startTime: string; // HH:mm format
+  startTime: string; // HH:mm format (now supports 5-minute intervals)
   duration: number; // in hours
   status: BookingStatus;
   
@@ -35,6 +35,12 @@ export interface Booking {
   
   // Championship assignment (for matches)
   championship?: ChampionshipType;
+  
+  // Recurring booking fields
+  isRecurring?: boolean;
+  recurringPattern?: 'weekly'; // Can add 'daily', 'monthly' later
+  recurringGroupId?: string; // Same ID for all bookings in the series
+  recurringEndDate?: string; // When to stop creating recurring bookings (optional)
   
   // Single user booking
   userId?: string;
