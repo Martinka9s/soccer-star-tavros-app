@@ -38,7 +38,6 @@ const TeamsManagement: React.FC<TeamsManagementProps> = () => {
     if (!window.confirm('Moving this team will reset all their stats. Continue?')) return;
     // TODO: Call Firebase service to move team and reset stats
     console.log('Move team:', teamId, 'to:', newChampionship);
-    setShowMoveModal(false);
   };
 
   const handleRemoveTeam = async (teamId: string) => {
