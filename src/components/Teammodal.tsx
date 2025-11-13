@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X, Trophy } from 'lucide-react';
 
-interface TeamRegistrationModalProps {
+interface TeamModalProps {
   onClose: () => void;
   onSubmit: (teamName: string, phoneNumber: string) => Promise<void>;
   userEmail: string;
@@ -9,7 +9,7 @@ interface TeamRegistrationModalProps {
   existingPhone?: string;
 }
 
-const TeamRegistrationModal: React.FC<TeamRegistrationModalProps> = ({
+const TeamModal: React.FC<TeamModalProps> = ({
   onClose,
   onSubmit,
   userEmail,
@@ -154,4 +154,4 @@ const TeamRegistrationModal: React.FC<TeamRegistrationModalProps> = ({
   );
 };
 
-export default TeamRegistrationModal;
+export default TeamModal;
