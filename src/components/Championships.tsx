@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Trophy, Calendar, Target, Award, ChevronDown, ChevronUp } from 'lucide-react';
+import { Trophy, Calendar, Award } from 'lucide-react';
 import { Team, ChampionshipType } from '../types';
 import { teamService } from '../services/firebaseService';
 
