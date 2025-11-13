@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import { X, Trophy } from 'lucide-react';
 
 interface TeamRegistrationModalProps {
@@ -17,7 +16,6 @@ const TeamRegistrationModal: React.FC<TeamRegistrationModalProps> = ({
   existingTeamName = '',
   existingPhone = '',
 }) => {
-  const { t } = useTranslation();
   const [teamName, setTeamName] = useState(existingTeamName);
   const [phoneNumber, setPhoneNumber] = useState(existingPhone);
   const [isSubmitting, setIsSubmitting] = useState(false);
