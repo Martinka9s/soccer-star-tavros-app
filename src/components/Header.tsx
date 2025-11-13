@@ -14,15 +14,15 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
   // Ensure Greek default if nothing stored
   useEffect(() => {
     const lng = i18n.language;
-    if (!lng || (!lng.startsWith('el') && !lng.startsWith('en'))) {
-      i18n.changeLanguage('el');
+    if (!lng || (!lng.startsWith('gr') && !lng.startsWith('en'))) {
+      i18n.changeLanguage('gr');
     }
   }, [i18n]);
 
-  const isGreek = i18n.language?.startsWith('el');
+  const isGreek = i18n.language?.startsWith('gr');
 
   const toggleLanguage = () => {
-    const next = isGreek ? 'en' : 'el';
+    const next = isGreek ? 'en' : 'gr';
     i18n.changeLanguage(next);
     try {
       localStorage.setItem('i18nextLng', next);
@@ -72,7 +72,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
             {/* Language toggle - Flag version for mobile */}
             <button
               onClick={toggleLanguage}
-              aria-label="Language toggle EL/EN"
+              aria-label="Language toggle GR/EN"
               className="text-2xl hover:scale-110 transition-transform md:hidden"
               title={isGreek ? 'Switch to English' : 'Αλλαγή σε Ελληνικά'}
             >
@@ -82,7 +82,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
             {/* Language toggle - Slider version for desktop */}
             <button
               onClick={toggleLanguage}
-              aria-label="Language toggle EL/EN"
+              aria-label="Language toggle GR/EN"
               className="hidden md:flex relative h-9 w-24 rounded-lg bg-slate-100 dark:bg-dark border border-slate-300 dark:border-gray-700 items-center justify-between px-3 text-sm font-medium"
             >
               <span
@@ -90,7 +90,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
                   isGreek ? 'left-0.5' : 'right-0.5'
                 }`}
               />
-              <span className={`z-10 ${isGreek ? 'text-white' : 'text-gray-600 dark:text-gray-300'}`}>EL</span>
+              <span className={`z-10 ${isGreek ? 'text-white' : 'text-gray-600 dark:text-gray-300'}`}>GR</span>
               <span className={`z-10 ${!isGreek ? 'text-white' : 'text-gray-600 dark:text-gray-300'}`}>EN</span>
             </button>
           </div>
