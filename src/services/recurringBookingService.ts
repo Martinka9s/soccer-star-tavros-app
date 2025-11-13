@@ -1,5 +1,4 @@
 // Recurring Booking Service Functions
-// Add these to your firebaseService.ts or create a separate recurringBookingService.ts
 
 import { 
   collection, 
@@ -244,49 +243,3 @@ export const recurringBookingService = {
     }
   },
 };
-
-// Inside bookingService in firebaseService.ts
-async createBooking(bookingData: Omit<Booking, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
-  try {
-    const bookingRef = await addDoc(collection(db, 'bookings'), {
-      ...bookingData,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    });
-
-    // ✅ NEW: Send notifications
-    // For match between two teams
-    if (bookingData.homeTeam && bookingData.awayTeam && 
-        bookingData.homeTeamUserId && bookingData.awayTeamUserId) {
-      
-      await notificationService.notifyMatchTeams(
-        bookingData.homeTeamUserId,
-        bookingData.awayTeamUserId,
-        bookingData.homeTeam,
-        bookingData.awayTeam,
-        bookingData.date,
-        bookingData.startTime,
-        bookingData.pitchType,
-        bookingRef.id
-      );
-    }
-    // For single team training
-    else if (bookingData.userId && bookingData.teamName) {
-      await notificationService.notifyTeamBooking(
-        bookingData.userId,
-        bookingData.teamName,
-        'single',
-        bookingData.date,
-        bookingData.startTime,
-        bookingData.pitchType,
-        undefined,
-        bookingRef.id
-      );
-    }
-
-    return bookingRef.id;
-  } catch (error) {
-    console.error('Error creating booking:', error);
-    throw new Error('Failed to create booking');
-  }
-},
