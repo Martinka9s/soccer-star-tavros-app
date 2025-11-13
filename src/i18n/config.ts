@@ -85,6 +85,8 @@ const resources = {
       bookingApproved: 'Your booking for {{pitch}} on {{date}} at {{time}} has been approved.',
       bookingRejected: 'Your booking for {{pitch}} on {{date}} at {{time}} has been rejected.',
       bookingCancelled: 'Your booking for {{pitch}} on {{date}} at {{time}} has been cancelled by admin.',
+      bookingApprovedMessage: 'Your booking was approved! Check the date and time, and don\'t be late.',
+      matchScheduledMessage: 'You got a new booking for the Championship. Check the date and time, and don\'t be late!',
 
       // Admin
       adminPanel: 'Admin panel',
@@ -176,7 +178,7 @@ const resources = {
       hours: 'ώρες',
       hour: 'ώρα',
       phoneNumber: 'Τηλέφωνο',
-      teamName: 'Όνομα ομάδας',
+      teamName: 'Όνομα Ομάδας',
       notes: 'Σημειώσεις',
       submit: 'Υποβολή',
       cancel: 'Ακύρωση',
@@ -216,6 +218,8 @@ const resources = {
       bookingApproved: 'Η κράτησή σας για το {{pitch}} στις {{date}} στις {{time}} εγκρίθηκε.',
       bookingRejected: 'Η κράτησή σας για το {{pitch}} στις {{date}} στις {{time}} απορρίφθηκε.',
       bookingCancelled: 'Η κράτησή σας για το {{pitch}} στις {{date}} στις {{time}} ακυρώθηκε από τον διαχειριστή.',
+      bookingApprovedMessage: 'Η κράτησή σας εγκρίθηκε! Ελέγξτε την ημερομηνία και την ώρα, και μην αργήσετε.',
+      matchScheduledMessage: 'Έχετε νέα κράτηση για το Πρωτάθλημα. Ελέγξτε την ημερομηνία και την ώρα, και μην αργήσετε!',
 
       // Admin
       adminPanel: 'Πίνακας διαχειριστή',
