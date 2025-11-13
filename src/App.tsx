@@ -12,6 +12,7 @@ import MyBookings from './components/MyBookings';
 import PendingRequests from './components/PendingRequests';
 import TeamsManagement from './components/TeamsManagement';
 import Championships from './components/Championships';
+import NotificationsPage from './components/NotificationsPage';
 import AuthModal from './components/AuthModal';
 import TeamModal from './components/TeamModal';
 import './i18n/config';
@@ -20,13 +21,10 @@ function App() {
   const { user, loading } = useAuth();
   const { t } = useTranslation();
   
-  // Google Calendar OAuth callback handler
   useGoogleCalendarCallback();
   
-  // Sidebar state
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   
-  // Load saved tab from sessionStorage or default to 'dashboard'
   const [activeTab, setActiveTab] = useState(() => {
     try {
       return sessionStorage.getItem('activeTab') || 'dashboard';
@@ -39,7 +37,6 @@ function App() {
   const [showTeamRegistrationModal, setShowTeamRegistrationModal] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
 
-  // Fetch pending bookings count for admin
   useEffect(() => {
     if (user?.role === 'admin') {
       const fetchPendingCount = async () => {
@@ -52,7 +49,6 @@ function App() {
       };
       fetchPendingCount();
       
-      // Refresh every 30 seconds
       const interval = setInterval(fetchPendingCount, 30000);
       return () => clearInterval(interval);
     } else {
@@ -85,13 +81,12 @@ function App() {
     const newTab = 'dashboard';
     setActiveTab(newTab);
     setPendingCount(0);
-    setIsSidebarOpen(false); // Close sidebar on logout
+    setIsSidebarOpen(false);
     try {
       sessionStorage.setItem('activeTab', newTab);
     } catch {}
   };
 
-  // Listen for logout event from sidebar
   useEffect(() => {
     const handleSidebarLogout = () => {
       handleLogout();
@@ -103,12 +98,10 @@ function App() {
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
     
-    // Save to sessionStorage
     try {
       sessionStorage.setItem('activeTab', tab);
     } catch {}
     
-    // Refresh pending count when navigating away from pending requests
     if (tab !== 'pendingRequests' && user?.role === 'admin') {
       bookingService.getPendingBookings().then(bookings => {
         setPendingCount(bookings.length);
@@ -120,7 +113,6 @@ function App() {
     if (!user) return;
     
     try {
-      // Import teamService at the top of file first
       const { teamService } = await import('./services/firebaseService');
       await teamService.createTeamRequest(user.id, user.email, teamName, phoneNumber);
       alert('Team registration submitted! An admin will review your request.');
@@ -164,7 +156,6 @@ function App() {
               if (!user) {
                 setShowAuthModal(true);
               } else {
-                // TODO: Check if user already has approved team
                 setShowTeamRegistrationModal(true);
               }
             }}
@@ -184,16 +175,7 @@ function App() {
           <Championships />
         )}
         {activeTab === 'notifications' && user && (
-          <div>
-            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-6">
-              {t('notifications')}
-            </h2>
-            <div className="bg-slate-50 dark:bg-dark-lighter border border-slate-200 dark:border-gray-700 rounded-lg shadow-sm p-12 text-center">
-              <p className="text-lg text-gray-600 dark:text-gray-400">
-                {t('noNotifications')}
-              </p>
-            </div>
-          </div>
+          <NotificationsPage user={user} />
         )}
       </main>
 
