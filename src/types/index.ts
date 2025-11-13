@@ -2,6 +2,7 @@ export type UserRole = 'user' | 'admin';
 export type BookingStatus = 'available' | 'pending' | 'booked' | 'blocked';
 export type PitchType = 'Pitch A' | 'Pitch B';
 export type ChampionshipType = 'MSL DREAM LEAGUE' | 'MSL A' | 'MSL B';
+export type TeamStatus = 'pending' | 'approved' | 'declined';
 
 export interface User {
   id: string;
@@ -9,6 +10,7 @@ export interface User {
   role: UserRole;
   teamName?: string;
   phoneNumber?: string;
+  teamId?: string; // Link to approved Team
   createdAt: Date;
 }
 
@@ -48,11 +50,12 @@ export interface Booking {
 export interface Notification {
   id: string;
   userId: string;
-  type: 'approved' | 'rejected' | 'cancelled' | 'match_scheduled';
-  bookingId: string;
-  pitchType: PitchType;
-  date: string;
-  startTime: string;
+  type: 'approved' | 'rejected' | 'cancelled' | 'match_scheduled' | 'team_approved' | 'team_declined';
+  bookingId?: string;
+  teamId?: string;
+  pitchType?: PitchType;
+  date?: string;
+  startTime?: string;
   message: string;
   read: boolean;
   createdAt: Date;
@@ -64,19 +67,36 @@ export interface TimeSlot {
   minute: number;
 }
 
-// Championship Team interface (for future team management)
+// Team with championship assignment and stats
 export interface Team {
   id: string;
   name: string;
-  championship: ChampionshipType;
+  userId: string;
+  userEmail: string;
+  phoneNumber: string;
+  championship?: ChampionshipType; // Set when approved
+  status: TeamStatus;
+  stats: {
+    points: number;        // Pts
+    played: number;        // Pla
+    wins: number;          // W
+    draws: number;         // D
+    losses: number;        // L
+    goalsFor: number;      // GF
+    goalsAgainst: number;  // GA
+    goalDifference: number; // GD
+  };
   createdAt: Date;
+  approvedAt?: Date;
+  reviewedBy?: string; // admin email who approved/declined
+  lastModified: Date;
 }
 
-// Championship Standings interface (calculated from match results)
+// Championship Standings (calculated view from Team stats)
 export interface ChampionshipStanding {
   rank: number;
   teamName: string;
-  points: number;        // Pts
+  points: number;        // Pts (Points)
   played: number;        // Pla
   wins: number;          // W
   draws: number;         // D
@@ -84,4 +104,16 @@ export interface ChampionshipStanding {
   goalsFor: number;      // GF
   goalsAgainst: number;  // GA
   goalDifference: number; // GD
+}
+
+// Historical season data (archived when championship is reset)
+export interface SeasonArchive {
+  id: string;
+  championship: ChampionshipType;
+  seasonYear: string; // "2024-2025"
+  teams: Team[];
+  finalStandings: ChampionshipStanding[];
+  totalMatches: number;
+  archivedAt: Date;
+  archivedBy: string; // admin email
 }
