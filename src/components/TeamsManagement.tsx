@@ -1,22 +1,34 @@
 import React, { useState, useEffect } from 'react';
 import { Trophy, Check, X, Trash2, MoveHorizontal, RotateCcw, ChevronDown } from 'lucide-react';
 import { Team, ChampionshipType } from '../types';
+import { teamService } from '../services/firebaseService';
 
 interface TeamsManagementProps {
-  // TODO: Add Firebase service functions as props
+  adminEmail: string;
 }
 
-const TeamsManagement: React.FC<TeamsManagementProps> = () => {
+const TeamsManagement: React.FC<TeamsManagementProps> = ({ adminEmail }) => {
   const [teams, setTeams] = useState<Team[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedChampionship, setSelectedChampionship] = useState<ChampionshipType | ''>('');
 
-  // TODO: Fetch teams from Firebase
+  // Fetch teams from Firebase
   useEffect(() => {
-    // Mock data for now
-    setTeams([]);
-    setLoading(false);
+    loadTeams();
   }, []);
+
+  const loadTeams = async () => {
+    try {
+      setLoading(true);
+      const allTeams = await teamService.getAllTeams();
+      setTeams(allTeams);
+    } catch (error) {
+      console.error('Error loading teams:', error);
+      alert('Failed to load teams');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const pendingTeams = teams.filter(t => t.status === 'pending');
   const dreamLeagueTeams = teams.filter(t => t.status === 'approved' && t.championship === 'MSL DREAM LEAGUE');
@@ -24,26 +36,50 @@ const TeamsManagement: React.FC<TeamsManagementProps> = () => {
   const mslBTeams = teams.filter(t => t.status === 'approved' && t.championship === 'MSL B');
 
   const handleApprove = async (teamId: string, championship: ChampionshipType) => {
-    // TODO: Call Firebase service to approve team
-    console.log('Approve team:', teamId, 'to championship:', championship);
+    try {
+      await teamService.approveTeam(teamId, championship, adminEmail);
+      alert('Team approved successfully!');
+      await loadTeams(); // Reload teams
+    } catch (error: any) {
+      console.error('Error approving team:', error);
+      alert(error.message || 'Failed to approve team');
+    }
   };
 
   const handleDecline = async (teamId: string) => {
     if (!window.confirm('Are you sure you want to decline this team registration?')) return;
-    // TODO: Call Firebase service to decline team
-    console.log('Decline team:', teamId);
+    try {
+      await teamService.declineTeam(teamId, adminEmail);
+      alert('Team declined');
+      await loadTeams(); // Reload teams
+    } catch (error: any) {
+      console.error('Error declining team:', error);
+      alert(error.message || 'Failed to decline team');
+    }
   };
 
   const handleMoveTeam = async (teamId: string, newChampionship: ChampionshipType) => {
     if (!window.confirm('Moving this team will reset all their stats. Continue?')) return;
-    // TODO: Call Firebase service to move team and reset stats
-    console.log('Move team:', teamId, 'to:', newChampionship);
+    try {
+      await teamService.moveTeam(teamId, newChampionship);
+      alert('Team moved successfully! Stats have been reset.');
+      await loadTeams(); // Reload teams
+    } catch (error: any) {
+      console.error('Error moving team:', error);
+      alert(error.message || 'Failed to move team');
+    }
   };
 
   const handleRemoveTeam = async (teamId: string) => {
     if (!window.confirm('Are you sure you want to remove this team?')) return;
-    // TODO: Call Firebase service to remove team
-    console.log('Remove team:', teamId);
+    try {
+      await teamService.removeTeam(teamId);
+      alert('Team removed successfully');
+      await loadTeams(); // Reload teams
+    } catch (error: any) {
+      console.error('Error removing team:', error);
+      alert(error.message || 'Failed to remove team');
+    }
   };
 
   const handleResetChampionship = async (championship: ChampionshipType) => {
@@ -51,8 +87,15 @@ const TeamsManagement: React.FC<TeamsManagementProps> = () => {
       `Reset ${championship}?\n\nThis will:\n- Archive current season data\n- Reset all team stats to 0\n- Clear match results\n\nTeams will remain assigned for new season.\n\nContinue?`
     );
     if (!confirmed) return;
-    // TODO: Call Firebase service to reset championship
-    console.log('Reset championship:', championship);
+    
+    try {
+      await teamService.resetChampionship(championship, adminEmail);
+      alert(`${championship} has been reset for the new season!`);
+      await loadTeams(); // Reload teams
+    } catch (error: any) {
+      console.error('Error resetting championship:', error);
+      alert(error.message || 'Failed to reset championship');
+    }
   };
 
   if (loading) {
