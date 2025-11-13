@@ -14,7 +14,7 @@ interface SidebarProps {
   pendingCount?: number;
 }
 
-// Google Calendar Button Component (for admin)
+// Google Calendar Button Component
 const GoogleCalendarButton: React.FC = () => {
   const [isConnected, setIsConnected] = useState(false);
   const [email, setEmail] = useState<string | null>(null);
@@ -69,16 +69,6 @@ const GoogleCalendarButton: React.FC = () => {
   );
 };
 
-interface SidebarProps {
-  isOpen: boolean;
-  onClose: () => void;
-  user: User | null;
-  activeTab: string;
-  onNavigate: (tab: string) => void;
-  onLoginRequired: () => void;
-  pendingCount?: number;
-}
-
 const Sidebar: React.FC<SidebarProps> = ({
   isOpen,
   onClose,
@@ -103,7 +93,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   const menuItems = [
     {
       id: 'dashboard',
-      label: t('home', { defaultValue: 'Home' }),
+      label: t('home'),
       icon: Home,
       requiresAuth: false,
       show: true,
@@ -117,7 +107,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     },
     {
       id: 'championships',
-      label: t('championships', { defaultValue: 'Championships' }),
+      label: t('championships'),
       icon: Trophy,
       requiresAuth: false,
       show: true,
@@ -128,7 +118,6 @@ const Sidebar: React.FC<SidebarProps> = ({
       icon: ClipboardList,
       requiresAuth: true,
       show: true,
-      badge: user?.role === 'admin' ? undefined : undefined, // Can add badge later if needed
     },
     {
       id: 'pendingRequests',
@@ -136,11 +125,11 @@ const Sidebar: React.FC<SidebarProps> = ({
       icon: Users,
       requiresAuth: true,
       show: user?.role === 'admin',
-      badge: pendingCount > 0 ? pendingCount : undefined,
+      hasDot: pendingCount > 0, // ✅ Changed from badge to dot
     },
     {
       id: 'teams',
-      label: t('teams', { defaultValue: 'Teams' }),
+      label: t('teams'),
       icon: Trophy,
       requiresAuth: true,
       show: user?.role === 'admin',
@@ -210,10 +199,11 @@ const Sidebar: React.FC<SidebarProps> = ({
                   <span className="font-medium">{item.label}</span>
                 </div>
 
-                {/* Badge */}
-                {item.badge !== undefined && item.badge > 0 && (
-                  <span className="flex items-center justify-center min-w-[24px] h-6 px-2 bg-red-500 text-white text-xs font-bold rounded-full">
-                    {item.badge}
+                {/* Red Dot Indicator */}
+                {item.hasDot && (
+                  <span className="flex h-3 w-3 relative">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
                   </span>
                 )}
               </button>
@@ -221,7 +211,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           })}
         </nav>
 
-        {/* Footer - User info with all functions */}
+        {/* Footer - User info */}
         <div className="absolute bottom-0 left-0 right-0 border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-[#1e293b]">
           {user ? (
             <div className="p-4 space-y-3">
@@ -265,7 +255,6 @@ const Sidebar: React.FC<SidebarProps> = ({
               <button
                 onClick={() => {
                   onClose();
-                  // Call logout from parent
                   window.dispatchEvent(new CustomEvent('sidebar-logout'));
                 }}
                 className="w-full px-4 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors flex items-center justify-center space-x-2"
