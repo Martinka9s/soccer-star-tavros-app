@@ -37,103 +37,126 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose, onLogin, onRegister }) =
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-slate-50 dark:bg-dark-lighter rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-white dark:bg-dark-lighter rounded-lg shadow-2xl max-w-md w-full">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-slate-200 dark:border-gray-700">
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
             {isLogin ? t('login') : t('register')}
           </h2>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-slate-200 dark:hover:bg-dark rounded-lg transition-colors"
-            aria-label="Close"
+            className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
           >
-            <X size={24} className="text-gray-700 dark:text-gray-300" />
+            <X size={24} />
           </button>
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          {/* Email */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              {t('email')}
-            </label>
-            <div className="relative">
-              <Mail
-                size={20}
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-              />
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="w-full pl-10 pr-4 py-3 bg-white dark:bg-dark border border-slate-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#6B2FB5] focus:border-transparent text-gray-900 dark:text-white"
-                placeholder={t('emailPlaceholder')}
-              />
+        <form onSubmit={handleSubmit} className="p-6">
+          <div className="space-y-4">
+            {/* Email */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                {t('email')}
+              </label>
+              <div className="relative">
+                <Mail
+                  size={20}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                />
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary dark:focus:ring-primary bg-white dark:bg-dark text-gray-900 dark:text-white"
+                  placeholder={t('emailPlaceholder')}
+                />
+              </div>
             </div>
-          </div>
 
-          {/* Password */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              {t('password')}
-            </label>
-            <div className="relative">
-              <Lock
-                size={20}
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-              />
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                minLength={6}
-                className="w-full pl-10 pr-4 py-3 bg-white dark:bg-dark border border-slate-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#6B2FB5] focus:border-transparent text-gray-900 dark:text-white"
-                placeholder={t('passwordPlaceholder')}
-              />
+            {/* Password */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                {t('password')}
+              </label>
+              <div className="relative">
+                <Lock
+                  size={20}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                />
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  minLength={6}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary dark:focus:ring-primary bg-white dark:bg-dark text-gray-900 dark:text-white"
+                  placeholder={t('passwordPlaceholder')}
+                />
+              </div>
             </div>
-          </div>
 
-          {/* Error Message */}
-          {error && (
-            <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-              <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
-            </div>
-          )}
+            {/* Error Message */}
+            {error && (
+              <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+              </div>
+            )}
 
-          {/* Info for Registration */}
-          {!isLogin && (
-            <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-              <p className="text-sm text-blue-800 dark:text-blue-300">
-                💡 After registration, you can join a championship by clicking "Join Championship" on the dashboard!
-              </p>
-            </div>
-          )}
+            {/* Forgot Password (Login only) */}
+            {isLogin && (
+              <div className="text-right">
+                <button
+                  type="button"
+                  className="text-sm text-primary dark:text-primary-light hover:underline"
+                >
+                  {t('forgotPassword', { defaultValue: 'Forgot password?' })}
+                </button>
+              </div>
+            )}
 
-          {/* Submit Button */}
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="w-full py-3 bg-[#6B2FB5] hover:bg-[#5a2596] text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isSubmitting ? t('loading') : isLogin ? t('login') : t('register')}
-          </button>
-
-          {/* Toggle Login/Register */}
-          <div className="text-center pt-4 border-t border-slate-200 dark:border-gray-700">
+            {/* Submit Button */}
             <button
-              type="button"
-              onClick={() => {
-                setIsLogin(!isLogin);
-                setError('');
-              }}
-              className="text-[#6B2FB5] dark:text-primary hover:text-[#5a2596] dark:hover:text-primary-light transition-colors"
+              type="submit"
+              disabled={isSubmitting}
+              className="w-full py-3 bg-primary hover:bg-primary-dark dark:bg-primary dark:hover:bg-primary-light text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isLogin ? t('noAccount') : t('haveAccount')}
+              {isSubmitting ? t('loading') : isLogin ? t('login') : t('register')}
             </button>
+
+            {/* Toggle Login/Register */}
+            <div className="text-center text-sm text-gray-600 dark:text-gray-400">
+              {isLogin ? (
+                <>
+                  {t('noAccount', { defaultValue: "Don't have an account?" })}{' '}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsLogin(false);
+                      setError('');
+                    }}
+                    className="text-primary dark:text-primary-light hover:underline font-medium"
+                  >
+                    {t('createOne', { defaultValue: 'Create one' })}
+                  </button>
+                </>
+              ) : (
+                <>
+                  {t('haveAccount', { defaultValue: 'Already have an account?' })}{' '}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsLogin(true);
+                      setError('');
+                    }}
+                    className="text-primary dark:text-primary-light hover:underline font-medium"
+                  >
+                    {t('login')}
+                  </button>
+                </>
+              )}
+            </div>
           </div>
         </form>
       </div>
