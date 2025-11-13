@@ -21,7 +21,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onBookNowClick, onJoinChampionshi
       image: '/sst_logo.PNG', // Replace with actual image
       title: t('appName'),
       subtitle: t('livePitchAvailability'),
-      buttonText: 'Book a Pitch Now',
+      buttonText: 'Book a pitch',
       buttonAction: onBookNowClick,
     },
     {
@@ -29,7 +29,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onBookNowClick, onJoinChampionshi
       image: '/sst_logo.PNG', // Replace with actual championship image
       title: 'Join the Championship',
       subtitle: 'Register your team and compete for glory!',
-      buttonText: 'Join Now',
+      buttonText: 'Join now',
       buttonAction: onJoinChampionshipClick,
     },
     {
@@ -37,7 +37,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onBookNowClick, onJoinChampionshi
       image: '/sst_logo.PNG', // Replace with actual promo image
       title: 'Professional Football Facilities',
       subtitle: 'State-of-the-art pitches for the best experience',
-      buttonText: 'Learn More',
+      buttonText: 'Learn more',
       buttonAction: onBookNowClick, // Can change this later
     },
   ];
@@ -151,7 +151,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onBookNowClick, onJoinChampionshi
       <section>
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
-            Next Games
+            Next games
           </h2>
         </div>
 
@@ -204,7 +204,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onBookNowClick, onJoinChampionshi
       <section>
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
-            Yesterday's Results
+            Yesterday's results
           </h2>
         </div>
 
