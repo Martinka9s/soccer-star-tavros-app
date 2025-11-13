@@ -6,10 +6,9 @@ import { Booking } from '../types';
 interface DashboardProps {
   onBookNowClick: () => void;
   onJoinChampionshipClick: () => void;
-  user: any; // User type
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ onBookNowClick, onJoinChampionshipClick, user }) => {
+const Dashboard: React.FC<DashboardProps> = ({ onBookNowClick, onJoinChampionshipClick }) => {
   const { t } = useTranslation();
   const [currentSlide, setCurrentSlide] = useState(0);
   const [showAllResults, setShowAllResults] = useState(false);
