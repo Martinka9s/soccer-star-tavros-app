@@ -324,7 +324,7 @@ const ChampionshipSection: React.FC<ChampionshipSectionProps> = ({
           className="px-3 py-1.5 bg-orange-600 hover:bg-orange-700 text-white text-sm rounded-lg transition-colors font-medium flex items-center space-x-1.5 whitespace-nowrap flex-shrink-0"
         >
           <RotateCcw size={16} />
-          <span>{t('resetSeason', { defaultValue: 'Reset Season' })}</span>
+          <span>{t('resetSeason', { defaultValue: 'Reset' })}</span>
         </button>
       </div>
 
