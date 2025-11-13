@@ -5,35 +5,58 @@ import { Booking } from '../types';
 
 interface DashboardProps {
   onBookNowClick: () => void;
+  onJoinChampionshipClick: () => void;
+  user: any; // User type
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ onBookNowClick }) => {
+const Dashboard: React.FC<DashboardProps> = ({ onBookNowClick, onJoinChampionshipClick, user }) => {
   const { t } = useTranslation();
   const [currentSlide, setCurrentSlide] = useState(0);
   const [showAllResults, setShowAllResults] = useState(false);
   const [showAllNextGames, setShowAllNextGames] = useState(false);
 
-  // Placeholder carousel images - replace with your actual images
-  const carouselImages = [
-    '/sst_logo.PNG', // Placeholder - replace with actual carousel images
-    '/sst_logo.PNG',
-    '/sst_logo.PNG',
+  // Carousel slides configuration
+  const carouselSlides = [
+    {
+      type: 'book-pitch',
+      image: '/sst_logo.PNG', // Replace with actual image
+      title: t('appName'),
+      subtitle: t('livePitchAvailability'),
+      buttonText: 'Book a Pitch Now',
+      buttonAction: onBookNowClick,
+    },
+    {
+      type: 'join-championship',
+      image: '/sst_logo.PNG', // Replace with actual championship image
+      title: 'Join the Championship',
+      subtitle: 'Register your team and compete for glory!',
+      buttonText: 'Join Now',
+      buttonAction: onJoinChampionshipClick,
+    },
+    {
+      type: 'info',
+      image: '/sst_logo.PNG', // Replace with actual promo image
+      title: 'Professional Football Facilities',
+      subtitle: 'State-of-the-art pitches for the best experience',
+      buttonText: 'Learn More',
+      buttonAction: onBookNowClick, // Can change this later
+    },
   ];
 
   // Auto-advance carousel every 5 seconds
   useEffect(() => {
     const interval = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % carouselImages.length);
+      setCurrentSlide((prev) => (prev + 1) % carouselSlides.length);
     }, 5000);
     return () => clearInterval(interval);
-  }, [carouselImages.length]);
+  }, [carouselSlides.length]);
 
   const nextSlide = () => {
-    setCurrentSlide((prev) => (prev + 1) % carouselImages.length);
+    setCurrentSlide((prev) => (prev + 1) % carouselSlides.length);
   };
 
   const prevSlide = () => {
-    setCurrentSlide((prev) => (prev - 1 + carouselImages.length) % carouselImages.length);
+    setCurrentSlide((prev) => (prev - 1 + carouselSlides.length) % carouselSlides.length);
   };
 
   // TODO: Replace with actual data fetched from Firebase
@@ -57,7 +80,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onBookNowClick }) => {
       <section className="relative w-full h-[300px] md:h-[400px] rounded-2xl overflow-hidden bg-slate-200 dark:bg-dark-lighter">
         {/* Carousel Images */}
         <div className="relative w-full h-full">
-          {carouselImages.map((image, index) => (
+          {carouselSlides.map((slide, index) => (
             <div
               key={index}
               className={`absolute inset-0 transition-opacity duration-700 ${
@@ -65,8 +88,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onBookNowClick }) => {
               }`}
             >
               <img
-                src={image}
-                alt={`Slide ${index + 1}`}
+                src={slide.image}
+                alt={slide.title}
                 className="w-full h-full object-cover"
               />
               {/* Dark overlay for text readability */}
@@ -93,7 +116,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onBookNowClick }) => {
 
         {/* Carousel Indicators */}
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex space-x-2 z-10">
-          {carouselImages.map((_, index) => (
+          {carouselSlides.map((_, index) => (
             <button
               key={index}
               onClick={() => setCurrentSlide(index)}
@@ -105,21 +128,21 @@ const Dashboard: React.FC<DashboardProps> = ({ onBookNowClick }) => {
           ))}
         </div>
 
-        {/* CTA Content */}
+        {/* CTA Content - Dynamic based on current slide */}
         <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4 z-10">
           <h1 className="text-4xl md:text-6xl font-bold text-white mb-4 drop-shadow-lg">
-            {t('appName')}
+            {carouselSlides[currentSlide].title}
           </h1>
           <p className="text-xl md:text-2xl text-white mb-8 drop-shadow-md">
-            {t('livePitchAvailability')}
+            {carouselSlides[currentSlide].subtitle}
           </p>
           <button
-            onClick={onBookNowClick}
+            onClick={carouselSlides[currentSlide].buttonAction}
             className="px-8 py-4 bg-[#6B2FB5] hover:bg-[#5a2596] text-white text-lg font-bold rounded-lg transition-all transform hover:scale-105 shadow-xl"
           >
             <div className="flex items-center space-x-2">
               <CalendarIcon size={24} />
-              <span>Book a Pitch Now</span>
+              <span>{carouselSlides[currentSlide].buttonText}</span>
             </div>
           </button>
         </div>
