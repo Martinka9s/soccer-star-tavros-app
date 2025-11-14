@@ -14,9 +14,9 @@ const resources = {
       home: 'Home',
       calendar: 'Calendar',
       championships: 'Championships',
-      myBookings: 'My Bookings',
+      myBookings: 'My bookings',
       bookings: 'Bookings',
-      pendingRequests: 'Pending Requests',
+      pendingRequests: 'Pending requests',
       teams: 'Teams',
 
       // Calendar
@@ -37,15 +37,15 @@ const resources = {
       blocked: 'Blocked',
 
       // Booking Modal
-      bookSlot: 'Book Slot',
-      createBooking: 'Create Booking',
-      editBooking: 'Edit Booking',
-      blockSlot: 'Block Slot',
-      selectDuration: 'Select Duration',
+      bookSlot: 'Book slot',
+      createBooking: 'Create booking',
+      editBooking: 'Edit booking',
+      blockSlot: 'Block slot',
+      selectDuration: 'Select duration',
       hours: 'hours',
       hour: 'hour',
-      phoneNumber: 'Phone Number',
-      teamName: 'Team Name',
+      phoneNumber: 'Phone number',
+      teamName: 'Team name',
       notes: 'Notes',
       submit: 'Submit',
       cancel: 'Cancel',
@@ -86,7 +86,7 @@ const resources = {
       bookingRejected: 'Your booking for {{pitch}} on {{date}} at {{time}} has been rejected.',
       bookingCancelled: 'Your booking for {{pitch}} on {{date}} at {{time}} has been cancelled by admin.',
       bookingApprovedMessage: 'Your booking was approved! Check the date and time, and don\'t be late.',
-      matchScheduledMessage: 'You got a new booking for the Championship. Check the date and time, and don\'t be late!',
+      matchScheduledMessage: 'You got a new booking for the championship. Check the date and time, and don\'t be late!',
 
       // Admin
       adminPanel: 'Admin panel',
@@ -102,7 +102,7 @@ const resources = {
       // Footer
       contact: 'Contact',
       location: 'Location',
-      followUs: 'Follow Us',
+      followUs: 'Follow us',
 
       // Messages
       bookingSuccess: 'Booking request submitted successfully!',
@@ -127,12 +127,75 @@ const resources = {
       showAll: 'Show all',
       showLess: 'Show less',
       bookAPitch: 'Book a pitch',
-      joinTheChampionship: 'Join the Championship',
+      joinTheChampionship: 'Join the championship',
       registerYourTeam: 'Register your team and compete for glory!',
       joinNow: 'Join now',
-      professionalFootballFacilities: 'Professional Football Facilities',
+      professionalFootballFacilities: 'Professional football facilities',
       stateOfTheArtPitches: 'State-of-the-art pitches for the best experience',
       learnMore: 'Learn more',
+
+      // NEW: Championships & Subgroups
+      championshipsDesc: 'View standings and match schedules',
+      standings: 'Standings',
+      allGroups: 'All groups (merged)',
+      mondayGroup: 'Monday group',
+      tuesdayGroup: 'Tuesday group',
+      wednesdayGroup: 'Wednesday group',
+      thursdayGroup: 'Thursday group',
+      mergedStandings: 'Combined standings',
+      noTeamsInSubgroup: 'No teams in this subgroup yet',
+      noTeamsInChampionship: 'No teams in this championship yet',
+      
+      // NEW: Table Headers & Legend
+      pld: 'Pld',
+      played: 'Played',
+      w: 'W',
+      won: 'Won',
+      d: 'D',
+      draw: 'Draw',
+      l: 'L',
+      lost: 'Lost',
+      gf: 'GF',
+      goalsFor: 'Goals for',
+      ga: 'GA',
+      goalsAgainst: 'Goals against',
+      gd: 'GD',
+      goalDifference: 'Goal difference',
+      pts: 'Pts',
+      points: 'Points',
+      legend: 'Legend',
+      top3: 'Top 3',
+      highlightedInGreen: 'highlighted in green',
+      eliminated: 'Eliminated',
+      highlightedInRed: 'teams shown in red',
+      
+      // NEW: Team Modal
+      joinChampionship: 'Join championship',
+      joinChampionshipDesc: 'Register your team to compete in our championships. An admin will review your request and assign you to the appropriate league.',
+      assignTeam: 'Assign to championship',
+      championship: 'Championship',
+      selectChampionship: 'Select a championship...',
+      subgroup: 'Playing day group',
+      selectSubgroup: 'Select a subgroup...',
+      subgroupExplanation: 'Teams in each subgroup will compete against each other during the group stage.',
+      championshipReviewInfo: 'Your request will be reviewed by an admin who will assign you to one of our championships: MSL DREAM LEAGUE, MSL A, or MSL B.',
+      enterTeamName: 'Enter your team name',
+      enterPhone: 'Enter your phone number',
+      submitting: 'Submitting...',
+      submitRequest: 'Submit request',
+      
+      // NEW: Knockout Bracket
+      knockoutBracket: 'Knockout bracket',
+      bracketComingSoon: 'Knockout bracket will appear here when finals begin',
+      
+      // NEW: Phases (for future use)
+      groupStage: 'Group stage',
+      qualificationRound: 'Qualification round',
+      finals: 'Finals',
+      roundOf16: 'Round of 16',
+      quarterfinals: 'Quarterfinals',
+      semifinals: 'Semifinals',
+      final: 'Final',
     }
   },
   gr: {
@@ -178,7 +241,7 @@ const resources = {
       hours: 'ώρες',
       hour: 'ώρα',
       phoneNumber: 'Τηλέφωνο',
-      teamName: 'Όνομα Ομάδας',
+      teamName: 'Όνομα ομάδας',
       notes: 'Σημειώσεις',
       submit: 'Υποβολή',
       cancel: 'Ακύρωση',
@@ -219,7 +282,7 @@ const resources = {
       bookingRejected: 'Η κράτησή σας για το {{pitch}} στις {{date}} στις {{time}} απορρίφθηκε.',
       bookingCancelled: 'Η κράτησή σας για το {{pitch}} στις {{date}} στις {{time}} ακυρώθηκε από τον διαχειριστή.',
       bookingApprovedMessage: 'Η κράτησή σας εγκρίθηκε! Ελέγξτε την ημερομηνία και την ώρα, και μην αργήσετε.',
-      matchScheduledMessage: 'Έχετε νέα κράτηση για το Πρωτάθλημα. Ελέγξτε την ημερομηνία και την ώρα, και μην αργήσετε!',
+      matchScheduledMessage: 'Έχετε νέα κράτηση για το πρωτάθλημα. Ελέγξτε την ημερομηνία και την ώρα, και μην αργήσετε!',
 
       // Admin
       adminPanel: 'Πίνακας διαχειριστή',
@@ -266,6 +329,69 @@ const resources = {
       professionalFootballFacilities: 'Επαγγελματικές εγκαταστάσεις ποδοσφαίρου',
       stateOfTheArtPitches: 'Γήπεδα τελευταίας τεχνολογίας για την καλύτερη εμπειρία',
       learnMore: 'Μάθετε περισσότερα',
+
+      // NEW: Championships & Subgroups
+      championshipsDesc: 'Δείτε τη βαθμολογία και το πρόγραμμα αγώνων',
+      standings: 'Βαθμολογία',
+      allGroups: 'Όλοι οι όμιλοι (συγχωνευμένοι)',
+      mondayGroup: 'Όμιλος Δευτέρας',
+      tuesdayGroup: 'Όμιλος Τρίτης',
+      wednesdayGroup: 'Όμιλος Τετάρτης',
+      thursdayGroup: 'Όμιλος Πέμπτης',
+      mergedStandings: 'Συνολική βαθμολογία',
+      noTeamsInSubgroup: 'Δεν υπάρχουν ομάδες σε αυτόν τον όμιλο ακόμα',
+      noTeamsInChampionship: 'Δεν υπάρχουν ομάδες σε αυτό το πρωτάθλημα ακόμα',
+      
+      // NEW: Table Headers & Legend
+      pld: 'Αγ',
+      played: 'Αγώνες',
+      w: 'Ν',
+      won: 'Νίκες',
+      d: 'Ι',
+      draw: 'Ισοπαλίες',
+      l: 'Η',
+      lost: 'Ήττες',
+      gf: 'ΓΥ',
+      goalsFor: 'Γκολ υπέρ',
+      ga: 'ΓΚ',
+      goalsAgainst: 'Γκολ κατά',
+      gd: 'ΔΓ',
+      goalDifference: 'Διαφορά γκολ',
+      pts: 'Βαθ',
+      points: 'Βαθμοί',
+      legend: 'Υπόμνημα',
+      top3: 'Πρώτες 3',
+      highlightedInGreen: 'επισημαίνονται με πράσινο',
+      eliminated: 'Αποκλεισμένοι',
+      highlightedInRed: 'ομάδες εμφανίζονται με κόκκινο',
+      
+      // NEW: Team Modal
+      joinChampionship: 'Εγγραφή στο πρωτάθλημα',
+      joinChampionshipDesc: 'Εγγράψτε την ομάδα σας για να αγωνιστείτε στα πρωταθλήματά μας. Ένας διαχειριστής θα αναθεωρήσει το αίτημά σας και θα σας αναθέσει στο κατάλληλο πρωτάθλημα.',
+      assignTeam: 'Ανάθεση σε πρωτάθλημα',
+      championship: 'Πρωτάθλημα',
+      selectChampionship: 'Επιλέξτε πρωτάθλημα...',
+      subgroup: 'Όμιλος αγώνων',
+      selectSubgroup: 'Επιλέξτε όμιλο...',
+      subgroupExplanation: 'Οι ομάδες κάθε ομίλου θα αγωνιστούν μεταξύ τους κατά τη διάρκεια της φάσης των ομίλων.',
+      championshipReviewInfo: 'Το αίτημά σας θα αναθεωρηθεί από έναν διαχειριστή που θα σας αναθέσει σε ένα από τα πρωταθλήματά μας: MSL DREAM LEAGUE, MSL A ή MSL B.',
+      enterTeamName: 'Εισάγετε το όνομα της ομάδας σας',
+      enterPhone: 'Εισάγετε τον αριθμό τηλεφώνου σας',
+      submitting: 'Υποβολή...',
+      submitRequest: 'Υποβολή αιτήματος',
+      
+      // NEW: Knockout Bracket
+      knockoutBracket: 'Πίνακας νοκ-άουτ',
+      bracketComingSoon: 'Ο πίνακας νοκ-άουτ θα εμφανιστεί εδώ όταν ξεκινήσουν οι τελικοί',
+      
+      // NEW: Phases (for future use)
+      groupStage: 'Φάση ομίλων',
+      qualificationRound: 'Γύρος προκριματικών',
+      finals: 'Τελικοί',
+      roundOf16: 'Φάση των 16',
+      quarterfinals: 'Προημιτελικά',
+      semifinals: 'Ημιτελικοί',
+      final: 'Τελικός',
     }
   }
 };
