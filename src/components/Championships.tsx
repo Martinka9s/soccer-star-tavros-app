@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Trophy, Calendar, Award } from 'lucide-react';
-import { Team, ChampionshipType } from '../types';
-import { teamService } from '../services/firebaseService';
+import { Trophy, Calendar, Award, Users, Play } from 'lucide-react';
+import { Team, ChampionshipType, SubgroupType, ChampionshipPhase } from '../types';
+import { teamService, championshipService } from '../services/firebaseService';
 
 const Championships: React.FC = () => {
   const { t } = useTranslation();
   const [teams, setTeams] = useState<Team[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedChampionship, setSelectedChampionship] = useState<ChampionshipType>('MSL DREAM LEAGUE');
+  const [selectedSubgroup, setSelectedSubgroup] = useState<SubgroupType | 'ALL'>('ALL');
+  const [currentPhase, setCurrentPhase] = useState<ChampionshipPhase>('group_stage');
 
   useEffect(() => {
     loadTeams();
@@ -26,11 +28,30 @@ const Championships: React.FC = () => {
     }
   };
 
-  // Filter teams by championship
-  const championshipTeams = teams.filter(t => t.championship === selectedChampionship);
+  // Get subgroups for selected championship
+  const getSubgroupsForChampionship = (championship: ChampionshipType): SubgroupType[] => {
+    if (championship === 'MSL A') {
+      return ['ΟΜΙΛΟΣ ΔΕΥΤΕΡΑΣ', 'ΟΜΙΛΟΣ ΤΡΙΤΗΣ', 'ΟΜΙΛΟΣ ΤΕΤΑΡΤΗΣ'];
+    } else if (championship === 'MSL B') {
+      return ['ΟΜΙΛΟΣ ΔΕΥΤΕΡΑΣ', 'ΟΜΙΛΟΣ ΤΡΙΤΗΣ', 'ΟΜΙΛΟΣ ΠΕΜΠΤΗΣ'];
+    }
+    return [];
+  };
 
-  // Sort by points (desc), then goal difference, then goals for
-  const sortedTeams = [...championshipTeams].sort((a, b) => {
+  // Filter teams by championship and optionally by subgroup
+  const getFilteredTeams = () => {
+    let filtered = teams.filter(t => t.championship === selectedChampionship);
+    
+    // If subgroup selected (not ALL), filter by subgroup
+    if (selectedSubgroup !== 'ALL' && selectedChampionship !== 'MSL DREAM LEAGUE') {
+      filtered = filtered.filter(t => t.subgroup === selectedSubgroup);
+    }
+    
+    return filtered;
+  };
+
+  // Sort teams by standings
+  const sortedTeams = [...getFilteredTeams()].sort((a, b) => {
     if (b.stats.points !== a.stats.points) {
       return b.stats.points - a.stats.points;
     }
@@ -41,6 +62,26 @@ const Championships: React.FC = () => {
     }
     return (b.stats.goalsFor || 0) - (a.stats.goalsFor || 0);
   });
+
+  // Get English translation for subgroup names
+  const getSubgroupLabel = (subgroup: SubgroupType): string => {
+    const labels = {
+      'ΟΜΙΛΟΣ ΔΕΥΤΕΡΑΣ': t('mondayGroup', { defaultValue: 'Monday Group' }),
+      'ΟΜΙΛΟΣ ΤΡΙΤΗΣ': t('tuesdayGroup', { defaultValue: 'Tuesday Group' }),
+      'ΟΜΙΛΟΣ ΤΕΤΑΡΤΗΣ': t('wednesdayGroup', { defaultValue: 'Wednesday Group' }),
+      'ΟΜΙΛΟΣ ΠΕΜΠΤΗΣ': t('thursdayGroup', { defaultValue: 'Thursday Group' }),
+    };
+    return labels[subgroup] || subgroup;
+  };
+
+  // Handle championship change - reset subgroup
+  const handleChampionshipChange = (championship: ChampionshipType) => {
+    setSelectedChampionship(championship);
+    setSelectedSubgroup('ALL');
+  };
+
+  const subgroups = getSubgroupsForChampionship(selectedChampionship);
+  const hasSubgroups = subgroups.length > 0;
 
   if (loading) {
     return (
@@ -67,7 +108,7 @@ const Championships: React.FC = () => {
       {/* Championship Selector */}
       <div className="flex space-x-2 overflow-x-auto pb-2">
         <button
-          onClick={() => setSelectedChampionship('MSL DREAM LEAGUE')}
+          onClick={() => handleChampionshipChange('MSL DREAM LEAGUE')}
           className={`px-4 py-2 rounded-lg font-medium whitespace-nowrap transition-all ${
             selectedChampionship === 'MSL DREAM LEAGUE'
               ? 'bg-[#6B2FB5] text-white shadow-lg'
@@ -78,7 +119,7 @@ const Championships: React.FC = () => {
           MSL DL
         </button>
         <button
-          onClick={() => setSelectedChampionship('MSL A')}
+          onClick={() => handleChampionshipChange('MSL A')}
           className={`px-4 py-2 rounded-lg font-medium whitespace-nowrap transition-all ${
             selectedChampionship === 'MSL A'
               ? 'bg-[#6B2FB5] text-white shadow-lg'
@@ -89,7 +130,7 @@ const Championships: React.FC = () => {
           MSL A
         </button>
         <button
-          onClick={() => setSelectedChampionship('MSL B')}
+          onClick={() => handleChampionshipChange('MSL B')}
           className={`px-4 py-2 rounded-lg font-medium whitespace-nowrap transition-all ${
             selectedChampionship === 'MSL B'
               ? 'bg-[#6B2FB5] text-white shadow-lg'
@@ -101,12 +142,52 @@ const Championships: React.FC = () => {
         </button>
       </div>
 
+      {/* Subgroup Tabs (for MSL A and MSL B only) */}
+      {hasSubgroups && (
+        <div className="flex space-x-2 overflow-x-auto pb-2 border-t border-slate-200 dark:border-gray-700 pt-4">
+          <button
+            onClick={() => setSelectedSubgroup('ALL')}
+            className={`px-4 py-2 rounded-lg font-medium whitespace-nowrap transition-all ${
+              selectedSubgroup === 'ALL'
+                ? 'bg-green-600 text-white shadow-lg'
+                : 'bg-slate-200 dark:bg-dark-lighter text-gray-700 dark:text-gray-300 hover:bg-slate-300 dark:hover:bg-dark'
+            }`}
+          >
+            <Users size={18} className="inline mr-2" />
+            {t('allGroups', { defaultValue: 'All Groups (Merged)' })}
+          </button>
+          {subgroups.map((subgroup) => (
+            <button
+              key={subgroup}
+              onClick={() => setSelectedSubgroup(subgroup)}
+              className={`px-4 py-2 rounded-lg font-medium whitespace-nowrap transition-all ${
+                selectedSubgroup === subgroup
+                  ? 'bg-blue-600 text-white shadow-lg'
+                  : 'bg-slate-200 dark:bg-dark-lighter text-gray-700 dark:text-gray-300 hover:bg-slate-300 dark:hover:bg-dark'
+              }`}
+            >
+              {getSubgroupLabel(subgroup)}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Standings Table */}
       <div className="bg-white dark:bg-dark-lighter rounded-lg shadow-lg overflow-hidden">
         <div className="px-6 py-4 bg-[#6B2FB5] border-b border-purple-600">
           <h2 className="text-xl font-bold text-white flex items-center">
             <Award size={24} className="mr-2" />
             {t('standings', { defaultValue: 'Standings' })}
+            {hasSubgroups && selectedSubgroup !== 'ALL' && (
+              <span className="ml-3 text-sm font-normal opacity-90">
+                - {getSubgroupLabel(selectedSubgroup)}
+              </span>
+            )}
+            {hasSubgroups && selectedSubgroup === 'ALL' && (
+              <span className="ml-3 text-sm font-normal opacity-90">
+                - {t('mergedStandings', { defaultValue: 'Combined Standings' })}
+              </span>
+            )}
           </h2>
         </div>
 
@@ -114,7 +195,10 @@ const Championships: React.FC = () => {
           <div className="p-12 text-center">
             <Trophy size={48} className="mx-auto text-gray-400 mb-4" />
             <p className="text-gray-600 dark:text-gray-400">
-              {t('noTeamsInChampionship', { defaultValue: 'No teams in this championship yet' })}
+              {hasSubgroups && selectedSubgroup !== 'ALL'
+                ? t('noTeamsInSubgroup', { defaultValue: 'No teams in this subgroup yet' })
+                : t('noTeamsInChampionship', { defaultValue: 'No teams in this championship yet' })
+              }
             </p>
           </div>
         ) : (
@@ -128,6 +212,11 @@ const Championships: React.FC = () => {
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
                     Team
                   </th>
+                  {hasSubgroups && selectedSubgroup === 'ALL' && (
+                    <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                      Group
+                    </th>
+                  )}
                   <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
                     Pld
                   </th>
@@ -158,12 +247,17 @@ const Championships: React.FC = () => {
                 {sortedTeams.map((team, index) => {
                   const goalDifference = (team.stats.goalsFor || 0) - (team.stats.goalsAgainst || 0);
                   const isTopThree = index < 3;
+                  const isEliminated = team.eliminated === true;
                   
                   return (
                     <tr
                       key={team.id}
                       className={`hover:bg-slate-50 dark:hover:bg-dark transition-colors ${
-                        isTopThree ? 'bg-green-50 dark:bg-green-900/10' : ''
+                        isEliminated 
+                          ? 'bg-red-50 dark:bg-red-900/10 opacity-75' 
+                          : isTopThree 
+                          ? 'bg-green-50 dark:bg-green-900/10' 
+                          : ''
                       }`}
                     >
                       <td className="px-4 py-3 whitespace-nowrap">
@@ -171,16 +265,28 @@ const Championships: React.FC = () => {
                           index === 0 ? 'text-yellow-600' :
                           index === 1 ? 'text-gray-400' :
                           index === 2 ? 'text-orange-600' :
+                          isEliminated ? 'text-red-500' :
                           'text-gray-600 dark:text-gray-400'
                         }`}>
                           {index + 1}
                         </span>
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap">
-                        <span className="font-medium text-gray-900 dark:text-white">
+                        <span className={`font-medium ${
+                          isEliminated 
+                            ? 'text-red-600 dark:text-red-400 line-through' 
+                            : 'text-gray-900 dark:text-white'
+                        }`}>
                           {team.name}
                         </span>
                       </td>
+                      {hasSubgroups && selectedSubgroup === 'ALL' && (
+                        <td className="px-4 py-3 text-center">
+                          <span className="text-xs px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 rounded">
+                            {team.subgroup?.split(' ')[1] || '-'}
+                          </span>
+                        </td>
+                      )}
                       <td className="px-4 py-3 text-center text-gray-700 dark:text-gray-300">
                         {team.stats.played}
                       </td>
@@ -207,7 +313,11 @@ const Championships: React.FC = () => {
                         {goalDifference > 0 ? '+' : ''}{goalDifference}
                       </td>
                       <td className="px-4 py-3 text-center">
-                        <span className="px-2 py-1 bg-[#6B2FB5] text-white rounded font-bold">
+                        <span className={`px-2 py-1 rounded font-bold ${
+                          isEliminated 
+                            ? 'bg-red-500 text-white' 
+                            : 'bg-[#6B2FB5] text-white'
+                        }`}>
                           {team.stats.points}
                         </span>
                       </td>
@@ -236,26 +346,29 @@ const Championships: React.FC = () => {
             <span><strong>{t('gd', { defaultValue: 'GD' })}:</strong> {t('goalDifference', { defaultValue: 'Goal Difference' })}</span>
             <span><strong>{t('pts', { defaultValue: 'Pts' })}:</strong> {t('points', { defaultValue: 'Points' })}</span>
           </div>
-          <div className="mt-2 pt-2 border-t border-slate-300 dark:border-gray-600">
-            <span className="text-xs text-gray-600 dark:text-gray-400">
+          <div className="mt-2 pt-2 border-t border-slate-300 dark:border-gray-600 space-y-1">
+            <div className="text-xs text-gray-600 dark:text-gray-400">
               🟢 <strong>{t('top3', { defaultValue: 'Top 3' })}</strong> {t('highlightedInGreen', { defaultValue: 'highlighted in green' })}
-            </span>
+            </div>
+            <div className="text-xs text-gray-600 dark:text-gray-400">
+              🔴 <strong>{t('eliminated', { defaultValue: 'Eliminated' })}</strong> {t('highlightedInRed', { defaultValue: 'teams shown in red' })}
+            </div>
           </div>
         </div>
       )}
 
-      {/* Upcoming Matches - Placeholder for now */}
+      {/* Placeholder for Future Features */}
       <div className="bg-white dark:bg-dark-lighter rounded-lg shadow-lg overflow-hidden">
         <div className="px-6 py-4 bg-[#6B2FB5] border-b border-purple-600">
           <h2 className="text-xl font-bold text-white flex items-center">
-            <Calendar size={24} className="mr-2" />
-            {t('upcomingMatches', { defaultValue: 'Upcoming Matches' })}
+            <Play size={24} className="mr-2" />
+            {t('knockoutBracket', { defaultValue: 'Knockout bracket' })}
           </h2>
         </div>
         <div className="p-12 text-center">
-          <Calendar size={48} className="mx-auto text-gray-400 mb-4" />
+          <Play size={48} className="mx-auto text-gray-400 mb-4" />
           <p className="text-gray-600 dark:text-gray-400">
-            {t('matchScheduleComingSoon', { defaultValue: 'Match schedule coming soon' })}
+            {t('bracketComingSoon', { defaultValue: 'Knockout bracket will appear here when finals begin' })}
           </p>
         </div>
       </div>
