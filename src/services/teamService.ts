@@ -1,4 +1,4 @@
-// Team Service Functions for Firebase
+// Team Service Functions for Firebase - WITH SUBGROUP SUPPORT
 
 import { 
   collection, 
@@ -14,7 +14,7 @@ import {
   Timestamp
 } from 'firebase/firestore';
 import { db, notificationService } from './firebaseService';
-import { Team, ChampionshipType, SeasonArchive } from '../types';
+import { Team, ChampionshipType, SubgroupType, SeasonArchive } from '../types';
 
 export const teamService = {
   /**
@@ -142,10 +142,39 @@ export const teamService = {
     }
   },
 
+  /**
+   * NEW: Get teams by championship and subgroup
+   */
+  async getTeamsBySubgroup(championship: ChampionshipType, subgroup: SubgroupType): Promise<Team[]> {
+    try {
+      const q = query(
+        collection(db, 'teams'),
+        where('championship', '==', championship),
+        where('subgroup', '==', subgroup),
+        where('status', '==', 'approved')
+      );
+      const snapshot = await getDocs(q);
+      return snapshot.docs.map(docSnap => ({
+        id: docSnap.id,
+        ...docSnap.data(),
+        createdAt: docSnap.data().createdAt?.toDate() || new Date(),
+        approvedAt: docSnap.data().approvedAt?.toDate(),
+        lastModified: docSnap.data().lastModified?.toDate() || new Date(),
+      } as Team));
+    } catch (error) {
+      console.error('Error getting teams by subgroup:', error);
+      throw new Error('Failed to load teams');
+    }
+  },
+
+  /**
+   * UPDATED: Approve team with championship AND optional subgroup
+   */
   async approveTeam(
     teamId: string, 
     championship: ChampionshipType, 
-    adminEmail: string
+    adminEmail: string,
+    subgroup?: SubgroupType
   ): Promise<void> {
     try {
       const teamDoc = await getDoc(doc(db, 'teams', teamId));
@@ -153,13 +182,20 @@ export const teamService = {
       
       const team = teamDoc.data();
 
-      await updateDoc(doc(db, 'teams', teamId), {
+      const updateData: any = {
         status: 'approved',
         championship,
         approvedAt: Timestamp.now(),
         reviewedBy: adminEmail,
         lastModified: Timestamp.now(),
-      });
+      };
+
+      // Add subgroup if provided (for MSL A/B)
+      if (subgroup) {
+        updateData.subgroup = subgroup;
+      }
+
+      await updateDoc(doc(db, 'teams', teamId), updateData);
 
       await updateDoc(doc(db, 'users', team.userId), {
         teamId,
@@ -191,9 +227,16 @@ export const teamService = {
     }
   },
 
-  async moveTeam(teamId: string, newChampionship: ChampionshipType): Promise<void> {
+  /**
+   * UPDATED: Move team with optional subgroup change
+   */
+  async moveTeam(
+    teamId: string, 
+    newChampionship: ChampionshipType,
+    newSubgroup?: SubgroupType
+  ): Promise<void> {
     try {
-      await updateDoc(doc(db, 'teams', teamId), {
+      const updateData: any = {
         championship: newChampionship,
         stats: {
           points: 0,
@@ -206,7 +249,16 @@ export const teamService = {
           goalDifference: 0,
         },
         lastModified: Timestamp.now(),
-      });
+      };
+
+      // Update or remove subgroup based on new championship
+      if (newSubgroup) {
+        updateData.subgroup = newSubgroup;
+      } else {
+        updateData.subgroup = null;
+      }
+
+      await updateDoc(doc(db, 'teams', teamId), updateData);
     } catch (error) {
       console.error('Error moving team:', error);
       throw new Error('Failed to move team');
@@ -242,6 +294,36 @@ export const teamService = {
     }
   },
 
+  /**
+   * NEW: Mark team as eliminated (for qualification phase)
+   */
+  async markTeamEliminated(teamId: string): Promise<void> {
+    try {
+      await updateDoc(doc(db, 'teams', teamId), {
+        eliminated: true,
+        lastModified: Timestamp.now(),
+      });
+    } catch (error) {
+      console.error('Error marking team as eliminated:', error);
+      throw new Error('Failed to mark team as eliminated');
+    }
+  },
+
+  /**
+   * NEW: Restore eliminated team
+   */
+  async restoreEliminatedTeam(teamId: string): Promise<void> {
+    try {
+      await updateDoc(doc(db, 'teams', teamId), {
+        eliminated: false,
+        lastModified: Timestamp.now(),
+      });
+    } catch (error) {
+      console.error('Error restoring eliminated team:', error);
+      throw new Error('Failed to restore team');
+    }
+  },
+
   async archiveTeam(teamId: string): Promise<void> {
     try {
       await updateDoc(doc(db, 'teams', teamId), {
@@ -254,13 +336,19 @@ export const teamService = {
     }
   },
 
-  async restoreTeam(teamId: string, championship: ChampionshipType): Promise<void> {
+  async restoreTeam(teamId: string, championship: ChampionshipType, subgroup?: SubgroupType): Promise<void> {
     try {
-      await updateDoc(doc(db, 'teams', teamId), {
+      const updateData: any = {
         status: 'approved',
         championship,
         lastModified: Timestamp.now(),
-      });
+      };
+      
+      if (subgroup) {
+        updateData.subgroup = subgroup;
+      }
+      
+      await updateDoc(doc(db, 'teams', teamId), updateData);
     } catch (error) {
       console.error('Error restoring team:', error);
       throw new Error('Failed to restore team');
@@ -291,6 +379,9 @@ export const teamService = {
     }
   },
 
+  /**
+   * UPDATED: Reset championship with subgroup archiving
+   */
   async resetChampionship(
     championship: ChampionshipType, 
     adminEmail: string
@@ -315,6 +406,7 @@ export const teamService = {
         .map((team, index) => ({
           rank: index + 1,
           teamName: team.name,
+          teamId: team.id,
           points: team.stats.points,
           played: team.stats.played,
           wins: team.stats.wins,
@@ -325,8 +417,44 @@ export const teamService = {
           goalDifference: team.stats.goalDifference,
         }));
 
+      // NEW: Archive subgroup standings separately for MSL A/B
+      let subgroupArchives: any[] = [];
+      if (championship === 'MSL A' || championship === 'MSL B') {
+        const subgroups = championship === 'MSL A' 
+          ? ['ΟΜΙΛΟΣ ΔΕΥΤΕΡΑΣ', 'ΟΜΙΛΟΣ ΤΡΙΤΗΣ', 'ΟΜΙΛΟΣ ΤΕΤΑΡΤΗΣ']
+          : ['ΟΜΙΛΟΣ ΔΕΥΤΕΡΑΣ', 'ΟΜΙΛΟΣ ΤΡΙΤΗΣ', 'ΟΜΙΛΟΣ ΠΕΜΠΤΗΣ'];
+
+        for (const subgroup of subgroups) {
+          const subgroupTeams = teams.filter(t => t.subgroup === subgroup);
+          const subgroupStandings = subgroupTeams
+            .sort((a, b) => {
+              if (b.stats.points !== a.stats.points) return b.stats.points - a.stats.points;
+              if (b.stats.goalDifference !== a.stats.goalDifference) return b.stats.goalDifference - a.stats.goalDifference;
+              return b.stats.goalsFor - a.stats.goalsFor;
+            })
+            .map((team, index) => ({
+              rank: index + 1,
+              teamName: team.name,
+              teamId: team.id,
+              points: team.stats.points,
+              played: team.stats.played,
+              wins: team.stats.wins,
+              draws: team.stats.draws,
+              losses: team.stats.losses,
+              goalsFor: team.stats.goalsFor,
+              goalsAgainst: team.stats.goalsAgainst,
+              goalDifference: team.stats.goalDifference,
+            }));
+
+          subgroupArchives.push({
+            subgroup: subgroup as SubgroupType,
+            standings: subgroupStandings,
+          });
+        }
+      }
+
       const seasonYear = new Date().getFullYear().toString();
-      const archiveData = {
+      const archiveData: any = {
         championship,
         seasonYear,
         teams: teams.map(t => ({
@@ -340,6 +468,10 @@ export const teamService = {
         archivedAt: Timestamp.now(),
         archivedBy: adminEmail,
       };
+
+      if (subgroupArchives.length > 0) {
+        archiveData.subgroupArchives = subgroupArchives;
+      }
 
       await addDoc(collection(db, 'seasonArchives'), archiveData);
 
@@ -356,6 +488,7 @@ export const teamService = {
             goalsAgainst: 0,
             goalDifference: 0,
           },
+          eliminated: false,
           lastModified: Timestamp.now(),
         });
       });
