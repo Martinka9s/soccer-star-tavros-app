@@ -4,6 +4,20 @@ export type PitchType = 'Pitch A' | 'Pitch B';
 export type ChampionshipType = 'MSL DREAM LEAGUE' | 'MSL A' | 'MSL B';
 export type TeamStatus = 'pending' | 'approved' | 'declined' | 'inactive';
 
+// NEW: Subgroup types for MSL A and MSL B
+export type SubgroupType = 
+  | 'ΟΜΙΛΟΣ ΔΕΥΤΕΡΑΣ'   // Monday Group
+  | 'ΟΜΙΛΟΣ ΤΡΙΤΗΣ'     // Tuesday Group
+  | 'ΟΜΙΛΟΣ ΤΕΤΑΡΤΗΣ'   // Wednesday Group
+  | 'ΟΜΙΛΟΣ ΠΕΜΠΤΗΣ';   // Thursday Group
+
+// NEW: Championship phase for managing tournament progression
+export type ChampionshipPhase = 
+  | 'group_stage'        // Teams playing in subgroups
+  | 'merged_standings'   // All subgroups merged into one table
+  | 'qualification'      // Determining final 16 teams
+  | 'finals';            // Knockout bracket (16 → 8 → 4 → 2 → 1)
+
 export interface User {
   id: string;
   email: string;
@@ -35,6 +49,10 @@ export interface Booking {
   
   // Championship assignment
   championship?: ChampionshipType;
+  
+  // NEW: Knockout bracket round tracking
+  bracketRound?: 'round_of_16' | 'quarterfinals' | 'semifinals' | 'final';
+  bracketMatchNumber?: number; // For organizing bracket display
   
   // Recurring booking fields
   isRecurring?: boolean;
@@ -80,7 +98,9 @@ export interface Team {
   userEmail: string;
   phoneNumber: string;
   championship?: ChampionshipType;
+  subgroup?: SubgroupType; // NEW: For MSL A/B teams
   status: TeamStatus;
+  eliminated?: boolean; // NEW: For teams that didn't make top 16
   stats: {
     points: number;
     played: number;
@@ -100,6 +120,7 @@ export interface Team {
 export interface ChampionshipStanding {
   rank: number;
   teamName: string;
+  teamId: string; // NEW: For tracking team reference
   points: number;
   played: number;
   wins: number;
@@ -108,6 +129,38 @@ export interface ChampionshipStanding {
   goalsFor: number;
   goalsAgainst: number;
   goalDifference: number;
+  eliminated?: boolean; // NEW: For visual indicator
+}
+
+// NEW: Championship configuration to track current phase
+export interface ChampionshipConfig {
+  id: string;
+  championship: ChampionshipType;
+  phase: ChampionshipPhase;
+  seasonYear: string;
+  finalistsCount?: number; // How many teams qualified for finals (e.g., 8 for Dream League, 16 for MSL A/B)
+  lastModified: Date;
+  modifiedBy?: string;
+}
+
+// NEW: Bracket match for knockout rounds
+export interface BracketMatch {
+  id: string;
+  championship: ChampionshipType;
+  round: 'round_of_16' | 'quarterfinals' | 'semifinals' | 'final';
+  matchNumber: number;
+  homeTeamId?: string;
+  awayTeamId?: string;
+  homeTeamName?: string;
+  awayTeamName?: string;
+  homeTeamScore?: number;
+  awayTeamScore?: number;
+  winnerId?: string;
+  winnerName?: string;
+  bookingId?: string; // Link to actual booking
+  completed: boolean;
+  nextMatchNumber?: number; // Which match does winner advance to
+  createdAt: Date;
 }
 
 export interface SeasonArchive {
@@ -119,4 +172,8 @@ export interface SeasonArchive {
   totalMatches: number;
   archivedAt: Date;
   archivedBy: string;
+  subgroupArchives?: { // NEW: For MSL A/B with subgroups
+    subgroup: SubgroupType;
+    standings: ChampionshipStanding[];
+  }[];
 }
