@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Trophy, Calendar, Award, Users, Play } from 'lucide-react';
-import { Team, ChampionshipType, SubgroupType, ChampionshipPhase } from '../types';
-import { teamService, championshipService } from '../services/firebaseService';
+import { Trophy, Award, Users, Play } from 'lucide-react';
+import { Team, ChampionshipType, SubgroupType } from '../types';
+import { teamService } from '../services/firebaseService';
 
 const Championships: React.FC = () => {
   const { t } = useTranslation();
@@ -274,7 +274,7 @@ const Championships: React.FC = () => {
                       <td className="px-4 py-3 whitespace-nowrap">
                         <span className={`font-medium ${
                           isEliminated 
-                            ? 'text-red-600 dark:text-red-400 line-through' 
+                            ? 'text-red-600 dark:text-red-400' 
                             : 'text-gray-900 dark:text-white'
                         }`}>
                           {team.name}
