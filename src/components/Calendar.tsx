@@ -107,11 +107,13 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
     const today = startOfDay(new Date());
     const selectedDate = startOfDay(parseISO(dateString + 'T00:00:00'));
 
+    // ✅ FIX: Get status FIRST, before checking user
     const { status, booking } = getSlotStatus(pitch, time);
 
     // ✅ NON-LOGGED USERS: Can see bookings but only interact with available slots
     if (!user) {
       if (status === 'available') {
+        // Only prompt login for available slots
         onLoginRequired();
       }
       // For booked/pending/blocked slots, do nothing (just display info)
@@ -245,6 +247,7 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
   const goToPrevious = () => setCurrentDate(subDays(currentDate, 1));
   const goToNext = () => setCurrentDate(addDays(currentDate, 1));
 
+  // Visibility helpers
   const canSeePrivateDetails = (booking: Booking, viewer: User | null) => {
     const isFriendlyNoTeam = !booking.homeTeam && !booking.awayTeam && !booking.teamName;
     if (!isFriendlyNoTeam) return true;
@@ -401,16 +404,20 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
 
               if (booking) {
                 if (booking.homeTeam && booking.awayTeam) {
+                  // ✅ Everyone sees match team names
                   primaryLabel = `${booking.homeTeam} vs ${booking.awayTeam}`;
                   secondaryLabel = '';
                 } else if (booking.teamName && booking.teamName.trim()) {
+                  // ✅ Everyone sees team name
                   primaryLabel = booking.teamName;
+                  // ✅ Only authorized users see contact info
                   if (canSeeContactInfo(booking, user)) {
                     secondaryLabel = booking.phoneNumber || (booking.userEmail ? maskEmail(booking.userEmail) : '');
                   } else {
                     secondaryLabel = '';
                   }
                 } else {
+                  // ✅ Guest booking - only owner/admin sees details
                   if (canSeePrivateDetails(booking, user)) {
                     primaryLabel = booking.userEmail ? maskEmail(booking.userEmail) : (booking.phoneNumber || '');
                     secondaryLabel = booking.phoneNumber && booking.userEmail ? booking.phoneNumber : '';
