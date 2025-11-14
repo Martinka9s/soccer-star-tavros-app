@@ -10,7 +10,6 @@ const Championships: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [selectedChampionship, setSelectedChampionship] = useState<ChampionshipType>('MSL DREAM LEAGUE');
   const [selectedSubgroup, setSelectedSubgroup] = useState<SubgroupType | 'ALL'>('ALL');
-  const [currentPhase, setCurrentPhase] = useState<ChampionshipPhase>('group_stage');
 
   useEffect(() => {
     loadTeams();
