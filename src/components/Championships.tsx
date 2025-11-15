@@ -1,10 +1,10 @@
-import KnockoutBracket from './KnockoutBracket';
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Trophy, Award, Users, Play } from 'lucide-react';
 import { Team, ChampionshipType, SubgroupType } from '../types';
 import { teamService } from '../services/firebaseService';
 import { useAuth } from '../hooks/useAuth';
+import KnockoutBracket from './KnockoutBracket';
 
 const Championships: React.FC = () => {
   const { t } = useTranslation();
@@ -62,10 +62,8 @@ const Championships: React.FC = () => {
     if (b.stats.points !== a.stats.points) {
       return b.stats.points - a.stats.points;
     }
-    const gdA =
-      (a.stats.goalsFor || 0) - (a.stats.goalsAgainst || 0);
-    const gdB =
-      (b.stats.goalsFor || 0) - (b.stats.goalsAgainst || 0);
+    const gdA = (a.stats.goalsFor || 0) - (a.stats.goalsAgainst || 0);
+    const gdB = (b.stats.goalsFor || 0) - (b.stats.goalsAgainst || 0);
     if (gdB !== gdA) {
       return gdB - gdA;
     }
@@ -121,75 +119,6 @@ const Championships: React.FC = () => {
 
   const subgroups = getSubgroupsForChampionship(selectedChampionship);
   const hasSubgroups = subgroups.length > 0;
-
-  // ---------- Knockout bracket data (visual only, from standings) ----------
-
-  const qualifiersCount =
-    selectedChampionship === 'MSL DREAM LEAGUE' ? 8 : 16;
-
-  // finals considered "started" when at least one team has eliminated flag set
-  const finalsStarted = sortedTeams.some(
-    (t) => typeof t.eliminated !== 'undefined'
-  );
-
-  // For now we show the bracket only for MSL A & MSL B (16 teams)
-  const isSixteenTeamBracket =
-    (selectedChampionship === 'MSL A' || selectedChampionship === 'MSL B') &&
-    qualifiersCount === 16;
-
-  const qualifiedTeams = isSixteenTeamBracket
-    ? sortedTeams.filter((t) => t.eliminated === false)
-    : [];
-
-  const showBracket =
-    finalsStarted &&
-    isSixteenTeamBracket &&
-    qualifiedTeams.length >= 16;
-
-  // Seed list 1..16 based on table order
-  const seeds = qualifiedTeams.slice(0, 16);
-
-  // Round of 16 pairings: 1–16, 2–15, 3–14, 4–13, 5–12, 6–11, 7–10, 8–9
-  const r16Pairs: [number, number][] = [
-    [0, 15],
-    [1, 14],
-    [2, 13],
-    [3, 12],
-    [4, 11],
-    [5, 10],
-    [6, 9],
-    [7, 8],
-  ];
-
-  const r16Matches = r16Pairs.map(([iA, iB], idx) => ({
-    label: `R16 ${idx + 1}`,
-    home: seeds[iA]?.name ?? `Team ${iA + 1}`,
-    away: seeds[iB]?.name ?? `Team ${iB + 1}`,
-  }));
-
-  // Quarterfinals – order requested:
-  // QF1: Winner R16 1 vs Winner R16 8
-  // QF2: Winner R16 2 vs Winner R16 7
-  // QF3: Winner R16 3 vs Winner R16 6
-  // QF4: Winner R16 4 vs Winner R16 5
-  const qfMatches = [
-    { label: 'QF 1', subtitle: 'Winner R16 1 vs Winner R16 8' },
-    { label: 'QF 2', subtitle: 'Winner R16 2 vs Winner R16 7' },
-    { label: 'QF 3', subtitle: 'Winner R16 3 vs Winner R16 6' },
-    { label: 'QF 4', subtitle: 'Winner R16 4 vs Winner R16 5' },
-  ];
-
-  const sfMatches = [
-    { label: 'SF 1', subtitle: 'Winner QF 1 vs Winner QF 4' },
-    { label: 'SF 2', subtitle: 'Winner QF 2 vs Winner QF 3' },
-  ];
-
-  const finalMatch = {
-    label: 'Final',
-    subtitle: 'Winner SF 1 vs Winner SF 2',
-  };
-
-  // ------------------------------------------------------------------------
 
   if (loading) {
     return (
@@ -376,8 +305,7 @@ const Championships: React.FC = () => {
               <tbody className="divide-y divide-slate-200 dark:divide-gray-700">
                 {sortedTeams.map((team, index) => {
                   const goalDifference =
-                    (team.stats.goalsFor || 0) -
-                    (team.stats.goalsAgainst || 0);
+                    (team.stats.goalsFor || 0) - (team.stats.goalsAgainst || 0);
                   const isTopThree = index < 3;
                   const isEliminated = team.eliminated === true;
 
@@ -424,9 +352,7 @@ const Championships: React.FC = () => {
                         <td className="px-4 py-3 text-center">
                           <span className="text-xs px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 rounded">
                             {team.subgroup
-                              ? getSubgroupLabel(
-                                  team.subgroup as SubgroupType
-                                )
+                              ? getSubgroupLabel(team.subgroup as SubgroupType)
                               : '-'}
                           </span>
                         </td>
@@ -535,7 +461,6 @@ const Championships: React.FC = () => {
       )}
 
       {/* Knockout Bracket */}
-        {/* Knockout Bracket */}
       <div className="bg-white dark:bg-dark-lighter rounded-lg shadow-lg overflow-hidden">
         <div className="px-6 py-4 bg-[#6B2FB5] border-b border-purple-600">
           <h2 className="text-xl font-bold text-white flex items-center">
@@ -543,123 +468,10 @@ const Championships: React.FC = () => {
             {t('knockoutBracket', { defaultValue: 'Knockout bracket' })}
           </h2>
         </div>
-        <KnockoutBracket championship={selectedChampionship} />
-      </div>
-
-
-        {showBracket ? (
-          <div className="p-6 overflow-x-auto">
-            <div className="grid grid-cols-4 gap-6 min-w-[700px]">
-              {/* Round of 16 */}
-              <div>
-                <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
-                  {t('roundOf16', { defaultValue: 'Round of 16' })}
-                </h3>
-                <div className="space-y-3">
-                  {r16Matches.map((m) => (
-                    <BracketMatchCard
-                      key={m.label}
-                      title={m.label}
-                      home={m.home}
-                      away={m.away}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              {/* Quarterfinals */}
-              <div>
-                <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
-                  {t('quarterfinals', {
-                    defaultValue: 'Quarterfinals',
-                  })}
-                </h3>
-                <div className="space-y-3">
-                  {qfMatches.map((m) => (
-                    <BracketMatchCard
-                      key={m.label}
-                      title={m.label}
-                      subtitle={m.subtitle}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              {/* Semifinals */}
-              <div>
-                <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
-                  {t('semifinals', { defaultValue: 'Semifinals' })}
-                </h3>
-                <div className="space-y-3">
-                  {sfMatches.map((m) => (
-                    <BracketMatchCard
-                      key={m.label}
-                      title={m.label}
-                      subtitle={m.subtitle}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              {/* Final */}
-              <div>
-                <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
-                  {t('final', { defaultValue: 'Final' })}
-                </h3>
-                <BracketMatchCard
-                  title={finalMatch.label}
-                  subtitle={finalMatch.subtitle}
-                />
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div className="p-12 text-center">
-            <Play size={48} className="mx-auto text-gray-400 mb-4" />
-            <p className="text-gray-600 dark:text-gray-400">
-              {t('bracketComingSoon', {
-                defaultValue:
-                  'Knockout bracket will appear here when finals begin',
-              })}
-            </p>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};
-
-interface BracketMatchCardProps {
-  title: string;
-  home?: string;
-  away?: string;
-  subtitle?: string;
-}
-
-const BracketMatchCard: React.FC<BracketMatchCardProps> = ({
-  title,
-  home,
-  away,
-  subtitle,
-}) => {
-  return (
-    <div className="bg-slate-50 dark:bg-dark rounded-lg border border-slate-200 dark:border-gray-700 px-3 py-2 text-xs text-gray-800 dark:text-gray-200">
-      <div className="flex items-center justify-between mb-1">
-        <span className="font-semibold">{title}</span>
-      </div>
-      {home && away ? (
-        <>
-          <div className="flex justify-between">
-            <span className="truncate pr-2">{home}</span>
-            <span className="text-gray-500 dark:text-gray-400">vs</span>
-          </div>
-          <div className="truncate">{away}</div>
-        </>
-      ) : (
-        <div className="text-gray-600 dark:text-gray-400">
-          {subtitle}
+        <div className="p-4">
+          <KnockoutBracket championship={selectedChampionship} />
         </div>
-      )}
+      </div>
     </div>
   );
 };
