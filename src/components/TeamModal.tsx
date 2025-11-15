@@ -18,7 +18,7 @@ interface TeamModalProps {
   existingPhone?: string;
   existingTeamLevel?: TeamLevel;
   existingPreferredDay?: PreferredDay;
-  isAdminAssigning?: boolean; // NEW: Admin assigning team to championship
+  isAdminAssigning?: boolean;
   existingChampionship?: ChampionshipType;
   existingSubgroup?: SubgroupType;
 }
@@ -45,7 +45,6 @@ const TeamModal: React.FC<TeamModalProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
 
-  // Get available subgroups based on selected championship
   const getSubgroupsForChampionship = (championship?: ChampionshipType): SubgroupType[] => {
     if (championship === 'MSL A') {
       return ['ΟΜΙΛΟΣ ΔΕΥΤΕΡΑΣ', 'ΟΜΙΛΟΣ ΤΡΙΤΗΣ', 'ΟΜΙΛΟΣ ΤΕΤΑΡΤΗΣ'];
@@ -55,17 +54,6 @@ const TeamModal: React.FC<TeamModalProps> = ({
     return [];
   };
 
-  // Get available subgroups based on selected championship
-  const getSubgroupsForChampionship = (championship?: ChampionshipType): SubgroupType[] => {
-    if (championship === 'MSL A') {
-      return ['ΟΜΙΛΟΣ ΔΕΥΤΕΡΑΣ', 'ΟΜΙΛΟΣ ΤΡΙΤΗΣ', 'ΟΜΙΛΟΣ ΤΕΤΑΡΤΗΣ'];
-    } else if (championship === 'MSL B') {
-      return ['ΟΜΙΛΟΣ ΔΕΥΤΕΡΑΣ', 'ΟΜΙΛΟΣ ΤΡΙΤΗΣ', 'ΟΜΙΛΟΣ ΠΕΜΠΤΗΣ'];
-    }
-    return [];
-  };
-
-  // Get English label for subgroup
   const getSubgroupLabel = (subgroup: SubgroupType): string => {
     const labels = {
       'ΟΜΙΛΟΣ ΔΕΥΤΕΡΑΣ': 'Monday Group',
@@ -79,7 +67,6 @@ const TeamModal: React.FC<TeamModalProps> = ({
   const availableSubgroups = getSubgroupsForChampionship(selectedChampionship);
   const requiresSubgroup = availableSubgroups.length > 0;
 
-  // When championship changes, reset subgroup if it's not valid for new championship
   const handleChampionshipChange = (championship: ChampionshipType) => {
     setSelectedChampionship(championship);
     const newSubgroups = getSubgroupsForChampionship(championship);
@@ -114,7 +101,6 @@ const TeamModal: React.FC<TeamModalProps> = ({
       return;
     }
 
-    // Admin assigning: require championship selection
     if (isAdminAssigning) {
       if (!selectedChampionship) {
         setError('Please select a championship');
@@ -147,7 +133,6 @@ const TeamModal: React.FC<TeamModalProps> = ({
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-slate-50 dark:bg-dark-lighter rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
-        {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-slate-200 dark:border-gray-700">
           <div className="flex items-center space-x-3">
             <div className="p-2 bg-[#6B2FB5] rounded-lg">
@@ -155,8 +140,8 @@ const TeamModal: React.FC<TeamModalProps> = ({
             </div>
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
               {isAdminAssigning 
-                ? t('assignTeam', { defaultValue: 'Assign to Championship' })
-                : t('joinChampionship', { defaultValue: 'Join Championship' })
+                ? t('assignTeam', { defaultValue: 'Assign to championship' })
+                : t('joinChampionship', { defaultValue: 'Join championship' })
               }
             </h2>
           </div>
@@ -169,7 +154,6 @@ const TeamModal: React.FC<TeamModalProps> = ({
           </button>
         </div>
 
-        {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           {!isAdminAssigning && (
             <p className="text-gray-600 dark:text-gray-400">
@@ -179,7 +163,6 @@ const TeamModal: React.FC<TeamModalProps> = ({
             </p>
           )}
 
-          {/* Email (read-only) */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               {t('email')}
@@ -192,7 +175,6 @@ const TeamModal: React.FC<TeamModalProps> = ({
             />
           </div>
 
-          {/* Team Name */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               {t('teamName')} <span className="text-red-500">*</span>
@@ -208,10 +190,9 @@ const TeamModal: React.FC<TeamModalProps> = ({
             />
           </div>
 
-          {/* Phone Number */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              {t('phoneNumber', { defaultValue: 'Phone Number' })} <span className="text-red-500">*</span>
+              {t('phoneNumber', { defaultValue: 'Phone number' })} <span className="text-red-500">*</span>
             </label>
             <input
               type="tel"
@@ -224,7 +205,44 @@ const TeamModal: React.FC<TeamModalProps> = ({
             />
           </div>
 
-          {/* Championship Selection (Admin Only) */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              {t('teamLevel', { defaultValue: 'Team level' })} <span className="text-red-500">*</span>
+            </label>
+            <select
+              value={teamLevel}
+              onChange={(e) => setTeamLevel(e.target.value as TeamLevel)}
+              required
+              disabled={isAdminAssigning}
+              className="w-full px-4 py-3 bg-white dark:bg-dark border border-slate-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#6B2FB5] focus:border-transparent text-gray-900 dark:text-white disabled:bg-slate-100 disabled:text-gray-500"
+            >
+              <option value="">{t('selectTeamLevel', { defaultValue: 'Select team level...' })}</option>
+              <option value="beginner">{t('beginner', { defaultValue: 'Beginner' })}</option>
+              <option value="intermediate">{t('intermediate', { defaultValue: 'Intermediate' })}</option>
+              <option value="advanced">{t('advanced', { defaultValue: 'Advanced' })}</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              {t('preferredDay', { defaultValue: 'Preferred playing day' })} <span className="text-red-500">*</span>
+            </label>
+            <select
+              value={preferredDay}
+              onChange={(e) => setPreferredDay(e.target.value as PreferredDay)}
+              required
+              disabled={isAdminAssigning}
+              className="w-full px-4 py-3 bg-white dark:bg-dark border border-slate-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#6B2FB5] focus:border-transparent text-gray-900 dark:text-white disabled:bg-slate-100 disabled:text-gray-500"
+            >
+              <option value="">{t('selectPreferredDay', { defaultValue: 'Select preferred day...' })}</option>
+              <option value="monday">{t('monday', { defaultValue: 'Monday' })}</option>
+              <option value="tuesday">{t('tuesday', { defaultValue: 'Tuesday' })}</option>
+              <option value="wednesday">{t('wednesday', { defaultValue: 'Wednesday' })}</option>
+              <option value="thursday">{t('thursday', { defaultValue: 'Thursday' })}</option>
+              <option value="friday">{t('friday', { defaultValue: 'Friday' })}</option>
+            </select>
+          </div>
+
           {isAdminAssigning && (
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -244,11 +262,10 @@ const TeamModal: React.FC<TeamModalProps> = ({
             </div>
           )}
 
-          {/* Subgroup Selection (Admin Only, for MSL A/B) */}
           {isAdminAssigning && requiresSubgroup && (
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                {t('subgroup', { defaultValue: 'Playing Day Group' })} <span className="text-red-500">*</span>
+                {t('subgroup', { defaultValue: 'Playing day group' })} <span className="text-red-500">*</span>
               </label>
               <select
                 value={selectedSubgroup || ''}
@@ -271,14 +288,12 @@ const TeamModal: React.FC<TeamModalProps> = ({
             </div>
           )}
 
-          {/* Error Message */}
           {error && (
             <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
               <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
             </div>
           )}
 
-          {/* Info Box */}
           {!isAdminAssigning && (
             <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
               <p className="text-sm text-blue-800 dark:text-blue-300">
@@ -289,7 +304,6 @@ const TeamModal: React.FC<TeamModalProps> = ({
             </div>
           )}
 
-          {/* Buttons */}
           <div className="flex space-x-3">
             <button
               type="button"
@@ -306,8 +320,8 @@ const TeamModal: React.FC<TeamModalProps> = ({
               {isSubmitting 
                 ? t('submitting', { defaultValue: 'Submitting...' }) 
                 : isAdminAssigning
-                ? t('assignTeam', { defaultValue: 'Assign Team' })
-                : t('submitRequest', { defaultValue: 'Submit Request' })
+                ? t('assignTeam', { defaultValue: 'Assign team' })
+                : t('submitRequest', { defaultValue: 'Submit request' })
               }
             </button>
           </div>
