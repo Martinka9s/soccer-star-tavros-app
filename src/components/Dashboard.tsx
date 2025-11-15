@@ -49,48 +49,62 @@ const Dashboard: React.FC<DashboardProps> = ({ onBookNowClick, onJoinChampionshi
     },
   ];
 
+  // Helper: compute match end datetime
+  const getMatchEnd = (booking: Booking): Date => {
+    const start = new Date(`${booking.date}T${booking.startTime}`);
+    const durationHours = booking.duration || 1;
+    return new Date(start.getTime() + durationHours * 60 * 60 * 1000);
+  };
+
   // Fetch match games
   useEffect(() => {
     loadGames();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadGames = async () => {
     try {
       setLoading(true);
-      const today = new Date();
-      const thirtyDaysAgo = new Date(today);
-      thirtyDaysAgo.setDate(today.getDate() - 30);
-      const thirtyDaysFromNow = new Date(today);
-      thirtyDaysFromNow.setDate(today.getDate() + 30);
+      const now = new Date();
+
+      const thirtyDaysAgo = new Date(now);
+      thirtyDaysAgo.setDate(now.getDate() - 30);
+      const thirtyDaysFromNow = new Date(now);
+      thirtyDaysFromNow.setDate(now.getDate() + 30);
 
       const startDate = thirtyDaysAgo.toISOString().split('T')[0];
       const endDate = thirtyDaysFromNow.toISOString().split('T')[0];
 
       const allBookings = await bookingService.getAllBookingsInRange(startDate, endDate);
-      
+
       // Filter only match bookings (with both home and away teams)
       const matchBookings = allBookings.filter(
-        booking => booking.homeTeam && booking.awayTeam && booking.status === 'booked'
+        (booking) => booking.homeTeam && booking.awayTeam && booking.status === 'booked'
       );
 
-      const todayStr = today.toISOString().split('T')[0];
-
-      // Upcoming games: future matches or today's matches
+      // Upcoming games: matches that haven't started yet
       const upcoming = matchBookings
-        .filter(booking => booking.date >= todayStr)
+        .filter((booking) => {
+          const matchStart = new Date(`${booking.date}T${booking.startTime}`);
+          return matchStart >= now;
+        })
         .sort((a, b) => {
           if (a.date !== b.date) return a.date.localeCompare(b.date);
           return a.startTime.localeCompare(b.startTime);
         });
 
-      // Latest results: past completed matches with scores
+      // Latest results: matches that have ended AND have scores
       const past = matchBookings
-        .filter(booking => 
-          booking.date < todayStr && 
-          booking.matchCompleted === true &&
-          booking.homeTeamScore !== undefined && 
-          booking.awayTeamScore !== undefined
-        )
+        .filter((booking) => {
+          if (
+            booking.homeTeamScore === undefined ||
+            booking.awayTeamScore === undefined
+          ) {
+            return false;
+          }
+          const matchEnd = getMatchEnd(booking);
+          return matchEnd < now;
+        })
         .sort((a, b) => {
           if (a.date !== b.date) return b.date.localeCompare(a.date);
           return b.startTime.localeCompare(a.startTime);
@@ -132,9 +146,11 @@ const Dashboard: React.FC<DashboardProps> = ({ onBookNowClick, onJoinChampionshi
       await bookingService.updateBooking(matchId, {
         homeTeamScore: editScores.home,
         awayTeamScore: editScores.away,
+        // We still set this to true, but the dashboard logic relies on time + scores,
+        // so it's not required for display.
         matchCompleted: true,
       });
-      
+
       setEditingMatch(null);
       await loadGames();
       alert('Score updated successfully!');
@@ -322,7 +338,12 @@ const Dashboard: React.FC<DashboardProps> = ({ onBookNowClick, onJoinChampionshi
                           type="number"
                           min="0"
                           value={editScores.home}
-                          onChange={(e) => setEditScores({ ...editScores, home: parseInt(e.target.value) || 0 })}
+                          onChange={(e) =>
+                            setEditScores({
+                              ...editScores,
+                              home: parseInt(e.target.value) || 0,
+                            })
+                          }
                           className="w-16 px-2 py-1 text-center text-xl font-bold bg-white dark:bg-dark border border-slate-300 dark:border-gray-600 rounded"
                         />
                         <span className="text-xl font-bold text-gray-900 dark:text-white">-</span>
@@ -330,7 +351,12 @@ const Dashboard: React.FC<DashboardProps> = ({ onBookNowClick, onJoinChampionshi
                           type="number"
                           min="0"
                           value={editScores.away}
-                          onChange={(e) => setEditScores({ ...editScores, away: parseInt(e.target.value) || 0 })}
+                          onChange={(e) =>
+                            setEditScores({
+                              ...editScores,
+                              away: parseInt(e.target.value) || 0,
+                            })
+                          }
                           className="w-16 px-2 py-1 text-center text-xl font-bold bg-white dark:bg-dark border border-slate-300 dark:border-gray-600 rounded"
                         />
                         <div className="text-lg font-semibold text-gray-900 dark:text-white flex-1 text-left">
@@ -369,7 +395,13 @@ const Dashboard: React.FC<DashboardProps> = ({ onBookNowClick, onJoinChampionshi
                         </div>
                         {isAdmin && (
                           <button
-                            onClick={() => handleEditScore(result.id, result.homeTeamScore || 0, result.awayTeamScore || 0)}
+                            onClick={() =>
+                              handleEditScore(
+                                result.id,
+                                result.homeTeamScore || 0,
+                                result.awayTeamScore || 0
+                              )
+                            }
                             className="ml-4 p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
                             title="Edit score"
                           >
