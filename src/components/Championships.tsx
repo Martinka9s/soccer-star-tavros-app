@@ -3,23 +3,28 @@ import { useTranslation } from 'react-i18next';
 import { Trophy, Award, Users, Play } from 'lucide-react';
 import { Team, ChampionshipType, SubgroupType } from '../types';
 import { teamService } from '../services/firebaseService';
+import { useAuth } from '../hooks/useAuth';
 
 const Championships: React.FC = () => {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
+
   const [teams, setTeams] = useState<Team[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedChampionship, setSelectedChampionship] = useState<ChampionshipType>('MSL DREAM LEAGUE');
+  const [selectedChampionship, setSelectedChampionship] =
+    useState<ChampionshipType>('MSL DREAM LEAGUE');
   const [selectedSubgroup, setSelectedSubgroup] = useState<SubgroupType | 'ALL'>('ALL');
 
   useEffect(() => {
-    loadTeams();
+    void loadTeams();
   }, []);
 
   const loadTeams = async () => {
     try {
       setLoading(true);
       const allTeams = await teamService.getAllTeams();
-      setTeams(allTeams.filter(t => t.status === 'approved'));
+      setTeams(allTeams.filter((t) => t.status === 'approved'));
     } catch (error) {
       console.error('Error loading teams:', error);
     } finally {
@@ -27,7 +32,7 @@ const Championships: React.FC = () => {
     }
   };
 
-  // Get subgroups for selected championship
+  // Get subgroups for selected championship (DB values stay in Greek)
   const getSubgroupsForChampionship = (championship: ChampionshipType): SubgroupType[] => {
     if (championship === 'MSL A') {
       return ['ΟΜΙΛΟΣ ΔΕΥΤΕΡΑΣ', 'ΟΜΙΛΟΣ ΤΡΙΤΗΣ', 'ΟΜΙΛΟΣ ΤΕΤΑΡΤΗΣ'];
@@ -37,53 +42,18 @@ const Championships: React.FC = () => {
     return [];
   };
 
-  // Localised label for full subgroup name
-  const getSubgroupLabel = (subgroup: SubgroupType): string => {
-    const labels = {
-      'ΟΜΙΛΟΣ ΔΕΥΤΕΡΑΣ': t('mondayGroup', { defaultValue: 'Monday group' }),
-      'ΟΜΙΛΟΣ ΤΡΙΤΗΣ': t('tuesdayGroup', { defaultValue: 'Tuesday group' }),
-      'ΟΜΙΛΟΣ ΤΕΤΑΡΤΗΣ': t('wednesdayGroup', { defaultValue: 'Wednesday group' }),
-      'ΟΜΙΛΟΣ ΠΕΜΠΤΗΣ': t('thursdayGroup', { defaultValue: 'Thursday group' }),
-    };
-    return labels[subgroup] || subgroup;
-  };
-
-  // Short label for the "Group" column chip (no GR/EN mix)
-  const getSubgroupShortLabel = (subgroup: SubgroupType): string => {
-    const isGreek = i18n.language === 'gr';
-
-    if (isGreek) {
-      const grLabels: Record<SubgroupType, string> = {
-        'ΟΜΙΛΟΣ ΔΕΥΤΕΡΑΣ': 'Δευτέρα',
-        'ΟΜΙΛΟΣ ΤΡΙΤΗΣ': 'Τρίτη',
-        'ΟΜΙΛΟΣ ΤΕΤΑΡΤΗΣ': 'Τετάρτη',
-        'ΟΜΙΛΟΣ ΠΕΜΠΤΗΣ': 'Πέμπτη',
-      };
-      return grLabels[subgroup] ?? subgroup;
-    }
-
-    const enLabels: Record<SubgroupType, string> = {
-      'ΟΜΙΛΟΣ ΔΕΥΤΕΡΑΣ': 'Mon',
-      'ΟΜΙΛΟΣ ΤΡΙΤΗΣ': 'Tue',
-      'ΟΜΙΛΟΣ ΤΕΤΑΡΤΗΣ': 'Wed',
-      'ΟΜΙΛΟΣ ΠΕΜΠΤΗΣ': 'Thu',
-    };
-    return enLabels[subgroup] ?? subgroup;
-  };
-
   // Filter teams by championship and optionally by subgroup
   const getFilteredTeams = () => {
-    let filtered = teams.filter(t => t.championship === selectedChampionship);
+    let filtered = teams.filter((t) => t.championship === selectedChampionship);
 
-    // If subgroup selected (not ALL), filter by subgroup
     if (selectedSubgroup !== 'ALL' && selectedChampionship !== 'MSL DREAM LEAGUE') {
-      filtered = filtered.filter(t => t.subgroup === selectedSubgroup);
+      filtered = filtered.filter((t) => t.subgroup === selectedSubgroup);
     }
 
     return filtered;
   };
 
-  // Sort teams by standings
+  // Sort teams by standings (points, GD, GF)
   const sortedTeams = [...getFilteredTeams()].sort((a, b) => {
     if (b.stats.points !== a.stats.points) {
       return b.stats.points - a.stats.points;
@@ -96,10 +66,48 @@ const Championships: React.FC = () => {
     return (b.stats.goalsFor || 0) - (a.stats.goalsFor || 0);
   });
 
+  // Localized labels for subgroups (UI shows Greek or English, DB stays Greek)
+  const getSubgroupLabel = (subgroup: SubgroupType): string => {
+    const labels: Record<SubgroupType, string> = {
+      'ΟΜΙΛΟΣ ΔΕΥΤΕΡΑΣ': t('mondayGroup', { defaultValue: 'Monday group' }),
+      'ΟΜΙΛΟΣ ΤΡΙΤΗΣ': t('tuesdayGroup', { defaultValue: 'Tuesday group' }),
+      'ΟΜΙΛΟΣ ΤΕΤΑΡΤΗΣ': t('wednesdayGroup', { defaultValue: 'Wednesday group' }),
+      'ΟΜΙΛΟΣ ΠΕΜΠΤΗΣ': t('thursdayGroup', { defaultValue: 'Thursday group' }),
+    };
+    return labels[subgroup] || subgroup;
+  };
+
   // Handle championship change - reset subgroup
   const handleChampionshipChange = (championship: ChampionshipType) => {
     setSelectedChampionship(championship);
     setSelectedSubgroup('ALL');
+  };
+
+  // Kick off finals: mark top 8/16 as qualified and the rest as eliminated
+  const handleKickoffFinals = async () => {
+    if (!isAdmin) {
+      alert('Only admin can start finals.');
+      return;
+    }
+
+    const qualifiersCount = selectedChampionship === 'MSL DREAM LEAGUE' ? 8 : 16;
+    const confirmText = `Kick off finals for ${selectedChampionship}? Top ${qualifiersCount} teams will qualify and the rest will be marked as eliminated (light red).`;
+
+    if (!window.confirm(confirmText)) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await teamService.kickoffFinals(selectedChampionship);
+      await loadTeams();
+      alert('Finals phase started. Qualified teams remain normal, others are marked as eliminated (light red).');
+    } catch (error: any) {
+      console.error('Error kicking off finals:', error);
+      alert(error.message || 'Failed to kick off finals');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const subgroups = getSubgroupsForChampionship(selectedChampionship);
@@ -193,6 +201,18 @@ const Championships: React.FC = () => {
               {getSubgroupLabel(subgroup)}
             </button>
           ))}
+        </div>
+      )}
+
+      {/* Kickoff Finals Button (Admin only) */}
+      {isAdmin && sortedTeams.length > 0 && (
+        <div className="flex justify-end">
+          <button
+            onClick={handleKickoffFinals}
+            className="mb-2 px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-semibold shadow-sm transition-colors"
+          >
+            Kick off finals
+          </button>
         </div>
       )}
 
@@ -315,7 +335,9 @@ const Championships: React.FC = () => {
                       {hasSubgroups && selectedSubgroup === 'ALL' && (
                         <td className="px-4 py-3 text-center">
                           <span className="text-xs px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 rounded">
-                            {team.subgroup ? getSubgroupShortLabel(team.subgroup) : '-'}
+                            {team.subgroup
+                              ? getSubgroupLabel(team.subgroup as SubgroupType)
+                              : '-'}
                           </span>
                         </td>
                       )}
@@ -374,41 +396,46 @@ const Championships: React.FC = () => {
             {t('legend', { defaultValue: 'Legend' })}
           </h3>
           <div className="flex flex-wrap gap-4 text-xs text-gray-600 dark:text-gray-400">
+            {/* Always English abbreviations, explanation localized */}
             <span>
-              <strong>Pld</strong> – {t('played', { defaultValue: 'Played' })}
+              <strong>Pld:</strong> {t('played', { defaultValue: 'Played' })}
             </span>
             <span>
-              <strong>W</strong> – {t('won', { defaultValue: 'Won' })}
+              <strong>W:</strong> {t('won', { defaultValue: 'Won' })}
             </span>
             <span>
-              <strong>D</strong> – {t('draw', { defaultValue: 'Draw' })}
+              <strong>D:</strong> {t('draw', { defaultValue: 'Draw' })}
             </span>
             <span>
-              <strong>L</strong> – {t('lost', { defaultValue: 'Lost' })}
+              <strong>L:</strong> {t('lost', { defaultValue: 'Lost' })}
             </span>
             <span>
-              <strong>GF</strong> – {t('goalsFor', { defaultValue: 'Goals for' })}
+              <strong>GF:</strong> {t('goalsFor', { defaultValue: 'Goals for' })}
             </span>
             <span>
-              <strong>GA</strong> – {t('goalsAgainst', { defaultValue: 'Goals against' })}
+              <strong>GA:</strong> {t('goalsAgainst', { defaultValue: 'Goals against' })}
             </span>
             <span>
-              <strong>GD</strong> – {t('goalDifference', { defaultValue: 'Goal difference' })}
+              <strong>GD:</strong> {t('goalDifference', { defaultValue: 'Goal difference' })}
             </span>
             <span>
-              <strong>Pts</strong> – {t('points', { defaultValue: 'Points' })}
+              <strong>Pts:</strong> {t('points', { defaultValue: 'Points' })}
             </span>
           </div>
           <div className="mt-2 pt-2 border-t border-slate-300 dark:border-gray-600 space-y-1">
+            {/* Only red / eliminated info (no green text as requested) */}
             <div className="text-xs text-gray-600 dark:text-gray-400">
-              🔴 <strong>{t('eliminated', { defaultValue: 'Eliminated' })}</strong>{' '}
-              {t('highlightedInRed', { defaultValue: 'teams shown in red' })}
+              🔴{' '}
+              <strong>{t('eliminated', { defaultValue: 'Eliminated' })}</strong>{' '}
+              {t('highlightedInRed', {
+                defaultValue: 'teams shown in red (out of championship)',
+              })}
             </div>
           </div>
         </div>
       )}
 
-      {/* Placeholder for Future Features */}
+      {/* Placeholder for Future Knockout Bracket */}
       <div className="bg-white dark:bg-dark-lighter rounded-lg shadow-lg overflow-hidden">
         <div className="px-6 py-4 bg-[#6B2FB5] border-b border-purple-600">
           <h2 className="text-xl font-bold text-white flex items-center">
