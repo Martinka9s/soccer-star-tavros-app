@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { User, UserRole } from '../types';
 import { authService } from '../services/firebaseService';
 
-// 👑 Put your admin login email here (the one you use to log into the app)
+// 👑 Put your admin login email(s) here (the ones you use to log into the app)
 const ADMIN_EMAILS = [
   'soccerstartavros@gmail.com',
 ];
@@ -19,15 +19,13 @@ export const useAuth = () => {
           // Try to load Firestore profile first
           const userData = await authService.getCurrentUser();
 
-          // Figure out the best email we have
+          // Pick best email we have
           const emailFromAuth = firebaseUser.email || '';
           const emailFromProfile = userData?.email || '';
           const finalEmail = (emailFromProfile || emailFromAuth).toLowerCase();
 
           // Is this email in our hard-coded admin list?
-          const isAdminEmail = ADMIN_EMAILS
-            .map((e) => e.toLowerCase())
-            .includes(finalEmail);
+          const isAdminEmail = ADMIN_EMAILS.map((e) => e.toLowerCase()).includes(finalEmail);
 
           // Normalise role
           let finalRole: UserRole = 'user';
@@ -41,7 +39,7 @@ export const useAuth = () => {
           }
 
           if (userData) {
-            // Use Firestore profile + our safe role + safe email
+            // Use Firestore profile + safe role + safe email
             const finalUser: User = {
               ...userData,
               email: finalEmail || userData.email || emailFromAuth,
@@ -56,7 +54,7 @@ export const useAuth = () => {
               id: firebaseUser.uid,
               email: finalEmail || emailFromAuth,
               role: finalRole,
-              createdAt: new Date(), // placeholder; real value comes from Firestore when available
+              createdAt: new Date(), // placeholder
             };
 
             console.log('[useAuth] Using fallback user:', fallbackUser);
@@ -67,27 +65,7 @@ export const useAuth = () => {
         }
       } catch (err) {
         console.error('Error fetching user data in useAuth:', err);
-
-        // In case of error we still try to keep a basic auth user if available
-        const fbUser = authService ? authService['auth']?.currentUser : null;
-
-        if (fbUser) {
-          const email = (fbUser.email || '').toLowerCase();
-          const isAdminEmail = ADMIN_EMAILS
-            .map((e) => e.toLowerCase())
-            .includes(email);
-
-          const fallbackUser: User = {
-            id: fbUser.uid,
-            email: email,
-            role: isAdminEmail ? 'admin' : 'user',
-            createdAt: new Date(),
-          };
-
-          setUser(fallbackUser);
-        } else {
-          setUser(null);
-        }
+        setUser(null);
       } finally {
         setLoading(false);
       }
