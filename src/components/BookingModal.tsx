@@ -42,15 +42,24 @@ const BookingModal: React.FC<BookingModalProps> = ({
   const [editableTime, setEditableTime] = useState('');
 
   const [bookingMode, setBookingMode] = useState<BookingMode>('guest');
-  const [availableTeams, setAvailableTeams] = useState<{ userId: string; teamName: string; email: string }[]>([]);
+  const [availableTeams, setAvailableTeams] = useState<
+    { userId: string; teamName: string; email: string }[]
+  >([]);
   const [homeTeam, setHomeTeam] = useState('');
   const [awayTeam, setAwayTeam] = useState('');
   const [selectedTeam, setSelectedTeam] = useState('');
 
-  // NEW: match result state
+  // Match result state
   const [homeTeamScore, setHomeTeamScore] = useState<string>('');
   const [awayTeamScore, setAwayTeamScore] = useState<string>('');
   const [matchCompleted, setMatchCompleted] = useState<boolean>(false);
+
+  // 🔥 NEW: knockout / finals fields
+  const [isKnockoutMatch, setIsKnockoutMatch] = useState<boolean>(false);
+  const [bracketRound, setBracketRound] = useState<
+    Booking['bracketRound'] | ''
+  >('');
+  const [bracketMatchNumber, setBracketMatchNumber] = useState<number | ''>('');
 
   const isAdmin = user.role === 'admin';
   const isEditMode = !!existingBooking;
@@ -58,7 +67,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
 
   useEffect(() => {
     if (isAdmin && isOpen) {
-      loadTeams();
+      void loadTeams();
     }
   }, [isAdmin, isOpen]);
 
@@ -90,14 +99,17 @@ const BookingModal: React.FC<BookingModalProps> = ({
         setBookingMode('match');
         setHomeTeam(existingBooking.homeTeam);
         setAwayTeam(existingBooking.awayTeam);
-      } else if (existingBooking.teamName && availableTeams.some(t => t.teamName === existingBooking.teamName)) {
+      } else if (
+        existingBooking.teamName &&
+        availableTeams.some((t) => t.teamName === existingBooking.teamName)
+      ) {
         setBookingMode('single-team');
         setSelectedTeam(existingBooking.teamName);
       } else {
         setBookingMode('guest');
       }
 
-      // NEW: preload scores
+      // preload scores
       if (typeof existingBooking.homeTeamScore === 'number') {
         setHomeTeamScore(String(existingBooking.homeTeamScore));
       } else {
@@ -111,7 +123,23 @@ const BookingModal: React.FC<BookingModalProps> = ({
       }
 
       setMatchCompleted(!!existingBooking.matchCompleted);
+
+      // 🔥 preload knockout info
+      if (existingBooking.bracketRound) {
+        setIsKnockoutMatch(true);
+        setBracketRound(existingBooking.bracketRound);
+        setBracketMatchNumber(
+          typeof existingBooking.bracketMatchNumber === 'number'
+            ? existingBooking.bracketMatchNumber
+            : ''
+        );
+      } else {
+        setIsKnockoutMatch(false);
+        setBracketRound('');
+        setBracketMatchNumber('');
+      }
     } else {
+      // reset for new booking
       setDuration(1);
       setPhoneNumber(user.phoneNumber || '');
       setTeamName(user.teamName || '');
@@ -124,7 +152,11 @@ const BookingModal: React.FC<BookingModalProps> = ({
       setHomeTeamScore('');
       setAwayTeamScore('');
       setMatchCompleted(false);
+      setIsKnockoutMatch(false);
+      setBracketRound('');
+      setBracketMatchNumber('');
     }
+
     setError('');
   }, [existingBooking, user, isOpen, availableTeams, selectedSlot]);
 
@@ -140,19 +172,27 @@ const BookingModal: React.FC<BookingModalProps> = ({
     const endMinutes = startMinutes + selectedDuration * 60;
 
     return existingBookings.some((booking) => {
-      if (booking.pitchType !== selectedSlot.pitch || booking.date !== selectedSlot.date) {
+      if (
+        booking.pitchType !== selectedSlot.pitch ||
+        booking.date !== selectedSlot.date
+      ) {
         return false;
       }
       if (booking.status === 'available') return false;
 
-      const [bookingHours, bookingMinutes] = booking.startTime.split(':').map(Number);
+      const [bookingHours, bookingMinutes] = booking.startTime
+        .split(':')
+        .map(Number);
       const bookingStartMinutes = bookingHours * 60 + bookingMinutes;
       const bookingEndMinutes = bookingStartMinutes + booking.duration * 60;
 
       return (
-        (startMinutes >= bookingStartMinutes && startMinutes < bookingEndMinutes) ||
-        (endMinutes > bookingStartMinutes && endMinutes <= bookingEndMinutes) ||
-        (startMinutes <= bookingStartMinutes && endMinutes >= bookingEndMinutes)
+        (startMinutes >= bookingStartMinutes &&
+          startMinutes < bookingEndMinutes) ||
+        (endMinutes > bookingStartMinutes &&
+          endMinutes <= bookingEndMinutes) ||
+        (startMinutes <= bookingStartMinutes &&
+          endMinutes >= bookingEndMinutes)
       );
     });
   };
@@ -165,7 +205,11 @@ const BookingModal: React.FC<BookingModalProps> = ({
   const availableDurations = getAvailableDurations();
 
   useEffect(() => {
-    if (!isEditMode && availableDurations.length > 0 && !availableDurations.includes(duration)) {
+    if (
+      !isEditMode &&
+      availableDurations.length > 0 &&
+      !availableDurations.includes(duration)
+    ) {
       setDuration(availableDurations[0]);
     }
   }, [availableDurations, duration, isEditMode]);
@@ -205,7 +249,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
       return;
     }
 
-    // NEW: Validate scores if present / completed
+    // Validate scores if present / completed
     let parsedHomeScore: number | undefined;
     let parsedAwayScore: number | undefined;
 
@@ -232,6 +276,20 @@ const BookingModal: React.FC<BookingModalProps> = ({
       return;
     }
 
+    // 🔥 Knockout validation
+    const isMatchBooking =
+      bookingMode === 'match' ||
+      (!!existingBooking &&
+        existingBooking.homeTeam &&
+        existingBooking.awayTeam);
+
+    if (isMatchBooking && isKnockoutMatch) {
+      if (!bracketRound || bracketMatchNumber === '') {
+        setError('Please select round and match number for finals match');
+        return;
+      }
+    }
+
     setLoading(true);
 
     try {
@@ -240,7 +298,8 @@ const BookingModal: React.FC<BookingModalProps> = ({
         date: isAdmin && isEditMode ? editableDate : selectedSlot.date,
         startTime: isAdmin && isEditMode ? editableTime : selectedSlot.time,
         duration,
-        status: isAdmin && isBlocked ? 'blocked' : (isAdmin ? status : 'pending'),
+        status:
+          isAdmin && isBlocked ? 'blocked' : isAdmin ? status : 'pending',
         notes: notes.trim(),
       };
 
@@ -248,13 +307,19 @@ const BookingModal: React.FC<BookingModalProps> = ({
         bookingData.homeTeam = homeTeam;
         bookingData.awayTeam = awayTeam;
 
-        const homeTeamUser = availableTeams.find(t => t.teamName === homeTeam);
-        const awayTeamUser = availableTeams.find(t => t.teamName === awayTeam);
+        const homeTeamUser = availableTeams.find(
+          (t) => t.teamName === homeTeam
+        );
+        const awayTeamUser = availableTeams.find(
+          (t) => t.teamName === awayTeam
+        );
 
         if (homeTeamUser) bookingData.homeTeamUserId = homeTeamUser.userId;
         if (awayTeamUser) bookingData.awayTeamUserId = awayTeamUser.userId;
       } else if (isAdmin && bookingMode === 'single-team') {
-        const teamUser = availableTeams.find(t => t.teamName === selectedTeam);
+        const teamUser = availableTeams.find(
+          (t) => t.teamName === selectedTeam
+        );
         if (teamUser) {
           bookingData.userId = teamUser.userId;
           bookingData.userEmail = teamUser.email;
@@ -267,11 +332,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
         bookingData.teamName = teamName.trim();
       }
 
-      // NEW: Attach scores only for match bookings / existing matches
-      const isMatchBooking =
-        bookingMode === 'match' ||
-        (!!existingBooking && existingBooking.homeTeam && existingBooking.awayTeam);
-
+      // Attach scores only for match bookings
       if (isMatchBooking) {
         if (parsedHomeScore !== undefined) {
           bookingData.homeTeamScore = parsedHomeScore;
@@ -280,6 +341,12 @@ const BookingModal: React.FC<BookingModalProps> = ({
           bookingData.awayTeamScore = parsedAwayScore;
         }
         bookingData.matchCompleted = matchCompleted;
+
+        // 🔥 Attach knockout meta if flagged
+        if (isKnockoutMatch && bracketRound && bracketMatchNumber !== '') {
+          bookingData.bracketRound = bracketRound;
+          bookingData.bracketMatchNumber = Number(bracketMatchNumber);
+        }
       }
 
       await onSubmit(bookingData);
@@ -309,7 +376,22 @@ const BookingModal: React.FC<BookingModalProps> = ({
   const showMatchResultSection =
     isAdmin &&
     (bookingMode === 'match' ||
-      (isEditMode && existingBooking?.homeTeam && existingBooking?.awayTeam));
+      (isEditMode &&
+        existingBooking?.homeTeam &&
+        existingBooking?.awayTeam));
+
+  // 🔥 Knockout match section condition
+  const showKnockoutSection = showMatchResultSection;
+
+  // Helper: match number options per round
+  const getMatchNumberOptions = () => {
+    if (!bracketRound) return [];
+    if (bracketRound === 'round_of_16') return [1, 2, 3, 4, 5, 6, 7, 8];
+    if (bracketRound === 'quarterfinals') return [1, 2, 3, 4];
+    if (bracketRound === 'semifinals') return [1, 2];
+    if (bracketRound === 'final') return [1];
+    return [];
+  };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
@@ -342,7 +424,9 @@ const BookingModal: React.FC<BookingModalProps> = ({
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
               <span className="text-gray-700 dark:text-gray-400">Pitch:</span>
-              <span className="ml-2 text-gray-900 dark:text-white">{selectedSlot.pitch}</span>
+              <span className="ml-2 text-gray-900 dark:text-white">
+                {selectedSlot.pitch}
+              </span>
             </div>
 
             <div>
@@ -355,7 +439,9 @@ const BookingModal: React.FC<BookingModalProps> = ({
                   className="ml-2 px-2 py-1 bg-white dark:bg-dark border border-slate-300 dark:border-gray-600 rounded text-gray-900 dark:text-white text-sm focus:outline-none focus:border-[#6B2FB5] dark:focus:border-primary"
                 />
               ) : (
-                <span className="ml-2 text-gray-900 dark:text-white">{editableDate}</span>
+                <span className="ml-2 text-gray-900 dark:text-white">
+                  {editableDate}
+                </span>
               )}
             </div>
 
@@ -369,7 +455,9 @@ const BookingModal: React.FC<BookingModalProps> = ({
                   className="ml-2 px-2 py-1 bg-white dark:bg-dark border border-slate-300 dark:border-gray-600 rounded text-gray-900 dark:text-white text-sm focus:outline-none focus:border-[#6B2FB5] dark:focus:border-primary"
                 />
               ) : (
-                <span className="ml-2 text-gray-900 dark:text-white">{editableTime}</span>
+                <span className="ml-2 text-gray-900 dark:text-white">
+                  {editableTime}
+                </span>
               )}
             </div>
           </div>
@@ -388,7 +476,9 @@ const BookingModal: React.FC<BookingModalProps> = ({
                     onChange={() => setBookingMode('match')}
                     className="text-[#6B2FB5] dark:text-primary focus:ring-[#6B2FB5] dark:focus:ring-primary"
                   />
-                  <span className="text-gray-900 dark:text-white">Match (2 teams)</span>
+                  <span className="text-gray-900 dark:text-white">
+                    Match (2 teams)
+                  </span>
                 </label>
                 <label className="flex items-center space-x-2 cursor-pointer">
                   <input
@@ -398,7 +488,9 @@ const BookingModal: React.FC<BookingModalProps> = ({
                     onChange={() => setBookingMode('single-team')}
                     className="text-[#6B2FB5] dark:text-primary focus:ring-[#6B2FB5] dark:focus:ring-primary"
                   />
-                  <span className="text-gray-900 dark:text-white">Single Team</span>
+                  <span className="text-gray-900 dark:text-white">
+                    Single Team
+                  </span>
                 </label>
                 <label className="flex items-center space-x-2 cursor-pointer">
                   <input
@@ -408,7 +500,9 @@ const BookingModal: React.FC<BookingModalProps> = ({
                     onChange={() => setBookingMode('guest')}
                     className="text-[#6B2FB5] dark:text-primary focus:ring-[#6B2FB5] dark:focus:ring-primary"
                   />
-                  <span className="text-gray-900 dark:text-white">Guest / Other</span>
+                  <span className="text-gray-900 dark:text-white">
+                    Guest / Other
+                  </span>
                 </label>
               </div>
             </div>
@@ -432,11 +526,12 @@ const BookingModal: React.FC<BookingModalProps> = ({
                     </option>
                   ))}
                 </select>
-                {!isEditMode && availableDurations.length < durationOptions.length && (
-                  <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">
-                    Some durations are unavailable due to conflicts
-                  </p>
-                )}
+                {!isEditMode &&
+                  availableDurations.length < durationOptions.length && (
+                    <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">
+                      Some durations are unavailable due to conflicts
+                    </p>
+                  )}
               </div>
 
               {isAdmin && bookingMode === 'match' && (
@@ -471,11 +566,13 @@ const BookingModal: React.FC<BookingModalProps> = ({
                       required
                     >
                       <option value="">Select away team</option>
-                      {availableTeams.filter(t => t.teamName !== homeTeam).map((team) => (
-                        <option key={team.userId} value={team.teamName}>
-                          {team.teamName}
-                        </option>
-                      ))}
+                      {availableTeams
+                        .filter((t) => t.teamName !== homeTeam)
+                        .map((team) => (
+                          <option key={team.userId} value={team.teamName}>
+                            {team.teamName}
+                          </option>
+                        ))}
                     </select>
                   </div>
                 </>
@@ -527,13 +624,17 @@ const BookingModal: React.FC<BookingModalProps> = ({
                       value={teamName}
                       onChange={(e) => setTeamName(e.target.value)}
                       className="w-full px-4 py-2 bg-white dark:bg-dark border border-slate-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-[#6B2FB5] dark:focus:border-primary"
-                      placeholder={user.teamName ? 'Edit team name or leave as is' : 'Team name (optional)'}
+                      placeholder={
+                        user.teamName
+                          ? 'Edit team name or leave as is'
+                          : 'Team name (optional)'
+                      }
                     />
                   </div>
                 </>
               )}
 
-              {/* NEW: Match result section for admin */}
+              {/* Match result section */}
               {showMatchResultSection && (
                 <div className="border border-slate-300 dark:border-gray-700 rounded-lg p-3 space-y-3">
                   <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
@@ -569,7 +670,9 @@ const BookingModal: React.FC<BookingModalProps> = ({
                     <input
                       type="checkbox"
                       checked={matchCompleted}
-                      onChange={() => setMatchCompleted((prev) => !prev)}
+                      onChange={() =>
+                        setMatchCompleted((prev) => !prev)
+                      }
                       className="text-[#6B2FB5] dark:text-primary focus:ring-[#6B2FB5] dark:focus:ring-primary"
                     />
                     <span>
@@ -578,6 +681,90 @@ const BookingModal: React.FC<BookingModalProps> = ({
                       })}
                     </span>
                   </label>
+                </div>
+              )}
+
+              {/* 🔥 Knockout / finals section */}
+              {showKnockoutSection && (
+                <div className="border border-purple-300 dark:border-purple-700 rounded-lg p-3 space-y-3">
+                  <label className="flex items-center space-x-2 text-xs text-gray-800 dark:text-gray-200 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={isKnockoutMatch}
+                      onChange={() =>
+                        setIsKnockoutMatch((prev) => !prev)
+                      }
+                      className="text-[#6B2FB5] dark:text-primary focus:ring-[#6B2FB5] dark:focus:ring-primary"
+                    />
+                    <span>
+                      {t('knockoutMatchLabel', {
+                        defaultValue: 'Finals / knockout match (bracket)',
+                      })}
+                    </span>
+                  </label>
+
+                  {isKnockoutMatch && (
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          {t('knockoutRound', { defaultValue: 'Round' })}
+                        </label>
+                        <select
+                          value={bracketRound || ''}
+                          onChange={(e) => {
+                            const value = e.target.value as Booking['bracketRound'] | '';
+                            setBracketRound(value);
+                            // reset match number when round changes
+                            setBracketMatchNumber('');
+                          }}
+                          className="w-full px-3 py-2 bg-white dark:bg-dark border border-slate-300 dark:border-gray-600 rounded text-gray-900 dark:text-white text-sm focus:outline-none focus:border-[#6B2FB5] dark:focus:border-primary"
+                        >
+                          <option value="">
+                            {t('selectRound', { defaultValue: 'Select round' })}
+                          </option>
+                          <option value="round_of_16">
+                            {t('roundOf16', { defaultValue: 'Round of 16' })}
+                          </option>
+                          <option value="quarterfinals">
+                            {t('quarterfinals', { defaultValue: 'Quarterfinals' })}
+                          </option>
+                          <option value="semifinals">
+                            {t('semifinals', { defaultValue: 'Semifinals' })}
+                          </option>
+                          <option value="final">
+                            {t('final', { defaultValue: 'Final' })}
+                          </option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          {t('matchNumber', { defaultValue: 'Match #' })}
+                        </label>
+                        <select
+                          value={bracketMatchNumber === '' ? '' : String(bracketMatchNumber)}
+                          onChange={(e) =>
+                            setBracketMatchNumber(
+                              e.target.value === '' ? '' : Number(e.target.value)
+                            )
+                          }
+                          className="w-full px-3 py-2 bg-white dark:bg-dark border border-slate-300 dark:border-gray-600 rounded text-gray-900 dark:text-white text-sm focus:outline-none focus:border-[#6B2FB5] dark:focus:border-primary"
+                          disabled={!bracketRound}
+                        >
+                          <option value="">
+                            {t('selectMatchNumber', {
+                              defaultValue: 'Select match',
+                            })}
+                          </option>
+                          {getMatchNumberOptions().map((n) => (
+                            <option key={n} value={n}>
+                              {n}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
