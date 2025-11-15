@@ -122,3 +122,33 @@ input[type="number"] {
 *:not(input):not(textarea):not(select) {
   transition-property: background-color, border-color, color;
 }
+
+/* ========================= */
+/*  MOBILE / APP FONT SIZES  */
+/* ========================= */
+
+/* On mobile / app width, make all titles & big texts smaller */
+@media (max-width: 768px) {
+  h1,
+  .text-4xl,
+  .text-3xl {
+    font-size: 1.5rem !important; /* smaller main titles */
+  }
+
+  .text-2xl {
+    font-size: 1.25rem !important; /* section titles (Dashboard, Calendar etc.) */
+  }
+
+  .text-xl {
+    font-size: 1.1rem !important;
+  }
+
+  .text-lg {
+    font-size: 1rem !important;
+  }
+
+  p,
+  .text-base {
+    font-size: 0.95rem !important;
+  }
+}
