@@ -161,7 +161,7 @@ const resources = {
       // Team Modal
       joinChampionship: 'Join championship',
       joinChampionshipDesc:
-        'Register your team to compete in our championships. An admin will review your request and assign you to the appropriate league.',
+        'Register your team to compete in our championships.',
       assignTeam: 'Assign to championship',
       championship: 'Championship',
       selectChampionship: 'Select a championship...',
@@ -375,7 +375,7 @@ const resources = {
       // Team Modal
       joinChampionship: 'Εγγραφή στο πρωτάθλημα',
       joinChampionshipDesc:
-        'Εγγράψτε την ομάδα σας για να αγωνιστείτε στα πρωταθλήματά μας. Ένας διαχειριστής θα αναθεωρήσει το αίτημά σας και θα σας αναθέσει στο κατάλληλο πρωτάθλημα.',
+        'Εγγράψτε την ομάδα σας για να αγωνιστείτε στα πρωταθλήματά μας.',
       assignTeam: 'Ανάθεση σε πρωτάθλημα',
       championship: 'Πρωτάθλημα',
       selectChampionship: 'Επιλέξτε πρωτάθλημα...',
