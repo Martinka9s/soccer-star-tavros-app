@@ -169,6 +169,7 @@ function App() {
                 setShowTeamRegistrationModal(true);
               }
             }}
+            user={user}
           />
         )}
         {activeTab === 'calendar' && (
