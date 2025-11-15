@@ -49,7 +49,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
   const [awayTeam, setAwayTeam] = useState('');
   const [selectedTeam, setSelectedTeam] = useState('');
 
-  // Match result state
+  // NEW: match result state
   const [homeTeamScore, setHomeTeamScore] = useState<string>('');
   const [awayTeamScore, setAwayTeamScore] = useState<string>('');
   const [matchCompleted, setMatchCompleted] = useState<boolean>(false);
@@ -60,7 +60,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
 
   useEffect(() => {
     if (isAdmin && isOpen) {
-      loadTeams();
+      void loadTeams();
     }
   }, [isAdmin, isOpen]);
 
@@ -210,7 +210,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
       return;
     }
 
-    // Validate scores if present / completed
+    // validate scores if present
     let parsedHomeScore: number | undefined;
     let parsedAwayScore: number | undefined;
 
@@ -272,7 +272,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
         bookingData.teamName = teamName.trim();
       }
 
-      // Attach scores only for match bookings / existing matches
+      // attach scores only for match bookings / existing matches
       const isMatchBooking =
         bookingMode === 'match' ||
         (!!existingBooking && existingBooking.homeTeam && existingBooking.awayTeam);
@@ -378,8 +378,9 @@ const BookingModal: React.FC<BookingModalProps> = ({
             </div>
           </div>
 
-          {/* 🔁 Booking type is now visible for admin both in create AND edit (except blocked) */}
-          {isAdmin && !isBlocked && (
+          {/* 🔧 always show booking type for new bookings (admin/non-admin),
+              logic on submit is still protected by isAdmin */}
+          {!isBlocked && !isEditMode && (
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Booking Type
