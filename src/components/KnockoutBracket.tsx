@@ -17,9 +17,7 @@ const KnockoutBracket: React.FC<KnockoutBracketProps> = ({ championship }) => {
     const load = async () => {
       setLoading(true);
       try {
-        const data = await teamService.getBracketMatchesForChampionship(
-          championship
-        );
+        const data = await teamService.getBracketMatchesForChampionship(championship);
         setMatches(data);
       } catch (e) {
         console.error(e);
@@ -53,7 +51,7 @@ const KnockoutBracket: React.FC<KnockoutBracketProps> = ({ championship }) => {
     );
   }
 
-  // Left / right split like your image
+  // Left / right split
   const leftR16 = r16.filter((m) => m.matchNumber <= 4);
   const rightR16 = r16.filter((m) => m.matchNumber > 4);
 
@@ -146,8 +144,9 @@ const RoundTitle: React.FC<{ label: string }> = ({ label }) => (
   </div>
 );
 
-const padToLength = <T,>(arr: T[], len: number): (T | null)[] => {
-  const result = [...arr];
+// 🔧 FIXED: no generics here, specific to BracketMatch
+const padToLength = (arr: BracketMatch[], len: number): (BracketMatch | null)[] => {
+  const result: (BracketMatch | null)[] = [...arr];
   while (result.length < len) result.push(null);
   return result;
 };
@@ -165,9 +164,7 @@ const MatchCard: React.FC<{ match: BracketMatch | null; highlight?: boolean }> =
   return (
     <div
       className={`relative rounded-lg border text-xs px-3 py-2 bg-slate-50/80 dark:bg-dark border-slate-200 dark:border-gray-700 min-h-[56px] flex flex-col justify-center ${
-        highlight
-          ? 'ring-2 ring-[#6B2FB5] shadow-lg'
-          : 'shadow-sm'
+        highlight ? 'ring-2 ring-[#6B2FB5] shadow-lg' : 'shadow-sm'
       }`}
     >
       {hasTeams ? (
