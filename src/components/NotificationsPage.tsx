@@ -71,10 +71,11 @@ const NotificationsPage: React.FC<NotificationsPageProps> = ({ user }) => {
         {notifications.some(n => !n.read) && (
           <button
             onClick={handleMarkAllAsRead}
-            className="flex items-center gap-2 px-4 py-2 bg-[#6B2FB5] hover:bg-[#5a2596] text-white rounded-lg transition-colors"
+            className="flex items-center justify-center p-3 bg-[#6B2FB5] hover:bg-[#5a2596] text-white rounded-lg transition-colors"
+            title={t('markAllRead')}
+            aria-label={t('markAllRead')}
           >
-            <CheckCheck size={18} />
-            <span>{t('markAllRead')}</span>
+            <CheckCheck size={24} />
           </button>
         )}
       </div>
