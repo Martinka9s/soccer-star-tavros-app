@@ -1,3 +1,4 @@
+import KnockoutBracket from './KnockoutBracket';
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Trophy, Award, Users, Play } from 'lucide-react';
