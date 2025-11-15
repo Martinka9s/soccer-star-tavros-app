@@ -69,7 +69,8 @@ const resources = {
       // Auth error/help texts
       auth_email_in_use: 'Email already in use. Try logging in or reset your password.',
       auth_invalid_email: 'Invalid email address.',
-      auth_weak_password: 'Password must be at least 6 characters long and include one uppercase letter, one lowercase letter, and one number.',
+      auth_weak_password:
+        'Password must be at least 6 characters long and include one uppercase letter, one lowercase letter, and one number.',
       send_reset_link: 'Send reset link',
       reset_sent: 'Password reset email sent.',
 
@@ -85,8 +86,9 @@ const resources = {
       bookingApproved: 'Your booking for {{pitch}} on {{date}} at {{time}} has been approved.',
       bookingRejected: 'Your booking for {{pitch}} on {{date}} at {{time}} has been rejected.',
       bookingCancelled: 'Your booking for {{pitch}} on {{date}} at {{time}} has been cancelled by admin.',
-      bookingApprovedMessage: 'Your booking was approved! Check the date and time, and don\'t be late.',
-      matchScheduledMessage: 'You got a new booking for the championship. Check the date and time, and don\'t be late!',
+      bookingApprovedMessage: "Your booking was approved! Check the date and time, and don't be late.",
+      matchScheduledMessage:
+        "You got a new booking for the championship. Check the date and time, and don't be late!",
 
       // Admin
       adminPanel: 'Admin panel',
@@ -135,9 +137,8 @@ const resources = {
       professionalFootballFacilities: 'Professional football facilities',
       stateOfTheArtPitches: 'State-of-the-art pitches for the best experience',
       learnMore: 'Learn more',
-      
 
-      // NEW: Championships & Subgroups
+      // Championships & Subgroups
       championshipsDesc: 'View standings and match schedules',
       standings: 'Standings',
       allGroups: 'All groups (merged)',
@@ -148,8 +149,8 @@ const resources = {
       mergedStandings: 'Combined standings',
       noTeamsInSubgroup: 'No teams in this subgroup yet',
       noTeamsInChampionship: 'No teams in this championship yet',
-      
-      // NEW: Table Headers & Legend
+
+      // Table Headers & Legend
       pld: 'Pld',
       played: 'Played',
       w: 'W',
@@ -171,27 +172,30 @@ const resources = {
       highlightedInGreen: 'highlighted in green',
       eliminated: 'Eliminated',
       highlightedInRed: 'teams shown in red',
-      
-      // NEW: Team Modal
+
+      // Team Modal
       joinChampionship: 'Join championship',
-      joinChampionshipDesc: 'Register your team to compete in our championships. An admin will review your request and assign you to the appropriate league.',
+      joinChampionshipDesc:
+        'Register your team to compete in our championships. An admin will review your request and assign you to the appropriate league.',
       assignTeam: 'Assign to championship',
       championship: 'Championship',
       selectChampionship: 'Select a championship...',
       subgroup: 'Playing day group',
       selectSubgroup: 'Select a subgroup...',
-      subgroupExplanation: 'Teams in each subgroup will compete against each other during the group stage.',
-      championshipReviewInfo: 'Your request will be reviewed by an admin who will assign you to one of our championships: MSL DREAM LEAGUE, MSL A, or MSL B.',
+      subgroupExplanation:
+        'Teams in each subgroup will compete against each other during the group stage.',
+      championshipReviewInfo:
+        'Your request will be reviewed by an admin who will assign you to one of our championships: MSL DREAM LEAGUE, MSL A, or MSL B.',
       enterTeamName: 'Enter your team name',
       enterPhone: 'Enter your phone number',
       submitting: 'Submitting...',
       submitRequest: 'Submit request',
-      
-      // NEW: Knockout Bracket
+
+      // Knockout Bracket
       knockoutBracket: 'Knockout bracket',
       bracketComingSoon: 'Knockout bracket will appear here when finals begin',
-      
-      // NEW: Phases (for future use)
+
+      // Phases
       groupStage: 'Group stage',
       qualificationRound: 'Qualification round',
       finals: 'Finals',
@@ -199,8 +203,8 @@ const resources = {
       quarterfinals: 'Quarterfinals',
       semifinals: 'Semifinals',
       final: 'Final',
-      
-      // NEW: Team registration fields
+
+      // Team registration fields
       teamLevel: 'Team level',
       selectTeamLevel: 'Select team level...',
       beginner: 'Beginner',
@@ -213,7 +217,24 @@ const resources = {
       wednesday: 'Wednesday',
       thursday: 'Thursday',
       friday: 'Friday',
-    }
+
+      // Teams Management
+      teamsManagement: 'Teams management',
+      teamsManagementDesc: 'Review registrations, manage teams, and organize championships',
+      requested: 'Requested',
+      decline: 'Decline',
+      resetSeason: 'Reset season',
+      edit: 'Edit',
+      moveTo: 'Move to...',
+      moveTeam: 'Move team',
+      deactivate: 'Deactivate',
+      inactiveTeams: 'Inactive teams',
+      noInactiveTeams: 'No inactive teams',
+      declined: 'Declined',
+      inactive: 'Inactive',
+      reactivate: 'Reactivate',
+      confirmReactivate: 'Confirm reactivate',
+    },
   },
   gr: {
     translation: {
@@ -239,11 +260,6 @@ const resources = {
       pitchA: 'Γήπεδο A',
       pitchB: 'Γήπεδο B',
       livePitchAvailability: 'Live Διαθεσιμότητα Γηπέδων',
-      selectDateAndPitch: 'Έλεξε διαθέσιμες ώρες & κάνε εύκολα κράτηση'
-
-
-      // Τίτλος & Υπότιτλος
-      livePitchAvailability: 'Live διαθεσιμότητα γηπέδων',
       selectDateAndPitch: 'Δες διαθέσιμες ώρες & κάνε κράτηση εύκολα',
 
       // Booking Status
@@ -285,7 +301,8 @@ const resources = {
       // Auth error/help texts
       auth_email_in_use: 'Το email χρησιμοποιείται ήδη. Δοκιμάστε σύνδεση ή επαναφορά κωδικού.',
       auth_invalid_email: 'Μη έγκυρο email.',
-      auth_weak_password: 'Ο κωδικός πρέπει να έχει τουλάχιστον 6 χαρακτήρες, 1 κεφαλαίο, 1 πεζό γράμμα και 1 αριθμό.',
+      auth_weak_password:
+        'Ο κωδικός πρέπει να έχει τουλάχιστον 6 χαρακτήρες, 1 κεφαλαίο, 1 πεζό γράμμα και 1 αριθμό.',
       send_reset_link: 'Αποστολή συνδέσμου επαναφοράς',
       reset_sent: 'Στάλθηκε email για επαναφορά κωδικού.',
 
@@ -298,11 +315,16 @@ const resources = {
       notifications: 'Ειδοποιήσεις',
       markAllRead: 'Σήμανση όλων ως αναγνωσμένα',
       noNotifications: 'Δεν υπάρχουν ειδοποιήσεις',
-      bookingApproved: 'Η κράτησή σας για το {{pitch}} στις {{date}} στις {{time}} εγκρίθηκε.',
-      bookingRejected: 'Η κράτησή σας για το {{pitch}} στις {{date}} στις {{time}} απορρίφθηκε.',
-      bookingCancelled: 'Η κράτησή σας για το {{pitch}} στις {{date}} στις {{time}} ακυρώθηκε από τον διαχειριστή.',
-      bookingApprovedMessage: 'Η κράτησή σας εγκρίθηκε! Ελέγξτε την ημερομηνία και την ώρα, και μην αργήσετε.',
-      matchScheduledMessage: 'Έχετε νέα κράτηση για το πρωτάθλημα. Ελέγξτε την ημερομηνία και την ώρα, και μην αργήσετε!',
+      bookingApproved:
+        'Η κράτησή σας για το {{pitch}} στις {{date}} στις {{time}} εγκρίθηκε.',
+      bookingRejected:
+        'Η κράτησή σας για το {{pitch}} στις {{date}} στις {{time}} απορρίφθηκε.',
+      bookingCancelled:
+        'Η κράτησή σας για το {{pitch}} στις {{date}} στις {{time}} ακυρώθηκε από τον διαχειριστή.',
+      bookingApprovedMessage:
+        'Η κράτησή σας εγκρίθηκε! Ελέγξτε την ημερομηνία και την ώρα, και μην αργήσετε.',
+      matchScheduledMessage:
+        'Έχετε νέα κράτηση για το πρωτάθλημα. Ελέγξτε την ημερομηνία και την ώρα, και μην αργήσετε!',
 
       // Admin
       adminPanel: 'Πίνακας διαχειριστή',
@@ -324,7 +346,7 @@ const resources = {
       bookingSuccess: 'Το αίτημα κράτησης υποβλήθηκε επιτυχώς!',
       bookingError: 'Αποτυχία δημιουργίας κράτησης. Παρακαλώ δοκιμάστε ξανά.',
       loginSuccess: 'Επιτυχής σύνδεση!',
-      loginError: 'Αποτυχία σύνδεσης. Ελέγξτε τα διαπιστευτήριά σας.',
+      loginError: 'Αποτυχία σύνδεσης. Ελέγξτε τα στοιχεία σας.',
       registerSuccess: 'Ο λογαριασμός δημιουργήθηκε επιτυχώς!',
       registerError: 'Αποτυχία δημιουργίας λογαριασμού. Παρακαλώ δοκιμάστε ξανά.',
       conflictError: 'Αυτή η ώρα συγκρούεται με μια υπάρχουσα κράτηση.',
@@ -336,14 +358,15 @@ const resources = {
       pm: 'ΜΜ',
 
       // Dashboard
-      nextGames: 'Επόμενα παιχνίδια',
-      latestResults: 'Τελευταία αποτελέσματα',
       nextGames: 'Επόμενοι αγώνες',
+      yesterdayResults: 'Χθεσινά αποτελέσματα',
+      latestResults: 'Τελευταία αποτελέσματα',
       noUpcomingGames: 'Δεν υπάρχουν προγραμματισμένα παιχνίδια',
       noResultsYesterday: 'Δεν υπάρχουν χθεσινά αποτελέσματα',
+      noLatestResults: 'Δεν υπάρχουν αποτελέσματα ακόμα',
       showAll: 'Δείτε όλα',
       showLess: 'Δείτε λιγότερα',
-      bookAPitch: 'Κάντε κράτηση',
+      bookAPitch: 'Κάντε κράτηση γηπέδου',
       joinTheChampionship: 'Εγγραφείτε στο πρωτάθλημα',
       registerYourTeam: 'Εγγράψτε την ομάδα σας και διαγωνιστείτε για τη δόξα!',
       joinNow: 'Εγγραφή τώρα',
@@ -351,7 +374,7 @@ const resources = {
       stateOfTheArtPitches: 'Γήπεδα τελευταίας τεχνολογίας για την καλύτερη εμπειρία',
       learnMore: 'Μάθετε περισσότερα',
 
-      // NEW: Championships & Subgroups
+      // Championships & Subgroups
       championshipsDesc: 'Δείτε τη βαθμολογία και το πρόγραμμα αγώνων',
       standings: 'Βαθμολογία',
       allGroups: 'Όλοι οι όμιλοι (συγχωνευμένοι)',
@@ -362,8 +385,8 @@ const resources = {
       mergedStandings: 'Συνολική βαθμολογία',
       noTeamsInSubgroup: 'Δεν υπάρχουν ομάδες σε αυτόν τον όμιλο ακόμα',
       noTeamsInChampionship: 'Δεν υπάρχουν ομάδες σε αυτό το πρωτάθλημα ακόμα',
-      
-      // NEW: Table Headers & Legend
+
+      // Table Headers & Legend
       pld: 'PLD',
       played: 'Αγώνες',
       w: 'W',
@@ -385,27 +408,30 @@ const resources = {
       highlightedInGreen: 'επισημαίνονται με πράσινο',
       eliminated: 'Αποκλεισμένοι',
       highlightedInRed: 'ομάδες εμφανίζονται με κόκκινο',
-      
-      // NEW: Team Modal
+
+      // Team Modal
       joinChampionship: 'Εγγραφή στο πρωτάθλημα',
-      joinChampionshipDesc: 'Εγγράψτε την ομάδα σας για να αγωνιστείτε στα πρωταθλήματά μας. Ένας διαχειριστής θα αναθεωρήσει το αίτημά σας και θα σας αναθέσει στο κατάλληλο πρωτάθλημα.',
+      joinChampionshipDesc:
+        'Εγγράψτε την ομάδα σας για να αγωνιστείτε στα πρωταθλήματά μας. Ένας διαχειριστής θα αναθεωρήσει το αίτημά σας και θα σας αναθέσει στο κατάλληλο πρωτάθλημα.',
       assignTeam: 'Ανάθεση σε πρωτάθλημα',
       championship: 'Πρωτάθλημα',
       selectChampionship: 'Επιλέξτε πρωτάθλημα...',
       subgroup: 'Όμιλος αγώνων',
       selectSubgroup: 'Επιλέξτε όμιλο...',
-      subgroupExplanation: 'Οι ομάδες κάθε ομίλου θα αγωνιστούν μεταξύ τους κατά τη διάρκεια της φάσης των ομίλων.',
-      championshipReviewInfo: 'Το αίτημά σας θα αναθεωρηθεί από έναν διαχειριστή που θα σας αναθέσει σε ένα από τα πρωταθλήματά μας: MSL DREAM LEAGUE, MSL A ή MSL B.',
+      subgroupExplanation:
+        'Οι ομάδες κάθε ομίλου θα αγωνιστούν μεταξύ τους κατά τη διάρκεια της φάσης των ομίλων.',
+      championshipReviewInfo:
+        'Το αίτημά σας θα αναθεωρηθεί από έναν διαχειριστή που θα σας αναθέσει σε ένα από τα πρωταθλήματά μας: MSL DREAM LEAGUE, MSL A ή MSL B.',
       enterTeamName: 'Εισάγετε το όνομα της ομάδας σας',
       enterPhone: 'Εισάγετε τον αριθμό τηλεφώνου σας',
       submitting: 'Υποβολή...',
       submitRequest: 'Υποβολή αιτήματος',
-      
-      // NEW: Knockout Bracket
+
+      // Knockout Bracket
       knockoutBracket: 'Πίνακας νοκ-άουτ',
       bracketComingSoon: 'Ο πίνακας νοκ-άουτ θα εμφανιστεί εδώ όταν ξεκινήσουν οι τελικοί',
-      
-      // NEW: Phases (for future use)
+
+      // Phases
       groupStage: 'Φάση ομίλων',
       qualificationRound: 'Γύρος προκριματικών',
       finals: 'Τελικοί',
@@ -413,8 +439,8 @@ const resources = {
       quarterfinals: 'Προημιτελικά',
       semifinals: 'Ημιτελικοί',
       final: 'Τελικός',
-      
-      // NEW: Team registration fields
+
+      // Team registration fields
       teamLevel: 'Επίπεδο ομάδας',
       selectTeamLevel: 'Επιλέξτε επίπεδο ομάδας...',
       beginner: 'Αρχάριος',
@@ -427,9 +453,25 @@ const resources = {
       wednesday: 'Τετάρτη',
       thursday: 'Πέμπτη',
       friday: 'Παρασκευή',
-  
-    }
-  }
+
+      // Teams Management
+      teamsManagement: 'Διαχείριση ομάδων',
+      teamsManagementDesc: 'Έλεγχος εγγραφών, διαχείριση ομάδων και οργάνωση πρωταθλημάτων',
+      requested: 'Αίτημα',
+      decline: 'Απόρριψη',
+      resetSeason: 'Επαναφορά σεζόν',
+      edit: 'Επεξεργασία',
+      moveTo: 'Μετακίνηση σε...',
+      moveTeam: 'Μετακίνηση ομάδας',
+      deactivate: 'Απενεργοποίηση',
+      inactiveTeams: 'Ανενεργές ομάδες',
+      noInactiveTeams: 'Δεν υπάρχουν ανενεργές ομάδες',
+      declined: 'Απορριφθείσα',
+      inactive: 'Ανενεργή',
+      reactivate: 'Επανενεργοποίηση',
+      confirmReactivate: 'Επιβεβαίωση επανενεργοποίησης',
+    },
+  },
 };
 
 // Read saved language if present; otherwise default to Greek ('gr')
@@ -441,13 +483,11 @@ const getInitialLang = (): 'gr' | 'en' => {
   return 'gr';
 };
 
-i18n
-  .use(initReactI18next)
-  .init({
-    resources,
-    lng: getInitialLang(),
-    fallbackLng: 'gr',
-    interpolation: { escapeValue: false },
-  });
+i18n.use(initReactI18next).init({
+  resources,
+  lng: getInitialLang(),
+  fallbackLng: 'gr',
+  interpolation: { escapeValue: false },
+});
 
 export default i18n;
