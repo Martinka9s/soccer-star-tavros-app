@@ -406,144 +406,128 @@ export const teamService = {
    * UPDATED: Reset championship with subgroup archiving
    */
   async resetChampionship(
-    championship: ChampionshipType, 
-    adminEmail: string
-  ): Promise<void> {
-    try {
-      const teams = await this.getTeamsByChampionship(championship);
+  championship: ChampionshipType,
+  adminEmail: string
+): Promise<void> {
+  try {
+    const teams = await this.getTeamsByChampionship(championship);
 
-      if (teams.length === 0) {
-        throw new Error('No teams found in this championship');
-      }
+    if (teams.length === 0) {
+      throw new Error('No teams found in this championship');
+    }
 
-      const finalStandings = teams
-        .sort((a, b) => {
-          if (b.stats.points !== a.stats.points) {
-            return b.stats.points - a.stats.points;
-          }
-          if (b.stats.goalDifference !== a.stats.goalDifference) {
-            return b.stats.goalDifference - a.stats.goalDifference;
-          }
-          return b.stats.goalsFor - a.stats.goalsFor;
-        })
-        .map((team, index) => ({
-          rank: index + 1,
-          teamName: team.name,
-          teamId: team.id,
-          points: team.stats.points,
-          played: team.stats.played,
-          wins: team.stats.wins,
-          draws: team.stats.draws,
-          losses: team.stats.losses,
-          goalsFor: team.stats.goalsFor,
-          goalsAgainst: team.stats.goalsAgainst,
-          goalDifference: team.stats.goalDifference,
-        }));
+    // ------------------------------
+    // 1️⃣ Create final standings
+    // ------------------------------
+    const finalStandings = teams
+      .sort((a, b) => {
+        if (b.stats.points !== a.stats.points) return b.stats.points - a.stats.points;
+        if (b.stats.goalDifference !== a.stats.goalDifference) return b.stats.goalDifference - a.stats.goalDifference;
+        return b.stats.goalsFor - a.stats.goalsFor;
+      })
+      .map((team, index) => ({
+        rank: index + 1,
+        teamName: team.name,
+        teamId: team.id,
+        points: team.stats.points,
+        played: team.stats.played,
+        wins: team.stats.wins,
+        draws: team.stats.draws,
+        losses: team.stats.losses,
+        goalsFor: team.stats.goalsFor,
+        goalsAgainst: team.stats.goalsAgainst,
+        goalDifference: team.stats.goalDifference,
+      }));
 
-      // NEW: Archive subgroup standings separately for MSL A/B
-      let subgroupArchives: any[] = [];
-      if (championship === 'MSL A' || championship === 'MSL B') {
-        const subgroups = championship === 'MSL A' 
+    // ------------------------------
+    // 2️⃣ Archive subgroup standings (MSL A & MSL B)
+    // ------------------------------
+    const subgroupArchives: any[] = [];
+
+    if (championship === 'MSL A' || championship === 'MSL B') {
+      const subgroups =
+        championship === 'MSL A'
           ? ['ΟΜΙΛΟΣ ΔΕΥΤΕΡΑΣ', 'ΟΜΙΛΟΣ ΤΡΙΤΗΣ', 'ΟΜΙΛΟΣ ΤΕΤΑΡΤΗΣ']
           : ['ΟΜΙΛΟΣ ΔΕΥΤΕΡΑΣ', 'ΟΜΙΛΟΣ ΤΡΙΤΗΣ', 'ΟΜΙΛΟΣ ΠΕΜΠΤΗΣ'];
 
-        for (const subgroup of subgroups) {
-          const subgroupTeams = teams.filter(t => t.subgroup === subgroup);
-          const subgroupStandings = subgroupTeams
-            .sort((a, b) => {
-              if (b.stats.points !== a.stats.points) return b.stats.points - a.stats.points;
-              if (b.stats.goalDifference !== a.stats.goalDifference) return b.stats.goalDifference - a.stats.goalDifference;
-              return b.stats.goalsFor - a.stats.goalsFor;
-            })
-            .map((team, index) => ({
-              rank: index + 1,
-              teamName: team.name,
-              teamId: team.id,
-              points: team.stats.points,
-              played: team.stats.played,
-              wins: team.stats.wins,
-              draws: team.stats.draws,
-              losses: team.stats.losses,
-              goalsFor: team.stats.goalsFor,
-              goalsAgainst: team.stats.goalsAgainst,
-              goalDifference: team.stats.goalDifference,
-            }));
+      for (const subgroup of subgroups) {
+        const subgroupTeams = teams.filter((t) => t.subgroup === subgroup);
+        const subgroupStandings = subgroupTeams
+          .sort((a, b) => {
+            if (b.stats.points !== a.stats.points) return b.stats.points - a.stats.points;
+            if (b.stats.goalDifference !== a.stats.goalDifference) return b.stats.goalDifference - a.stats.goalDifference;
+            return b.stats.goalsFor - a.stats.goalsFor;
+          })
+          .map((team, index) => ({
+            rank: index + 1,
+            teamName: team.name,
+            teamId: team.id,
+            points: team.stats.points,
+            played: team.stats.played,
+            wins: team.stats.wins,
+            draws: team.stats.draws,
+            losses: team.stats.losses,
+            goalsFor: team.stats.goalsFor,
+            goalsAgainst: team.stats.goalsAgainst,
+            goalDifference: team.stats.goalDifference,
+          }));
 
-          subgroupArchives.push({
-            subgroup: subgroup as SubgroupType,
-            standings: subgroupStandings,
-          });
-        }
-      }
-
-      const seasonYear = new Date().getFullYear().toString();
-      const archiveData: any = {
-        championship,
-        seasonYear,
-        teams: teams.map(t => ({
-          ...t,
-          createdAt: Timestamp.fromDate(t.createdAt),
-          approvedAt: t.approvedAt ? Timestamp.fromDate(t.approvedAt) : null,
-          lastModified: Timestamp.fromDate(t.lastModified),
-        })),
-        finalStandings,
-        totalMatches: teams.reduce((sum, t) => sum + t.stats.played, 0),
-        archivedAt: Timestamp.now(),
-        archivedBy: adminEmail,
-      };
-
-      if (subgroupArchives.length > 0) {
-        archiveData.subgroupArchives = subgroupArchives;
-      }
-
-      await addDoc(collection(db, 'seasonArchives'), archiveData);
-
-      const batch = writeBatch(db);
-      teams.forEach(team => {
-        batch.update(doc(db, 'teams', team.id), {
-          stats: {
-            points: 0,
-            played: 0,
-            wins: 0,
-            draws: 0,
-            losses: 0,
-            goalsFor: 0,
-            goalsAgainst: 0,
-            goalDifference: 0,
-          },
-          eliminated: false,
-          lastModified: Timestamp.now(),
+        subgroupArchives.push({
+          subgroup,
+          standings: subgroupStandings,
         });
-      });
-      await batch.commit();
-      
-    } catch (error: any) {
-      console.error('Error resetting championship:', error);
-      throw new Error(error.message || 'Failed to reset championship');
-    }
-  },
-
-  async getSeasonArchives(championship?: ChampionshipType): Promise<SeasonArchive[]> {
-    try {
-      let q;
-      if (championship) {
-        q = query(
-          collection(db, 'seasonArchives'),
-          where('championship', '==', championship)
-        );
-      } else {
-        q = collection(db, 'seasonArchives');
       }
-
-      const snapshot = await getDocs(q);
-      return snapshot.docs.map(docSnap => ({
-        id: docSnap.id,
-        ...docSnap.data(),
-        archivedAt: docSnap.data().archivedAt?.toDate() || new Date(),
-      } as SeasonArchive));
-    } catch (error) {
-      console.error('Error getting season archives:', error);
-      throw new Error('Failed to load season archives');
     }
-  },
-};
+
+    // ------------------------------
+    // 3️⃣ WRITE ARCHIVE DOCUMENT
+    // ------------------------------
+    const seasonYear = new Date().getFullYear().toString();
+
+    await addDoc(collection(db, 'seasonArchives'), {
+      championship,
+      seasonYear,
+      finalStandings,
+      subgroupArchives,
+      totalMatches: teams.reduce((sum, t) => sum + t.stats.played, 0),
+      teams: teams.map((t) => ({
+        ...t,
+        createdAt: Timestamp.fromDate(t.createdAt),
+        approvedAt: t.approvedAt ? Timestamp.fromDate(t.approvedAt) : null,
+        lastModified: Timestamp.fromDate(t.lastModified),
+      })),
+      archivedAt: Timestamp.now(),
+      archivedBy: adminEmail,
+    });
+
+    // ------------------------------
+    // 4️⃣ RESET teams & set INACTIVE
+    // ------------------------------
+    const batch = writeBatch(db);
+
+    teams.forEach((team) => {
+      batch.update(doc(db, 'teams', team.id), {
+        status: 'inactive',              // 👈 REQUIRED
+        championship: null,              // 👈 Remove old championship
+        subgroup: null,                  // 👈 Remove subgroup
+        eliminated: false,
+        lastModified: Timestamp.now(),
+        stats: {
+          points: 0,
+          played: 0,
+          wins: 0,
+          draws: 0,
+          losses: 0,
+          goalsFor: 0,
+          goalsAgainst: 0,
+          goalDifference: 0,
+        },
+      });
+    });
+
+    await batch.commit();
+  } catch (error: any) {
+    console.error('Error resetting championship:', error);
+    throw new Error(error.message || 'Failed to reset championship');
+  }
+}
