@@ -535,15 +535,17 @@ const Championships: React.FC = () => {
       )}
 
       {/* Knockout Bracket */}
+        {/* Knockout Bracket */}
       <div className="bg-white dark:bg-dark-lighter rounded-lg shadow-lg overflow-hidden">
         <div className="px-6 py-4 bg-[#6B2FB5] border-b border-purple-600">
           <h2 className="text-xl font-bold text-white flex items-center">
             <Play size={24} className="mr-2" />
-            {t('knockoutBracket', {
-              defaultValue: 'Knockout bracket',
-            })}
+            {t('knockoutBracket', { defaultValue: 'Knockout bracket' })}
           </h2>
         </div>
+        <KnockoutBracket championship={selectedChampionship} />
+      </div>
+
 
         {showBracket ? (
           <div className="p-6 overflow-x-auto">
