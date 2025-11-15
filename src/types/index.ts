@@ -74,7 +74,7 @@ export interface Booking {
 export interface Notification {
   id: string;
   userId: string;
-  type: 'approved' | 'rejected' | 'cancelled' | 'match_scheduled' | 'team_approved' | 'team_declined' | 'booking' | 'general';
+  type: 'approved' | 'rejected' | 'cancelled' | 'match_scheduled' | 'team_approved' | 'team_declined' | 'team_registration' | 'booking' | 'general';
   bookingId?: string;
   teamId?: string;
   pitchType?: PitchType;
