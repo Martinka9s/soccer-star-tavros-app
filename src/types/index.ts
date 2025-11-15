@@ -173,17 +173,25 @@ export interface BracketMatch {
   championship: ChampionshipType;
   round: 'round_of_16' | 'quarterfinals' | 'semifinals' | 'final';
   matchNumber: number;
+
   homeTeamId?: string;
   awayTeamId?: string;
   homeTeamName?: string;
   awayTeamName?: string;
+
   homeTeamScore?: number;
   awayTeamScore?: number;
+
   winnerId?: string;
   winnerName?: string;
-  bookingId?: string; // Link to actual booking
+
+  bookingId?: string; // Link to actual booking (Calendar match)
+
+  // For auto-progression:
+  nextMatchNumber?: number;              // which match in the NEXT round
+  slotInNextMatch?: 'home' | 'away';     // put this winner as HOME or AWAY in that match
+
   completed: boolean;
-  nextMatchNumber?: number; // Which match does winner advance to
   createdAt: Date;
 }
 
