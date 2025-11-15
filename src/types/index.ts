@@ -91,12 +91,17 @@ export interface TimeSlot {
   minute: number;
 }
 
+export type TeamLevel = 'beginner' | 'intermediate' | 'advanced';
+export type PreferredDay = 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday';
+
 export interface Team {
   id: string;
   name: string;
   userId: string;
   userEmail: string;
   phoneNumber: string;
+  teamLevel: TeamLevel; // NEW: Team skill level
+  preferredDay: PreferredDay; // NEW: Preferred playing day
   championship?: ChampionshipType;
   subgroup?: SubgroupType; // NEW: For MSL A/B teams
   status: TeamStatus;
