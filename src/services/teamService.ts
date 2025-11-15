@@ -13,7 +13,13 @@ import {
   Timestamp,
 } from 'firebase/firestore';
 import { db, notificationService } from './firebaseService';
-import { Team, ChampionshipType, SubgroupType, SeasonArchive } from '../types';
+import {
+  Team,
+  ChampionshipType,
+  SubgroupType,
+  SeasonArchive,
+  BracketMatch,
+} from '../types';
 
 export const teamService = {
   /**
@@ -648,20 +654,16 @@ export const teamService = {
       throw new Error(error.message || 'Failed to kick off finals');
     }
   },
-};
 
   /**
-   * Get all bracket matches for one championship
+   * Get all bracket matches for one championship (for KnockoutBracket component)
    */
   async getBracketMatchesForChampionship(
     championship: ChampionshipType
   ): Promise<BracketMatch[]> {
     try {
       const snapshot = await getDocs(
-        query(
-          collection(db, 'bracketMatches'),
-          where('championship', '==', championship)
-        )
+        query(collection(db, 'bracketMatches'), where('championship', '==', championship))
       );
 
       return snapshot.docs
@@ -674,7 +676,6 @@ export const teamService = {
           } as BracketMatch;
         })
         .sort((a, b) => {
-          // Sort by round, then matchNumber
           const roundOrder: Record<BracketMatch['round'], number> = {
             round_of_16: 1,
             quarterfinals: 2,
