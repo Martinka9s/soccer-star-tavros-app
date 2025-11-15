@@ -32,6 +32,21 @@ const Championships: React.FC = () => {
     }
   };
 
+  // Helper: sort teams for standings (points → GD → GF)
+  const sortTeamsForStandings = (list: Team[]) => {
+    return [...list].sort((a, b) => {
+      if (b.stats.points !== a.stats.points) {
+        return b.stats.points - a.stats.points;
+      }
+      const gdA = (a.stats.goalsFor || 0) - (a.stats.goalsAgainst || 0);
+      const gdB = (b.stats.goalsFor || 0) - (b.stats.goalsAgainst || 0);
+      if (gdB !== gdA) {
+        return gdB - gdA;
+      }
+      return (b.stats.goalsFor || 0) - (a.stats.goalsFor || 0);
+    });
+  };
+
   // Get subgroups for selected championship (DB values stay in Greek)
   const getSubgroupsForChampionship = (championship: ChampionshipType): SubgroupType[] => {
     if (championship === 'MSL A') {
@@ -42,7 +57,7 @@ const Championships: React.FC = () => {
     return [];
   };
 
-  // Filter teams by championship and optionally by subgroup
+  // Filter teams by championship and optionally by subgroup (for table)
   const getFilteredTeams = () => {
     let filtered = teams.filter((t) => t.championship === selectedChampionship);
 
@@ -53,18 +68,8 @@ const Championships: React.FC = () => {
     return filtered;
   };
 
-  // Sort teams by standings (points, GD, GF)
-  const sortedTeams = [...getFilteredTeams()].sort((a, b) => {
-    if (b.stats.points !== a.stats.points) {
-      return b.stats.points - a.stats.points;
-    }
-    const gdA = (a.stats.goalsFor || 0) - (a.stats.goalsAgainst || 0);
-    const gdB = (b.stats.goalsFor || 0) - (b.stats.goalsAgainst || 0);
-    if (gdB !== gdA) {
-      return gdB - gdA;
-    }
-    return (b.stats.goalsFor || 0) - (a.stats.goalsFor || 0);
-  });
+  // Sorted list for the currently visible table
+  const sortedTeams = sortTeamsForStandings(getFilteredTeams());
 
   // Localized labels for subgroups (UI shows Greek or English, DB stays Greek)
   const getSubgroupLabel = (subgroup: SubgroupType): string => {
@@ -101,7 +106,9 @@ const Championships: React.FC = () => {
       setLoading(true);
       await teamService.kickoffFinals(selectedChampionship);
       await loadTeams();
-      alert('Finals phase started. Qualified teams remain normal, others are marked as eliminated (light red).');
+      alert(
+        'Finals phase started. Qualified teams remain normal, others are marked as eliminated (light red).'
+      );
     } catch (error: any) {
       console.error('Error kicking off finals:', error);
       alert(error.message || 'Failed to kick off finals');
@@ -113,6 +120,51 @@ const Championships: React.FC = () => {
   const subgroups = getSubgroupsForChampionship(selectedChampionship);
   const hasSubgroups = subgroups.length > 0;
 
+  // ✅ Only show eliminated styling in:
+  // - DREAM LEAGUE (no subgroups)
+  // - MSL A/B when "All groups (merged)" is selected
+  const showEliminatedStyling = !hasSubgroups || selectedSubgroup === 'ALL';
+
+  // ---------------------- FINALS / BRACKET LOGIC -------------------------
+
+  // All teams for current championship (full set, not filtered by subgroup)
+  const championshipTeams = teams.filter(
+    (t) => t.championship === selectedChampionship && t.status === 'approved'
+  );
+  const sortedChampionshipTeams = sortTeamsForStandings(championshipTeams);
+
+  // Finals considered "started" when at least one team is marked eliminated
+  const finalsStarted = championshipTeams.some((t) => t.eliminated === true);
+
+  const finalistsCount = selectedChampionship === 'MSL DREAM LEAGUE' ? 8 : 16;
+  const qualifiedTeams = finalsStarted
+    ? sortedChampionshipTeams.filter((t) => !t.eliminated).slice(0, finalistsCount)
+    : [];
+
+  // Helper: build simple seeded pairs for bracket (1 vs last, 2 vs last-1, etc.)
+  const buildPairs = (list: Team[]) => {
+    const pairs: { home?: Team; away?: Team }[] = [];
+    const n = list.length;
+    for (let i = 0; i < n / 2; i++) {
+      const home = list[i];
+      const away = list[n - 1 - i];
+      pairs.push({ home, away });
+    }
+    return pairs;
+  };
+
+  const isDreamLeague = selectedChampionship === 'MSL DREAM LEAGUE';
+  const roundOf16Pairs =
+    finalsStarted && !isDreamLeague && qualifiedTeams.length === 16
+      ? buildPairs(qualifiedTeams)
+      : [];
+  const quarterfinalPairs =
+    finalsStarted && isDreamLeague && qualifiedTeams.length === 8
+      ? buildPairs(qualifiedTeams)
+      : finalsStarted && !isDreamLeague && qualifiedTeams.length === 16
+      ? new Array(8).fill(null) // for MSL A/B: QFs will be "Winner R16-X"
+      : [];
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -122,11 +174,6 @@ const Championships: React.FC = () => {
       </div>
     );
   }
-
-  // ✅ Only show eliminated styling in:
-  // - DREAM LEAGUE (no subgroups)
-  // - MSL A/B when "All groups (merged)" is selected
-  const showEliminatedStyling = !hasSubgroups || selectedSubgroup === 'ALL';
 
   return (
     <div className="space-y-6">
@@ -401,7 +448,6 @@ const Championships: React.FC = () => {
             {t('legend', { defaultValue: 'Legend' })}
           </h3>
           <div className="flex flex-wrap gap-4 text-xs text-gray-600 dark:text-gray-400">
-            {/* Always English abbreviations, explanation localized */}
             <span>
               <strong>Pld:</strong> {t('played', { defaultValue: 'Played' })}
             </span>
@@ -439,22 +485,170 @@ const Championships: React.FC = () => {
         </div>
       )}
 
-      {/* Placeholder for Future Knockout Bracket */}
+      {/* Knockout Bracket */}
       <div className="bg-white dark:bg-dark-lighter rounded-lg shadow-lg overflow-hidden">
-        <div className="px-6 py-4 bg-[#6B2FB5] border-b border-purple-600">
+        <div className="px-6 py-4 bg-[#6B2FB5] border-b border-purple-600 flex items-center justify-between">
           <h2 className="text-xl font-bold text-white flex items-center">
             <Play size={24} className="mr-2" />
             {t('knockoutBracket', { defaultValue: 'Knockout bracket' })}
           </h2>
+          {finalsStarted && qualifiedTeams.length > 0 && (
+            <span className="text-xs text-white/80">
+              {isDreamLeague
+                ? `${qualifiedTeams.length} teams (Quarterfinals)`
+                : `${qualifiedTeams.length} teams (Round of 16)`}
+            </span>
+          )}
         </div>
-        <div className="p-12 text-center">
-          <Play size={48} className="mx-auto text-gray-400 mb-4" />
-          <p className="text-gray-600 dark:text-gray-400">
-            {t('bracketComingSoon', {
-              defaultValue: 'Knockout bracket will appear here when finals begin',
-            })}
-          </p>
-        </div>
+
+        {!finalsStarted || qualifiedTeams.length === 0 ? (
+          <div className="p-12 text-center">
+            <Play size={48} className="mx-auto text-gray-400 mb-4" />
+            <p className="text-gray-600 dark:text-gray-400">
+              {t('bracketComingSoon', {
+                defaultValue:
+                  'Kick off finals to lock the top teams and generate the knockout bracket.',
+              })}
+            </p>
+          </div>
+        ) : (
+          <div className="p-6 overflow-x-auto">
+            {/* DREAM LEAGUE: 8 teams → QF / SF / Final */}
+            {isDreamLeague ? (
+              <div className="flex gap-6 min-w-[700px]">
+                {/* Quarterfinals */}
+                <div className="flex-1">
+                  <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+                    Quarterfinals
+                  </h3>
+                  <div className="space-y-3">
+                    {quarterfinalPairs.map((pair, idx) => (
+                      <div
+                        key={idx}
+                        className="border border-slate-200 dark:border-gray-700 rounded-lg p-3 bg-slate-50 dark:bg-dark"
+                      >
+                        <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">
+                          QF {idx + 1}
+                        </div>
+                        <div className="text-sm text-gray-900 dark:text-white">
+                          {pair?.home ? pair.home.name : 'TBD'} vs{' '}
+                          {pair?.away ? pair.away.name : 'TBD'}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Semifinals */}
+                <div className="flex-1">
+                  <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+                    Semifinals
+                  </h3>
+                  <div className="space-y-3">
+                    <div className="border border-slate-200 dark:border-gray-700 rounded-lg p-3 bg-slate-50 dark:bg-dark text-sm text-gray-900 dark:text-white">
+                      SF 1: Winner QF 1 vs Winner QF 2
+                    </div>
+                    <div className="border border-slate-200 dark:border-gray-700 rounded-lg p-3 bg-slate-50 dark:bg-dark text-sm text-gray-900 dark:text-white">
+                      SF 2: Winner QF 3 vs Winner QF 4
+                    </div>
+                  </div>
+                </div>
+
+                {/* Final + 3rd place */}
+                <div className="flex-1">
+                  <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+                    Final &amp; 3rd place
+                  </h3>
+                  <div className="space-y-3">
+                    <div className="border border-yellow-400/70 dark:border-yellow-500 rounded-lg p-3 bg-yellow-50 dark:bg-yellow-900/20 text-sm text-gray-900 dark:text-white font-semibold">
+                      Final: Winner SF 1 vs Winner SF 2
+                    </div>
+                    <div className="border border-slate-200 dark:border-gray-700 rounded-lg p-3 bg-slate-50 dark:bg-dark text-xs text-gray-900 dark:text-white">
+                      3rd place (optional): Loser SF 1 vs Loser SF 2
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              // MSL A / B: 16 teams → R16 / QF / SF / Final
+              <div className="flex gap-6 min-w-[1000px]">
+                {/* Round of 16 */}
+                <div className="flex-1">
+                  <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+                    Round of 16
+                  </h3>
+                  <div className="space-y-3">
+                    {roundOf16Pairs.map((pair, idx) => (
+                      <div
+                        key={idx}
+                        className="border border-slate-200 dark:border-gray-700 rounded-lg p-3 bg-slate-50 dark:bg-dark"
+                      >
+                        <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">
+                          R16 {idx + 1}
+                        </div>
+                        <div className="text-sm text-gray-900 dark:text-white">
+                          {pair.home ? pair.home.name : 'TBD'} vs{' '}
+                          {pair.away ? pair.away.name : 'TBD'}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Quarterfinals */}
+                <div className="flex-1">
+                  <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+                    Quarterfinals
+                  </h3>
+                  <div className="space-y-3 text-sm text-gray-900 dark:text-white">
+                    <div className="border border-slate-200 dark:border-gray-700 rounded-lg p-3 bg-slate-50 dark:bg-dark">
+                      QF 1: Winner R16 1 vs Winner R16 2
+                    </div>
+                    <div className="border border-slate-200 dark:border-gray-700 rounded-lg p-3 bg-slate-50 dark:bg-dark">
+                      QF 2: Winner R16 3 vs Winner R16 4
+                    </div>
+                    <div className="border border-slate-200 dark:border-gray-700 rounded-lg p-3 bg-slate-50 dark:bg-dark">
+                      QF 3: Winner R16 5 vs Winner R16 6
+                    </div>
+                    <div className="border border-slate-200 dark:border-gray-700 rounded-lg p-3 bg-slate-50 dark:bg-dark">
+                      QF 4: Winner R16 7 vs Winner R16 8
+                    </div>
+                  </div>
+                </div>
+
+                {/* Semifinals */}
+                <div className="flex-1">
+                  <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+                    Semifinals
+                  </h3>
+                  <div className="space-y-3 text-sm text-gray-900 dark:text-white">
+                    <div className="border border-slate-200 dark:border-gray-700 rounded-lg p-3 bg-slate-50 dark:bg-dark">
+                      SF 1: Winner QF 1 vs Winner QF 2
+                    </div>
+                    <div className="border border-slate-200 dark:border-gray-700 rounded-lg p-3 bg-slate-50 dark:bg-dark">
+                      SF 2: Winner QF 3 vs Winner QF 4
+                    </div>
+                  </div>
+                </div>
+
+                {/* Final + 3rd place */}
+                <div className="flex-1">
+                  <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+                    Final &amp; 3rd place
+                  </h3>
+                  <div className="space-y-3">
+                    <div className="border border-yellow-400/70 dark:border-yellow-500 rounded-lg p-3 bg-yellow-50 dark:bg-yellow-900/20 text-sm text-gray-900 dark:text-white font-semibold">
+                      Final: Winner SF 1 vs Winner SF 2
+                    </div>
+                    <div className="border border-slate-200 dark:border-gray-700 rounded-lg p-3 bg-slate-50 dark:bg-dark text-xs text-gray-900 dark:text-white">
+                      3rd place (optional): Loser SF 1 vs Loser SF 2
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
