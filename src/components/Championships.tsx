@@ -91,7 +91,7 @@ const Championships: React.FC = () => {
     }
 
     const qualifiersCount = selectedChampionship === 'MSL DREAM LEAGUE' ? 8 : 16;
-    const confirmText = `Kick off finals for ${selectedChampionship}? Top ${qualifiersCount} teams will qualify and the rest will be marked as eliminated (light red in merged table).`;
+    const confirmText = `Kick off finals for ${selectedChampionship}? Top ${qualifiersCount} teams will qualify and the rest will be marked as eliminated (light red).`;
 
     if (!window.confirm(confirmText)) {
       return;
@@ -101,9 +101,7 @@ const Championships: React.FC = () => {
       setLoading(true);
       await teamService.kickoffFinals(selectedChampionship);
       await loadTeams();
-      alert(
-        'Finals phase started. Qualified teams remain normal in the merged view, others are marked as eliminated (light red).'
-      );
+      alert('Finals phase started. Qualified teams remain normal, others are marked as eliminated (light red).');
     } catch (error: any) {
       console.error('Error kicking off finals:', error);
       alert(error.message || 'Failed to kick off finals');
@@ -115,9 +113,6 @@ const Championships: React.FC = () => {
   const subgroups = getSubgroupsForChampionship(selectedChampionship);
   const hasSubgroups = subgroups.length > 0;
 
-  // NEW: flag so we only show red in merged (ALL groups) view
-  const isMergedView = hasSubgroups && selectedSubgroup === 'ALL';
-
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -127,6 +122,11 @@ const Championships: React.FC = () => {
       </div>
     );
   }
+
+  // ✅ Only show eliminated styling in:
+  // - DREAM LEAGUE (no subgroups)
+  // - MSL A/B when "All groups (merged)" is selected
+  const showEliminatedStyling = !hasSubgroups || selectedSubgroup === 'ALL';
 
   return (
     <div className="space-y-6">
@@ -246,9 +246,7 @@ const Championships: React.FC = () => {
             <p className="text-gray-600 dark:text-gray-400">
               {hasSubgroups && selectedSubgroup !== 'ALL'
                 ? t('noTeamsInSubgroup', { defaultValue: 'No teams in this subgroup yet' })
-                : t('noTeamsInChampionship', {
-                    defaultValue: 'No teams in this championship yet',
-                  })}
+                : t('noTeamsInChampionship', { defaultValue: 'No teams in this championship yet' })}
             </p>
           </div>
         ) : (
@@ -298,12 +296,7 @@ const Championships: React.FC = () => {
                   const goalDifference =
                     (team.stats.goalsFor || 0) - (team.stats.goalsAgainst || 0);
                   const isTopThree = index < 3;
-
-                  // 🔴 Only consider "eliminated" in MERGED view.
-                  // Subgroup view stays clean, as requested.
-                  const isEliminated =
-                    isMergedView &&
-                    (team.eliminated === true || team.knockoutStatus === 'eliminated');
+                  const isEliminated = showEliminatedStyling && team.eliminated === true;
 
                   return (
                     <tr
@@ -435,12 +428,11 @@ const Championships: React.FC = () => {
             </span>
           </div>
           <div className="mt-2 pt-2 border-t border-slate-300 dark:border-gray-600 space-y-1">
-            {/* Only red / eliminated info */}
             <div className="text-xs text-gray-600 dark:text-gray-400">
               🔴{' '}
               <strong>{t('eliminated', { defaultValue: 'Eliminated' })}</strong>{' '}
               {t('highlightedInRed', {
-                defaultValue: 'teams shown in red (out of championship) in merged table',
+                defaultValue: 'teams shown in red (out of championship)',
               })}
             </div>
           </div>
