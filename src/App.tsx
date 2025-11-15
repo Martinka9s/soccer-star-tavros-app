@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from './hooks/useAuth';
 import { useGoogleCalendarCallback } from './hooks/useGoogleCalendarCallback';
 import { authService, bookingService } from './services/firebaseService';
+import { TeamLevel, PreferredDay } from './types';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
 import Footer from './components/Footer';
@@ -106,12 +107,24 @@ function App() {
     }
   };
 
-  const handleTeamRegistration = async (teamName: string, phoneNumber: string) => {
+  const handleTeamRegistration = async (
+    teamName: string, 
+    phoneNumber: string,
+    teamLevel: TeamLevel,
+    preferredDay: PreferredDay
+  ) => {
     if (!user) return;
     
     try {
       const { teamService } = await import('./services/firebaseService');
-      await teamService.createTeamRequest(user.id, user.email, teamName, phoneNumber);
+      await teamService.createTeamRequest(
+        user.id, 
+        user.email, 
+        teamName, 
+        phoneNumber,
+        teamLevel,
+        preferredDay
+      );
       alert('Team registration submitted! An admin will review your request.');
       setShowTeamRegistrationModal(false);
     } catch (error: any) {
