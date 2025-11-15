@@ -22,6 +22,13 @@ const NotificationsPage: React.FC<NotificationsPageProps> = ({ user }) => {
     refresh();
   }, []);
 
+  const handleMarkAllAsRead = async () => {
+    await markAllAsRead();
+    
+    // Trigger sidebar refresh
+    window.dispatchEvent(new Event('refresh-notifications'));
+  };
+
   const getNotificationIcon = (type: string) => {
     switch (type) {
       case 'approved':
@@ -35,6 +42,8 @@ const NotificationsPage: React.FC<NotificationsPageProps> = ({ user }) => {
         return '⚽';
       case 'team_approved':
         return '🎉';
+      case 'team_registration':
+        return '📝';
       default:
         return '📢';
     }
@@ -61,7 +70,7 @@ const NotificationsPage: React.FC<NotificationsPageProps> = ({ user }) => {
 
         {notifications.some(n => !n.read) && (
           <button
-            onClick={markAllAsRead}
+            onClick={handleMarkAllAsRead}
             className="flex items-center gap-2 px-4 py-2 bg-[#6B2FB5] hover:bg-[#5a2596] text-white rounded-lg transition-colors"
           >
             <CheckCheck size={18} />
