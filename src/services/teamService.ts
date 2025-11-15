@@ -1,17 +1,16 @@
 // Team Service Functions for Firebase - WITH SUBGROUP SUPPORT
-
-import { 
-  collection, 
-  doc, 
-  addDoc, 
-  updateDoc, 
-  deleteDoc, 
-  getDocs, 
+import {
+  collection,
+  doc,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  getDocs,
   getDoc,
-  query, 
+  query,
   where,
   writeBatch,
-  Timestamp
+  Timestamp,
 } from 'firebase/firestore';
 import { db, notificationService } from './firebaseService';
 import { Team, ChampionshipType, SubgroupType, SeasonArchive } from '../types';
@@ -21,9 +20,9 @@ export const teamService = {
    * Create a new team registration request
    */
   async createTeamRequest(
-    userId: string, 
-    userEmail: string, 
-    teamName: string, 
+    userId: string,
+    userEmail: string,
+    teamName: string,
     phoneNumber: string,
     teamLevel: 'beginner' | 'intermediate' | 'advanced',
     preferredDay: 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday'
@@ -57,7 +56,7 @@ export const teamService = {
       };
 
       const docRef = await addDoc(collection(db, 'teams'), teamData);
-      
+
       await updateDoc(doc(db, 'users', userId), {
         teamName,
         phoneNumber,
@@ -67,8 +66,8 @@ export const teamService = {
       // NEW: Notify all admins about new team registration
       try {
         const usersSnapshot = await getDocs(collection(db, 'users'));
-        const adminUsers = usersSnapshot.docs.filter(doc => doc.data().role === 'admin');
-        
+        const adminUsers = usersSnapshot.docs.filter((doc) => doc.data().role === 'admin');
+
         for (const adminDoc of adminUsers) {
           await addDoc(collection(db, 'notifications'), {
             userId: adminDoc.id,
@@ -94,9 +93,9 @@ export const teamService = {
     try {
       const q = query(collection(db, 'teams'), where('userId', '==', userId));
       const snapshot = await getDocs(q);
-      
+
       if (snapshot.empty) return null;
-      
+
       const docSnap = snapshot.docs[0];
       return {
         id: docSnap.id,
@@ -114,13 +113,16 @@ export const teamService = {
   async getAllTeams(): Promise<Team[]> {
     try {
       const snapshot = await getDocs(collection(db, 'teams'));
-      return snapshot.docs.map(docSnap => ({
-        id: docSnap.id,
-        ...docSnap.data(),
-        createdAt: docSnap.data().createdAt?.toDate() || new Date(),
-        approvedAt: docSnap.data().approvedAt?.toDate(),
-        lastModified: docSnap.data().lastModified?.toDate() || new Date(),
-      } as Team));
+      return snapshot.docs.map(
+        (docSnap) =>
+          ({
+            id: docSnap.id,
+            ...docSnap.data(),
+            createdAt: docSnap.data().createdAt?.toDate() || new Date(),
+            approvedAt: docSnap.data().approvedAt?.toDate(),
+            lastModified: docSnap.data().lastModified?.toDate() || new Date(),
+          } as Team)
+      );
     } catch (error) {
       console.error('Error getting all teams:', error);
       throw new Error('Failed to load teams');
@@ -131,13 +133,16 @@ export const teamService = {
     try {
       const q = query(collection(db, 'teams'), where('status', '==', 'pending'));
       const snapshot = await getDocs(q);
-      return snapshot.docs.map(docSnap => ({
-        id: docSnap.id,
-        ...docSnap.data(),
-        createdAt: docSnap.data().createdAt?.toDate() || new Date(),
-        approvedAt: docSnap.data().approvedAt?.toDate(),
-        lastModified: docSnap.data().lastModified?.toDate() || new Date(),
-      } as Team));
+      return snapshot.docs.map(
+        (docSnap) =>
+          ({
+            id: docSnap.id,
+            ...docSnap.data(),
+            createdAt: docSnap.data().createdAt?.toDate() || new Date(),
+            approvedAt: docSnap.data().approvedAt?.toDate(),
+            lastModified: docSnap.data().lastModified?.toDate() || new Date(),
+          } as Team)
+      );
     } catch (error) {
       console.error('Error getting pending teams:', error);
       throw new Error('Failed to load pending teams');
@@ -152,13 +157,16 @@ export const teamService = {
         where('status', '==', 'approved')
       );
       const snapshot = await getDocs(q);
-      return snapshot.docs.map(docSnap => ({
-        id: docSnap.id,
-        ...docSnap.data(),
-        createdAt: docSnap.data().createdAt?.toDate() || new Date(),
-        approvedAt: docSnap.data().approvedAt?.toDate(),
-        lastModified: docSnap.data().lastModified?.toDate() || new Date(),
-      } as Team));
+      return snapshot.docs.map(
+        (docSnap) =>
+          ({
+            id: docSnap.id,
+            ...docSnap.data(),
+            createdAt: docSnap.data().createdAt?.toDate() || new Date(),
+            approvedAt: docSnap.data().approvedAt?.toDate(),
+            lastModified: docSnap.data().lastModified?.toDate() || new Date(),
+          } as Team)
+      );
     } catch (error) {
       console.error('Error getting teams by championship:', error);
       throw new Error('Failed to load teams');
@@ -168,7 +176,10 @@ export const teamService = {
   /**
    * NEW: Get teams by championship and subgroup
    */
-  async getTeamsBySubgroup(championship: ChampionshipType, subgroup: SubgroupType): Promise<Team[]> {
+  async getTeamsBySubgroup(
+    championship: ChampionshipType,
+    subgroup: SubgroupType
+  ): Promise<Team[]> {
     try {
       const q = query(
         collection(db, 'teams'),
@@ -177,13 +188,16 @@ export const teamService = {
         where('status', '==', 'approved')
       );
       const snapshot = await getDocs(q);
-      return snapshot.docs.map(docSnap => ({
-        id: docSnap.id,
-        ...docSnap.data(),
-        createdAt: docSnap.data().createdAt?.toDate() || new Date(),
-        approvedAt: docSnap.data().approvedAt?.toDate(),
-        lastModified: docSnap.data().lastModified?.toDate() || new Date(),
-      } as Team));
+      return snapshot.docs.map(
+        (docSnap) =>
+          ({
+            id: docSnap.id,
+            ...docSnap.data(),
+            createdAt: docSnap.data().createdAt?.toDate() || new Date(),
+            approvedAt: docSnap.data().approvedAt?.toDate(),
+            lastModified: docSnap.data().lastModified?.toDate() || new Date(),
+          } as Team)
+      );
     } catch (error) {
       console.error('Error getting teams by subgroup:', error);
       throw new Error('Failed to load teams');
@@ -194,15 +208,15 @@ export const teamService = {
    * UPDATED: Approve team with championship AND optional subgroup
    */
   async approveTeam(
-    teamId: string, 
-    championship: ChampionshipType, 
+    teamId: string,
+    championship: ChampionshipType,
     adminEmail: string,
     subgroup?: SubgroupType
   ): Promise<void> {
     try {
       const teamDoc = await getDoc(doc(db, 'teams', teamId));
       if (!teamDoc.exists()) throw new Error('Team not found');
-      
+
       const team = teamDoc.data();
 
       const updateData: any = {
@@ -226,11 +240,7 @@ export const teamService = {
         phoneNumber: team.phoneNumber,
       });
 
-      await notificationService.notifyTeamApproval(
-        team.userId,
-        team.name,
-        championship
-      );
+      await notificationService.notifyTeamApproval(team.userId, team.name, championship);
     } catch (error) {
       console.error('Error approving team:', error);
       throw new Error('Failed to approve team');
@@ -254,7 +264,7 @@ export const teamService = {
    * UPDATED: Move team with optional subgroup change
    */
   async moveTeam(
-    teamId: string, 
+    teamId: string,
     newChampionship: ChampionshipType,
     newSubgroup?: SubgroupType
   ): Promise<void> {
@@ -359,18 +369,22 @@ export const teamService = {
     }
   },
 
-  async restoreTeam(teamId: string, championship: ChampionshipType, subgroup?: SubgroupType): Promise<void> {
+  async restoreTeam(
+    teamId: string,
+    championship: ChampionshipType,
+    subgroup?: SubgroupType
+  ): Promise<void> {
     try {
       const updateData: any = {
         status: 'approved',
         championship,
         lastModified: Timestamp.now(),
       };
-      
+
       if (subgroup) {
         updateData.subgroup = subgroup;
       }
-      
+
       await updateDoc(doc(db, 'teams', teamId), updateData);
     } catch (error) {
       console.error('Error restoring team:', error);
@@ -403,131 +417,198 @@ export const teamService = {
   },
 
   /**
-   * UPDATED: Reset championship with subgroup archiving
+   * UPDATED: Reset championship with subgroup archiving & move to inactive
    */
   async resetChampionship(
-  championship: ChampionshipType,
-  adminEmail: string
-): Promise<void> {
-  try {
-    const teams = await this.getTeamsByChampionship(championship);
+    championship: ChampionshipType,
+    adminEmail: string
+  ): Promise<void> {
+    try {
+      const teams = await this.getTeamsByChampionship(championship);
 
-    if (teams.length === 0) {
-      throw new Error('No teams found in this championship');
-    }
-
-    // ------------------------------
-    // 1️⃣ Create final standings
-    // ------------------------------
-    const finalStandings = teams
-      .sort((a, b) => {
-        if (b.stats.points !== a.stats.points) return b.stats.points - a.stats.points;
-        if (b.stats.goalDifference !== a.stats.goalDifference) return b.stats.goalDifference - a.stats.goalDifference;
-        return b.stats.goalsFor - a.stats.goalsFor;
-      })
-      .map((team, index) => ({
-        rank: index + 1,
-        teamName: team.name,
-        teamId: team.id,
-        points: team.stats.points,
-        played: team.stats.played,
-        wins: team.stats.wins,
-        draws: team.stats.draws,
-        losses: team.stats.losses,
-        goalsFor: team.stats.goalsFor,
-        goalsAgainst: team.stats.goalsAgainst,
-        goalDifference: team.stats.goalDifference,
-      }));
-
-    // ------------------------------
-    // 2️⃣ Archive subgroup standings (MSL A & MSL B)
-    // ------------------------------
-    const subgroupArchives: any[] = [];
-
-    if (championship === 'MSL A' || championship === 'MSL B') {
-      const subgroups =
-        championship === 'MSL A'
-          ? ['ΟΜΙΛΟΣ ΔΕΥΤΕΡΑΣ', 'ΟΜΙΛΟΣ ΤΡΙΤΗΣ', 'ΟΜΙΛΟΣ ΤΕΤΑΡΤΗΣ']
-          : ['ΟΜΙΛΟΣ ΔΕΥΤΕΡΑΣ', 'ΟΜΙΛΟΣ ΤΡΙΤΗΣ', 'ΟΜΙΛΟΣ ΠΕΜΠΤΗΣ'];
-
-      for (const subgroup of subgroups) {
-        const subgroupTeams = teams.filter((t) => t.subgroup === subgroup);
-        const subgroupStandings = subgroupTeams
-          .sort((a, b) => {
-            if (b.stats.points !== a.stats.points) return b.stats.points - a.stats.points;
-            if (b.stats.goalDifference !== a.stats.goalDifference) return b.stats.goalDifference - a.stats.goalDifference;
-            return b.stats.goalsFor - a.stats.goalsFor;
-          })
-          .map((team, index) => ({
-            rank: index + 1,
-            teamName: team.name,
-            teamId: team.id,
-            points: team.stats.points,
-            played: team.stats.played,
-            wins: team.stats.wins,
-            draws: team.stats.draws,
-            losses: team.stats.losses,
-            goalsFor: team.stats.goalsFor,
-            goalsAgainst: team.stats.goalsAgainst,
-            goalDifference: team.stats.goalDifference,
-          }));
-
-        subgroupArchives.push({
-          subgroup,
-          standings: subgroupStandings,
-        });
+      if (teams.length === 0) {
+        throw new Error('No teams found in this championship');
       }
-    }
 
-    // ------------------------------
-    // 3️⃣ WRITE ARCHIVE DOCUMENT
-    // ------------------------------
-    const seasonYear = new Date().getFullYear().toString();
+      // 1️⃣ Final standings (overall)
+      const finalStandings = teams
+        .sort((a, b) => {
+          if (b.stats.points !== a.stats.points) return b.stats.points - a.stats.points;
+          if (b.stats.goalDifference !== a.stats.goalDifference)
+            return b.stats.goalDifference - a.stats.goalDifference;
+          return b.stats.goalsFor - a.stats.goalsFor;
+        })
+        .map((team, index) => ({
+          rank: index + 1,
+          teamName: team.name,
+          teamId: team.id,
+          points: team.stats.points,
+          played: team.stats.played,
+          wins: team.stats.wins,
+          draws: team.stats.draws,
+          losses: team.stats.losses,
+          goalsFor: team.stats.goalsFor,
+          goalsAgainst: team.stats.goalsAgainst,
+          goalDifference: team.stats.goalDifference,
+        }));
 
-    await addDoc(collection(db, 'seasonArchives'), {
-      championship,
-      seasonYear,
-      finalStandings,
-      subgroupArchives,
-      totalMatches: teams.reduce((sum, t) => sum + t.stats.played, 0),
-      teams: teams.map((t) => ({
-        ...t,
-        createdAt: Timestamp.fromDate(t.createdAt),
-        approvedAt: t.approvedAt ? Timestamp.fromDate(t.approvedAt) : null,
-        lastModified: Timestamp.fromDate(t.lastModified),
-      })),
-      archivedAt: Timestamp.now(),
-      archivedBy: adminEmail,
-    });
+      // 2️⃣ Subgroup archives (MSL A / MSL B only)
+      const subgroupArchives: any[] = [];
 
-    // ------------------------------
-    // 4️⃣ RESET teams & set INACTIVE
-    // ------------------------------
-    const batch = writeBatch(db);
+      if (championship === 'MSL A' || championship === 'MSL B') {
+        const subgroups =
+          championship === 'MSL A'
+            ? ['ΟΜΙΛΟΣ ΔΕΥΤΕΡΑΣ', 'ΟΜΙΛΟΣ ΤΡΙΤΗΣ', 'ΟΜΙΛΟΣ ΤΕΤΑΡΤΗΣ']
+            : ['ΟΜΙΛΟΣ ΔΕΥΤΕΡΑΣ', 'ΟΜΙΛΟΣ ΤΡΙΤΗΣ', 'ΟΜΙΛΟΣ ΠΕΜΠΤΗΣ'];
 
-    teams.forEach((team) => {
-      batch.update(doc(db, 'teams', team.id), {
-        status: 'inactive',              // 👈 REQUIRED
-        championship: null,              // 👈 Remove old championship
-        subgroup: null,                  // 👈 Remove subgroup
-        eliminated: false,
-        lastModified: Timestamp.now(),
-        stats: {
-          points: 0,
-          played: 0,
-          wins: 0,
-          draws: 0,
-          losses: 0,
-          goalsFor: 0,
-          goalsAgainst: 0,
-          goalDifference: 0,
-        },
+        for (const subgroup of subgroups) {
+          const subgroupTeams = teams.filter((t) => t.subgroup === subgroup);
+          const subgroupStandings = subgroupTeams
+            .sort((a, b) => {
+              if (b.stats.points !== a.stats.points) return b.stats.points - a.stats.points;
+              if (b.stats.goalDifference !== a.stats.goalDifference)
+                return b.stats.goalDifference - a.stats.goalDifference;
+              return b.stats.goalsFor - a.stats.goalsFor;
+            })
+            .map((team, index) => ({
+              rank: index + 1,
+              teamName: team.name,
+              teamId: team.id,
+              points: team.stats.points,
+              played: team.stats.played,
+              wins: team.stats.wins,
+              draws: team.stats.draws,
+              losses: team.stats.losses,
+              goalsFor: team.stats.goalsFor,
+              goalsAgainst: team.stats.goalsAgainst,
+              goalDifference: team.stats.goalDifference,
+            }));
+
+          subgroupArchives.push({
+            subgroup: subgroup as SubgroupType,
+            standings: subgroupStandings,
+          });
+        }
+      }
+
+      // 3️⃣ Archive document
+      const seasonYear = new Date().getFullYear().toString();
+
+      await addDoc(collection(db, 'seasonArchives'), {
+        championship,
+        seasonYear,
+        finalStandings,
+        subgroupArchives,
+        totalMatches: teams.reduce((sum, t) => sum + t.stats.played, 0),
+        teams: teams.map((t) => ({
+          ...t,
+          createdAt: Timestamp.fromDate(t.createdAt),
+          approvedAt: t.approvedAt ? Timestamp.fromDate(t.approvedAt) : null,
+          lastModified: Timestamp.fromDate(t.lastModified),
+        })),
+        archivedAt: Timestamp.now(),
+        archivedBy: adminEmail,
       });
-    });
 
-    await batch.commit();
-  } catch (error: any) {
-    console.error('Error resetting championship:', error);
-    throw new Error(error.message || 'Failed to reset championship');
-  }
-}
+      // 4️⃣ Reset teams & move them to inactive
+      const batch = writeBatch(db);
+      teams.forEach((team) => {
+        batch.update(doc(db, 'teams', team.id), {
+          status: 'inactive',
+          championship: null,
+          subgroup: null,
+          eliminated: false,
+          lastModified: Timestamp.now(),
+          stats: {
+            points: 0,
+            played: 0,
+            wins: 0,
+            draws: 0,
+            losses: 0,
+            goalsFor: 0,
+            goalsAgainst: 0,
+            goalDifference: 0,
+          },
+        });
+      });
+      await batch.commit();
+    } catch (error: any) {
+      console.error('Error resetting championship:', error);
+      throw new Error(error.message || 'Failed to reset championship');
+    }
+  },
+
+  async getSeasonArchives(championship?: ChampionshipType): Promise<SeasonArchive[]> {
+    try {
+      let q;
+      if (championship) {
+        q = query(collection(db, 'seasonArchives'), where('championship', '==', championship));
+      } else {
+        q = collection(db, 'seasonArchives');
+      }
+
+      const snapshot = await getDocs(q);
+      return snapshot.docs.map(
+        (docSnap) =>
+          ({
+            id: docSnap.id,
+            ...docSnap.data(),
+            archivedAt: docSnap.data().archivedAt?.toDate() || new Date(),
+          } as SeasonArchive)
+      );
+    } catch (error) {
+      console.error('Error getting season archives:', error);
+      throw new Error('Failed to load season archives');
+    }
+  },
+
+  /**
+   * NEW: Kick off finals – highlight qualified teams and mark others as eliminated.
+   * DREAM LEAGUE → top 8
+   * MSL A / MSL B → top 16 (after subgroups merge)
+   */
+  async kickoffFinals(championship: ChampionshipType): Promise<void> {
+    try {
+      const teams = await this.getTeamsByChampionship(championship);
+      if (teams.length === 0) {
+        throw new Error('No teams found in this championship');
+      }
+
+      const qualifiersCount = championship === 'MSL DREAM LEAGUE' ? 8 : 16;
+
+      // Sort by standings (same as board)
+      const sorted = [...teams].sort((a, b) => {
+        if (b.stats.points !== a.stats.points) return b.stats.points - a.stats.points;
+        const gdA = a.stats.goalDifference ?? (a.stats.goalsFor - a.stats.goalsAgainst);
+        const gdB = b.stats.goalDifference ?? (b.stats.goalsFor - b.stats.goalsAgainst);
+        if (gdB !== gdA) return gdB - gdA;
+        return (b.stats.goalsFor || 0) - (a.stats.goalsFor || 0);
+      });
+
+      const cutoff = Math.min(qualifiersCount, sorted.length);
+      const qualified = sorted.slice(0, cutoff);
+      const eliminated = sorted.slice(cutoff);
+
+      const batch = writeBatch(db);
+
+      qualified.forEach((team) => {
+        batch.update(doc(db, 'teams', team.id), {
+          eliminated: false,
+          lastModified: Timestamp.now(),
+        });
+      });
+
+      eliminated.forEach((team) => {
+        batch.update(doc(db, 'teams', team.id), {
+          eliminated: true,
+          lastModified: Timestamp.now(),
+        });
+      });
+
+      await batch.commit();
+    } catch (error: any) {
+      console.error('Error kicking off finals:', error);
+      throw new Error(error.message || 'Failed to kick off finals');
+    }
+  },
+};
