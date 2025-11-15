@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Trophy, Check, X, Trash2, MoveHorizontal, RotateCcw, ChevronDown, Edit2, RotateCw } from 'lucide-react';
-import { Team, ChampionshipType, SubgroupType } from '../types';
+import { Team, ChampionshipType, SubgroupType, TeamLevel, PreferredDay } from '../types';
 import { teamService } from '../services/firebaseService';
 import TeamModal from './TeamModal';
 
@@ -55,8 +55,8 @@ const TeamsManagement: React.FC<TeamsManagementProps> = ({ adminEmail }) => {
   const handleAssignment = async (
     _teamName: string,
     _phoneNumber: string,
-    _teamLevel: string,
-    _preferredDay: string,
+    _teamLevel: TeamLevel,
+    _preferredDay: PreferredDay,
     championship?: ChampionshipType,
     subgroup?: SubgroupType
   ) => {
@@ -299,6 +299,8 @@ const TeamsManagement: React.FC<TeamsManagementProps> = ({ adminEmail }) => {
           userEmail={teamToAssign.userEmail}
           existingTeamName={teamToAssign.name}
           existingPhone={teamToAssign.phoneNumber}
+          existingTeamLevel={teamToAssign.teamLevel}
+          existingPreferredDay={teamToAssign.preferredDay}
           isAdminAssigning={true}
           existingChampionship={teamToAssign.championship}
           existingSubgroup={teamToAssign.subgroup}
