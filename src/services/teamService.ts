@@ -649,3 +649,46 @@ export const teamService = {
     }
   },
 };
+
+  /**
+   * Get all bracket matches for one championship
+   */
+  async getBracketMatchesForChampionship(
+    championship: ChampionshipType
+  ): Promise<BracketMatch[]> {
+    try {
+      const snapshot = await getDocs(
+        query(
+          collection(db, 'bracketMatches'),
+          where('championship', '==', championship)
+        )
+      );
+
+      return snapshot.docs
+        .map((docSnap) => {
+          const data = docSnap.data();
+          return {
+            id: docSnap.id,
+            ...data,
+            createdAt: data.createdAt?.toDate() || new Date(),
+          } as BracketMatch;
+        })
+        .sort((a, b) => {
+          // Sort by round, then matchNumber
+          const roundOrder: Record<BracketMatch['round'], number> = {
+            round_of_16: 1,
+            quarterfinals: 2,
+            semifinals: 3,
+            final: 4,
+          };
+          if (roundOrder[a.round] !== roundOrder[b.round]) {
+            return roundOrder[a.round] - roundOrder[b.round];
+          }
+          return a.matchNumber - b.matchNumber;
+        });
+    } catch (error) {
+      console.error('Error loading bracket matches:', error);
+      throw new Error('Failed to load knockout bracket');
+    }
+  },
+};
