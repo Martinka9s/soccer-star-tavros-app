@@ -170,13 +170,17 @@ const BookingModal: React.FC<BookingModalProps> = ({
 
   const availableDurations = getAvailableDurations();
 
-  useEffect(() => (
+  // 🔧 FIXED: this effect no longer returns a boolean
+  useEffect(() => {
     // If new durations come in and current duration is not allowed, snap to first option
-    !isEditMode &&
-    availableDurations.length > 0 &&
-    !availableDurations.includes(duration) &&
-    setDuration(availableDurations[0])
-  ), [availableDurations, duration, isEditMode]);
+    if (
+      !isEditMode &&
+      availableDurations.length > 0 &&
+      !availableDurations.includes(duration)
+    ) {
+      setDuration(availableDurations[0]);
+    }
+  }, [availableDurations, duration, isEditMode]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
