@@ -116,7 +116,15 @@ const Sidebar: React.FC<SidebarProps> = ({
       };
       fetchUnreadCount();
       const interval = setInterval(fetchUnreadCount, 30000); // Poll every 30 seconds
-      return () => clearInterval(interval);
+      
+      // Listen for refresh events
+      const handleRefreshNotifications = () => fetchUnreadCount();
+      window.addEventListener('refresh-notifications', handleRefreshNotifications);
+      
+      return () => {
+        clearInterval(interval);
+        window.removeEventListener('refresh-notifications', handleRefreshNotifications);
+      };
     } else {
       setUnreadNotificationsCount(0);
     }
@@ -128,6 +136,21 @@ const Sidebar: React.FC<SidebarProps> = ({
       onLoginRequired();
       return;
     }
+    
+    // Trigger immediate refresh when navigating to teams or notifications
+    if (tab === 'teams' && user?.role === 'admin') {
+      teamService.getPendingTeams().then(pending => {
+        setPendingTeamsCount(pending.length);
+      }).catch(console.error);
+    }
+    
+    if (tab === 'notifications' && user) {
+      notificationService.getNotificationsByUser(user.id).then(notifications => {
+        const unread = notifications.filter(n => !n.read).length;
+        setUnreadNotificationsCount(unread);
+      }).catch(console.error);
+    }
+    
     onNavigate(tab);
     onClose();
   };
