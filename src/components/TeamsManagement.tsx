@@ -53,8 +53,8 @@ const TeamsManagement: React.FC<TeamsManagementProps> = ({ adminEmail }) => {
 
   // Handle assignment from modal
   const handleAssignment = async (
-    teamName: string,
-    phoneNumber: string,
+    _teamName: string,
+    _phoneNumber: string,
     championship?: ChampionshipType,
     subgroup?: SubgroupType
   ) => {
