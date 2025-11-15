@@ -1,34 +1,37 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { X, Trophy } from 'lucide-react';
-import { ChampionshipType, SubgroupType, TeamLevel, PreferredDay } from '../types';
+import { X } from 'lucide-react';
+import { ChampionshipType, PreferredDay, SubgroupType, TeamLevel } from '../types';
 
 interface TeamModalProps {
   onClose: () => void;
   onSubmit: (
-    teamName: string, 
-    phoneNumber: string, 
-    teamLevel: TeamLevel, 
-    preferredDay: PreferredDay, 
-    championship?: ChampionshipType, 
+    teamName: string,
+    phoneNumber: string,
+    teamLevel: TeamLevel,
+    preferredDay: PreferredDay,
+    championship?: ChampionshipType,
     subgroup?: SubgroupType
-  ) => Promise<void>;
+  ) => Promise<void> | void;
   userEmail: string;
-  existingTeamName?: string;
-  existingPhone?: string;
-  existingTeamLevel?: TeamLevel;
-  existingPreferredDay?: PreferredDay;
+
+  existingTeamName?: string | null;
+  existingPhone?: string | null;
+  existingTeamLevel?: TeamLevel | null;
+  existingPreferredDay?: PreferredDay | null;
+
+  // When admin assigns a team from TeamsManagement
   isAdminAssigning?: boolean;
-  existingChampionship?: ChampionshipType;
-  existingSubgroup?: SubgroupType;
+  existingChampionship?: ChampionshipType | null;
+  existingSubgroup?: SubgroupType | null;
 }
 
 const TeamModal: React.FC<TeamModalProps> = ({
   onClose,
   onSubmit,
   userEmail,
-  existingTeamName = '',
-  existingPhone = '',
+  existingTeamName,
+  existingPhone,
   existingTeamLevel,
   existingPreferredDay,
   isAdminAssigning = false,
@@ -36,293 +39,221 @@ const TeamModal: React.FC<TeamModalProps> = ({
   existingSubgroup,
 }) => {
   const { t } = useTranslation();
-  const [teamName, setTeamName] = useState(existingTeamName);
-  const [phoneNumber, setPhoneNumber] = useState(existingPhone);
-  const [teamLevel, setTeamLevel] = useState<TeamLevel | ''>(existingTeamLevel || '');
-  const [preferredDay, setPreferredDay] = useState<PreferredDay | ''>(existingPreferredDay || '');
-  const [selectedChampionship, setSelectedChampionship] = useState<ChampionshipType | undefined>(existingChampionship);
-  const [selectedSubgroup, setSelectedSubgroup] = useState<SubgroupType | undefined>(existingSubgroup);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState('');
 
-  const getSubgroupsForChampionship = (championship?: ChampionshipType): SubgroupType[] => {
-    if (championship === 'MSL A') {
+  const [teamName, setTeamName] = useState(existingTeamName || '');
+  const [phoneNumber, setPhoneNumber] = useState(existingPhone || '');
+  const [teamLevel, setTeamLevel] = useState<TeamLevel>(
+    existingTeamLevel || 'beginner'
+  );
+  const [preferredDay, setPreferredDay] = useState<PreferredDay>(
+    existingPreferredDay || 'monday'
+  );
+
+  // For admin assignment
+  const [championship, setChampionship] = useState<ChampionshipType | ''>(
+    existingChampionship || ''
+  );
+  const [subgroup, setSubgroup] = useState<SubgroupType | undefined>(
+    existingSubgroup || undefined
+  );
+
+  const [submitting, setSubmitting] = useState(false);
+
+  const getSubgroupsForChampionship = (
+    ch: ChampionshipType | ''
+  ): SubgroupType[] => {
+    if (ch === 'MSL A') {
       return ['ΟΜΙΛΟΣ ΔΕΥΤΕΡΑΣ', 'ΟΜΙΛΟΣ ΤΡΙΤΗΣ', 'ΟΜΙΛΟΣ ΤΕΤΑΡΤΗΣ'];
-    } else if (championship === 'MSL B') {
+    }
+    if (ch === 'MSL B') {
       return ['ΟΜΙΛΟΣ ΔΕΥΤΕΡΑΣ', 'ΟΜΙΛΟΣ ΤΡΙΤΗΣ', 'ΟΜΙΛΟΣ ΠΕΜΠΤΗΣ'];
     }
     return [];
   };
 
-  const getSubgroupLabel = (subgroup: SubgroupType): string => {
-    const labels = {
-      'ΟΜΙΛΟΣ ΔΕΥΤΕΡΑΣ': 'Monday Group',
-      'ΟΜΙΛΟΣ ΤΡΙΤΗΣ': 'Tuesday Group',
-      'ΟΜΙΛΟΣ ΤΕΤΑΡΤΗΣ': 'Wednesday Group',
-      'ΟΜΙΛΟΣ ΠΕΜΠΤΗΣ': 'Thursday Group',
-    };
-    return labels[subgroup] || subgroup;
-  };
-
-  const availableSubgroups = getSubgroupsForChampionship(selectedChampionship);
+  const availableSubgroups = getSubgroupsForChampionship(championship || '');
   const requiresSubgroup = availableSubgroups.length > 0;
-
-  const handleChampionshipChange = (championship: ChampionshipType) => {
-    setSelectedChampionship(championship);
-    const newSubgroups = getSubgroupsForChampionship(championship);
-    if (newSubgroups.length === 0) {
-      setSelectedSubgroup(undefined);
-    } else if (selectedSubgroup && !newSubgroups.includes(selectedSubgroup)) {
-      setSelectedSubgroup(undefined);
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    if (!teamName.trim() || !phoneNumber.trim()) return;
 
-    if (!teamName.trim()) {
-      setError('Team name is required');
-      return;
-    }
+    if (isAdminAssigning && championship === '') return;
+    if (isAdminAssigning && requiresSubgroup && !subgroup) return;
 
-    if (!phoneNumber.trim()) {
-      setError('Phone number is required');
-      return;
-    }
-
-    if (!teamLevel) {
-      setError('Team level is required');
-      return;
-    }
-
-    if (!preferredDay) {
-      setError('Preferred playing day is required');
-      return;
-    }
-
-    if (isAdminAssigning) {
-      if (!selectedChampionship) {
-        setError('Please select a championship');
-        return;
-      }
-      if (requiresSubgroup && !selectedSubgroup) {
-        setError('Please select a subgroup for this championship');
-        return;
-      }
-    }
-
-    setIsSubmitting(true);
     try {
+      setSubmitting(true);
       await onSubmit(
-        teamName.trim(), 
+        teamName.trim(),
         phoneNumber.trim(),
-        teamLevel as TeamLevel,
-        preferredDay as PreferredDay,
-        selectedChampionship,
-        selectedSubgroup
+        teamLevel,
+        preferredDay,
+        isAdminAssigning ? (championship as ChampionshipType) : undefined,
+        isAdminAssigning ? subgroup : undefined
       );
-      onClose();
-    } catch (err: any) {
-      setError(err.message || 'Failed to submit registration');
     } finally {
-      setIsSubmitting(false);
+      setSubmitting(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-slate-50 dark:bg-dark-lighter rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-6 border-b border-slate-200 dark:border-gray-700">
-          <div className="flex items-center space-x-3">
-            <div className="p-2 bg-[#6B2FB5] rounded-lg">
-              <Trophy size={24} className="text-white" />
-            </div>
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-              {isAdminAssigning 
-                ? t('assignTeam', { defaultValue: 'Assign to championship' })
-                : t('joinChampionship', { defaultValue: 'Join championship' })
-              }
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
+      <div className="w-full max-w-lg rounded-2xl bg-slate-50 dark:bg-dark-lighter shadow-xl border border-slate-200 dark:border-slate-700">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-700">
+          <div>
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
+              {isAdminAssigning ? t('assignTeam') : t('joinChampionship')}
             </h2>
+            <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
+              {t('joinChampionshipDesc')}
+            </p>
           </div>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-slate-200 dark:hover:bg-dark rounded-lg transition-colors"
+            className="rounded-full p-1.5 text-gray-500 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-gray-900 transition"
             aria-label="Close"
           >
-            <X size={24} className="text-gray-700 dark:text-gray-300" />
+            <X size={18} />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+        {/* Body */}
+        <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
+          {/* Info line */}
           {!isAdminAssigning && (
-            <p className="text-gray-600 dark:text-gray-400">
-              {t('joinChampionshipDesc', { 
-                defaultValue: 'Register your team to compete in our championships. An admin will review your request and assign you to the appropriate league.'
-              })}
-            </p>
+            <div className="text-xs text-gray-500 dark:text-gray-400">
+              {userEmail}
+            </div>
           )}
 
+          {/* Team name */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              {t('email')}
-            </label>
-            <input
-              type="email"
-              value={userEmail}
-              disabled
-              className="w-full px-4 py-3 bg-slate-100 dark:bg-dark border border-slate-300 dark:border-gray-600 rounded-lg text-gray-500 dark:text-gray-400"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              {t('teamName')} <span className="text-red-500">*</span>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+              {t('teamName')}
             </label>
             <input
               type="text"
               value={teamName}
               onChange={(e) => setTeamName(e.target.value)}
-              placeholder={t('enterTeamName', { defaultValue: 'Enter your team name' })}
+              className="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-dark px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#6B2FB5]"
+              placeholder={t('enterTeamName') as string}
               required
-              disabled={isAdminAssigning}
-              className="w-full px-4 py-3 bg-white dark:bg-dark border border-slate-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#6B2FB5] focus:border-transparent text-gray-900 dark:text-white placeholder-gray-400 disabled:bg-slate-100 disabled:text-gray-500"
             />
           </div>
 
+          {/* Phone */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              {t('phoneNumber', { defaultValue: 'Phone number' })} <span className="text-red-500">*</span>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+              {t('phoneNumber')}
             </label>
             <input
               type="tel"
               value={phoneNumber}
               onChange={(e) => setPhoneNumber(e.target.value)}
-              placeholder={t('enterPhone', { defaultValue: 'Enter your phone number' })}
+              className="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-dark px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#6B2FB5]"
+              placeholder={t('enterPhone') as string}
               required
-              disabled={isAdminAssigning}
-              className="w-full px-4 py-3 bg-white dark:bg-dark border border-slate-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#6B2FB5] focus:border-transparent text-gray-900 dark:text-white placeholder-gray-400 disabled:bg-slate-100 disabled:text-gray-500"
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              {t('teamLevel', { defaultValue: 'Team level' })} <span className="text-red-500">*</span>
-            </label>
-            <select
-              value={teamLevel}
-              onChange={(e) => setTeamLevel(e.target.value as TeamLevel)}
-              required
-              disabled={isAdminAssigning}
-              className="w-full px-4 py-3 bg-white dark:bg-dark border border-slate-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#6B2FB5] focus:border-transparent text-gray-900 dark:text-white disabled:bg-slate-100 disabled:text-gray-500"
-            >
-              <option value="">{t('selectTeamLevel', { defaultValue: 'Select team level...' })}</option>
-              <option value="beginner">{t('beginner', { defaultValue: 'Beginner' })}</option>
-              <option value="intermediate">{t('intermediate', { defaultValue: 'Intermediate' })}</option>
-              <option value="advanced">{t('advanced', { defaultValue: 'Advanced' })}</option>
-            </select>
+          {/* Team level + preferred day */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+                {t('teamLevel')}
+              </label>
+              <select
+                value={teamLevel}
+                onChange={(e) => setTeamLevel(e.target.value as TeamLevel)}
+                className="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-dark px-3 py-2 text-sm text-gray-900 dark:text-white"
+              >
+                <option value="beginner">{t('beginner')}</option>
+                <option value="intermediate">{t('intermediate')}</option>
+                <option value="advanced">{t('advanced')}</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+                {t('preferredDay')}
+              </label>
+              <select
+                value={preferredDay}
+                onChange={(e) => setPreferredDay(e.target.value as PreferredDay)}
+                className="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-dark px-3 py-2 text-sm text-gray-900 dark:text-white"
+              >
+                <option value="monday">{t('monday')}</option>
+                <option value="tuesday">{t('tuesday')}</option>
+                <option value="wednesday">{t('wednesday')}</option>
+                <option value="thursday">{t('thursday')}</option>
+                <option value="friday">{t('friday')}</option>
+              </select>
+            </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              {t('preferredDay', { defaultValue: 'Preferred playing day' })} <span className="text-red-500">*</span>
-            </label>
-            <select
-              value={preferredDay}
-              onChange={(e) => setPreferredDay(e.target.value as PreferredDay)}
-              required
-              disabled={isAdminAssigning}
-              className="w-full px-4 py-3 bg-white dark:bg-dark border border-slate-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#6B2FB5] focus:border-transparent text-gray-900 dark:text-white disabled:bg-slate-100 disabled:text-gray-500"
-            >
-              <option value="">{t('selectPreferredDay', { defaultValue: 'Select preferred day...' })}</option>
-              <option value="monday">{t('monday', { defaultValue: 'Monday' })}</option>
-              <option value="tuesday">{t('tuesday', { defaultValue: 'Tuesday' })}</option>
-              <option value="wednesday">{t('wednesday', { defaultValue: 'Wednesday' })}</option>
-              <option value="thursday">{t('thursday', { defaultValue: 'Thursday' })}</option>
-              <option value="friday">{t('friday', { defaultValue: 'Friday' })}</option>
-            </select>
-          </div>
-
+          {/* Admin-only: championship + subgroup */}
           {isAdminAssigning && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                {t('championship', { defaultValue: 'Championship' })} <span className="text-red-500">*</span>
-              </label>
-              <select
-                value={selectedChampionship || ''}
-                onChange={(e) => handleChampionshipChange(e.target.value as ChampionshipType)}
-                required
-                className="w-full px-4 py-3 bg-white dark:bg-dark border border-slate-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#6B2FB5] focus:border-transparent text-gray-900 dark:text-white"
-              >
-                <option value="">{t('selectChampionship', { defaultValue: 'Select a championship...' })}</option>
-                <option value="MSL DREAM LEAGUE">MSL DREAM LEAGUE</option>
-                <option value="MSL A">MSL A</option>
-                <option value="MSL B">MSL B</option>
-              </select>
+            <div className="space-y-3 pt-1">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+                  {t('championship')}
+                </label>
+                <select
+                  value={championship}
+                  onChange={(e) => {
+                    const value = e.target.value as ChampionshipType | '';
+                    setChampionship(value);
+                    setSubgroup(undefined);
+                  }}
+                  className="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-dark px-3 py-2 text-sm text-gray-900 dark:text-white"
+                  required
+                >
+                  <option value="">{t('selectChampionship')}</option>
+                  <option value="MSL DREAM LEAGUE">MSL DREAM LEAGUE</option>
+                  <option value="MSL A">MSL A</option>
+                  <option value="MSL B">MSL B</option>
+                </select>
+              </div>
+
+              {requiresSubgroup && championship && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+                    {t('subgroup')}
+                  </label>
+                  <select
+                    value={subgroup || ''}
+                    onChange={(e) => setSubgroup(e.target.value as SubgroupType)}
+                    className="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-dark px-3 py-2 text-sm text-gray-900 dark:text-white"
+                    required={requiresSubgroup}
+                  >
+                    <option value="">{t('selectSubgroup')}</option>
+                    {availableSubgroups.map((sg) => (
+                      <option key={sg} value={sg}>
+                        {sg}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </div>
           )}
 
-          {isAdminAssigning && requiresSubgroup && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                {t('subgroup', { defaultValue: 'Playing day group' })} <span className="text-red-500">*</span>
-              </label>
-              <select
-                value={selectedSubgroup || ''}
-                onChange={(e) => setSelectedSubgroup(e.target.value as SubgroupType)}
-                required
-                className="w-full px-4 py-3 bg-white dark:bg-dark border border-slate-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#6B2FB5] focus:border-transparent text-gray-900 dark:text-white"
-              >
-                <option value="">{t('selectSubgroup', { defaultValue: 'Select a subgroup...' })}</option>
-                {availableSubgroups.map(subgroup => (
-                  <option key={subgroup} value={subgroup}>
-                    {subgroup} ({getSubgroupLabel(subgroup)})
-                  </option>
-                ))}
-              </select>
-              <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                {t('subgroupExplanation', { 
-                  defaultValue: 'Teams in each subgroup will compete against each other during the group stage.' 
-                })}
-              </p>
-            </div>
-          )}
-
-          {error && (
-            <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-              <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
-            </div>
-          )}
-
-          {!isAdminAssigning && (
-            <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-              <p className="text-sm text-blue-800 dark:text-blue-300">
-                📋 {t('championshipReviewInfo', {
-                  defaultValue: 'Your request will be reviewed by an admin who will assign you to one of our championships: MSL DREAM LEAGUE, MSL A, or MSL B.'
-                })}
-              </p>
-            </div>
-          )}
-
-          <div className="flex space-x-3">
+          {/* Footer buttons */}
+          <div className="flex justify-end gap-3 pt-3">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-6 py-3 border border-slate-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-slate-100 dark:hover:bg-dark transition-colors font-medium"
+              className="px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-slate-100 dark:hover:bg-slate-700"
             >
-              {t('cancel', { defaultValue: 'Cancel' })}
+              {t('cancel')}
             </button>
             <button
               type="submit"
-              disabled={isSubmitting}
-              className="flex-1 px-6 py-3 bg-[#6B2FB5] hover:bg-[#5a2596] text-white rounded-lg transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={submitting}
+              className="px-5 py-2 rounded-lg bg-[#6B2FB5] hover:bg-[#5a2596] text-sm font-semibold text-white disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              {isSubmitting 
-                ? t('submitting', { defaultValue: 'Submitting...' }) 
-                : isAdminAssigning
-                ? t('assignTeam', { defaultValue: 'Assign team' })
-                : t('submitRequest', { defaultValue: 'Submit request' })
-              }
+              {submitting ? t('submitting') : isAdminAssigning ? t('assignTeam') : t('submitRequest')}
             </button>
           </div>
         </form>
