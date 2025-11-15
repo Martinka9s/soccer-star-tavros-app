@@ -5,7 +5,7 @@ import { Team, ChampionshipType, SubgroupType } from '../types';
 import { teamService } from '../services/firebaseService';
 
 const Championships: React.FC = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [teams, setTeams] = useState<Team[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedChampionship, setSelectedChampionship] = useState<ChampionshipType>('MSL DREAM LEAGUE');
@@ -37,15 +37,49 @@ const Championships: React.FC = () => {
     return [];
   };
 
+  // Localised label for full subgroup name
+  const getSubgroupLabel = (subgroup: SubgroupType): string => {
+    const labels = {
+      'ΟΜΙΛΟΣ ΔΕΥΤΕΡΑΣ': t('mondayGroup', { defaultValue: 'Monday group' }),
+      'ΟΜΙΛΟΣ ΤΡΙΤΗΣ': t('tuesdayGroup', { defaultValue: 'Tuesday group' }),
+      'ΟΜΙΛΟΣ ΤΕΤΑΡΤΗΣ': t('wednesdayGroup', { defaultValue: 'Wednesday group' }),
+      'ΟΜΙΛΟΣ ΠΕΜΠΤΗΣ': t('thursdayGroup', { defaultValue: 'Thursday group' }),
+    };
+    return labels[subgroup] || subgroup;
+  };
+
+  // Short label for the "Group" column chip (no GR/EN mix)
+  const getSubgroupShortLabel = (subgroup: SubgroupType): string => {
+    const isGreek = i18n.language === 'gr';
+
+    if (isGreek) {
+      const grLabels: Record<SubgroupType, string> = {
+        'ΟΜΙΛΟΣ ΔΕΥΤΕΡΑΣ': 'Δευτέρα',
+        'ΟΜΙΛΟΣ ΤΡΙΤΗΣ': 'Τρίτη',
+        'ΟΜΙΛΟΣ ΤΕΤΑΡΤΗΣ': 'Τετάρτη',
+        'ΟΜΙΛΟΣ ΠΕΜΠΤΗΣ': 'Πέμπτη',
+      };
+      return grLabels[subgroup] ?? subgroup;
+    }
+
+    const enLabels: Record<SubgroupType, string> = {
+      'ΟΜΙΛΟΣ ΔΕΥΤΕΡΑΣ': 'Mon',
+      'ΟΜΙΛΟΣ ΤΡΙΤΗΣ': 'Tue',
+      'ΟΜΙΛΟΣ ΤΕΤΑΡΤΗΣ': 'Wed',
+      'ΟΜΙΛΟΣ ΠΕΜΠΤΗΣ': 'Thu',
+    };
+    return enLabels[subgroup] ?? subgroup;
+  };
+
   // Filter teams by championship and optionally by subgroup
   const getFilteredTeams = () => {
     let filtered = teams.filter(t => t.championship === selectedChampionship);
-    
+
     // If subgroup selected (not ALL), filter by subgroup
     if (selectedSubgroup !== 'ALL' && selectedChampionship !== 'MSL DREAM LEAGUE') {
       filtered = filtered.filter(t => t.subgroup === selectedSubgroup);
     }
-    
+
     return filtered;
   };
 
@@ -62,17 +96,6 @@ const Championships: React.FC = () => {
     return (b.stats.goalsFor || 0) - (a.stats.goalsFor || 0);
   });
 
-  // Get English translation for subgroup names
-  const getSubgroupLabel = (subgroup: SubgroupType): string => {
-    const labels = {
-      'ΟΜΙΛΟΣ ΔΕΥΤΕΡΑΣ': t('mondayGroup', { defaultValue: 'Monday Group' }),
-      'ΟΜΙΛΟΣ ΤΡΙΤΗΣ': t('tuesdayGroup', { defaultValue: 'Tuesday Group' }),
-      'ΟΜΙΛΟΣ ΤΕΤΑΡΤΗΣ': t('wednesdayGroup', { defaultValue: 'Wednesday Group' }),
-      'ΟΜΙΛΟΣ ΠΕΜΠΤΗΣ': t('thursdayGroup', { defaultValue: 'Thursday Group' }),
-    };
-    return labels[subgroup] || subgroup;
-  };
-
   // Handle championship change - reset subgroup
   const handleChampionshipChange = (championship: ChampionshipType) => {
     setSelectedChampionship(championship);
@@ -85,7 +108,9 @@ const Championships: React.FC = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="text-gray-600 dark:text-gray-400">{t('loading', { defaultValue: 'Loading...' })}</div>
+        <div className="text-gray-600 dark:text-gray-400">
+          {t('loading', { defaultValue: 'Loading...' })}
+        </div>
       </div>
     );
   }
@@ -153,7 +178,7 @@ const Championships: React.FC = () => {
             }`}
           >
             <Users size={18} className="inline mr-2" />
-            {t('allGroups', { defaultValue: 'All Groups (Merged)' })}
+            {t('allGroups', { defaultValue: 'All groups (merged)' })}
           </button>
           {subgroups.map((subgroup) => (
             <button
@@ -179,12 +204,12 @@ const Championships: React.FC = () => {
             {t('standings', { defaultValue: 'Standings' })}
             {hasSubgroups && selectedSubgroup !== 'ALL' && (
               <span className="ml-3 text-sm font-normal opacity-90">
-                - {getSubgroupLabel(selectedSubgroup)}
+                - {getSubgroupLabel(selectedSubgroup as SubgroupType)}
               </span>
             )}
             {hasSubgroups && selectedSubgroup === 'ALL' && (
               <span className="ml-3 text-sm font-normal opacity-90">
-                - {t('mergedStandings', { defaultValue: 'Combined Standings' })}
+                - {t('mergedStandings', { defaultValue: 'Combined standings' })}
               </span>
             )}
           </h2>
@@ -196,8 +221,7 @@ const Championships: React.FC = () => {
             <p className="text-gray-600 dark:text-gray-400">
               {hasSubgroups && selectedSubgroup !== 'ALL'
                 ? t('noTeamsInSubgroup', { defaultValue: 'No teams in this subgroup yet' })
-                : t('noTeamsInChampionship', { defaultValue: 'No teams in this championship yet' })
-              }
+                : t('noTeamsInChampionship', { defaultValue: 'No teams in this championship yet' })}
             </p>
           </div>
         ) : (
@@ -244,45 +268,54 @@ const Championships: React.FC = () => {
               </thead>
               <tbody className="divide-y divide-slate-200 dark:divide-gray-700">
                 {sortedTeams.map((team, index) => {
-                  const goalDifference = (team.stats.goalsFor || 0) - (team.stats.goalsAgainst || 0);
+                  const goalDifference =
+                    (team.stats.goalsFor || 0) - (team.stats.goalsAgainst || 0);
                   const isTopThree = index < 3;
                   const isEliminated = team.eliminated === true;
-                  
+
                   return (
                     <tr
                       key={team.id}
                       className={`hover:bg-slate-50 dark:hover:bg-dark transition-colors ${
-                        isEliminated 
-                          ? 'bg-red-50 dark:bg-red-900/10 opacity-75' 
-                          : isTopThree 
-                          ? 'bg-green-50 dark:bg-green-900/10' 
+                        isEliminated
+                          ? 'bg-red-50 dark:bg-red-900/10 opacity-75'
+                          : isTopThree
+                          ? 'bg-green-50 dark:bg-green-900/10'
                           : ''
                       }`}
                     >
                       <td className="px-4 py-3 whitespace-nowrap">
-                        <span className={`font-bold ${
-                          index === 0 ? 'text-yellow-600' :
-                          index === 1 ? 'text-gray-400' :
-                          index === 2 ? 'text-orange-600' :
-                          isEliminated ? 'text-red-500' :
-                          'text-gray-600 dark:text-gray-400'
-                        }`}>
+                        <span
+                          className={`font-bold ${
+                            index === 0
+                              ? 'text-yellow-600'
+                              : index === 1
+                              ? 'text-gray-400'
+                              : index === 2
+                              ? 'text-orange-600'
+                              : isEliminated
+                              ? 'text-red-500'
+                              : 'text-gray-600 dark:text-gray-400'
+                          }`}
+                        >
                           {index + 1}
                         </span>
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap">
-                        <span className={`font-medium ${
-                          isEliminated 
-                            ? 'text-red-600 dark:text-red-400' 
-                            : 'text-gray-900 dark:text-white'
-                        }`}>
+                        <span
+                          className={`font-medium ${
+                            isEliminated
+                              ? 'text-red-600 dark:text-red-400'
+                              : 'text-gray-900 dark:text-white'
+                          }`}
+                        >
                           {team.name}
                         </span>
                       </td>
                       {hasSubgroups && selectedSubgroup === 'ALL' && (
                         <td className="px-4 py-3 text-center">
                           <span className="text-xs px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 rounded">
-                            {team.subgroup?.split(' ')[1] || '-'}
+                            {team.subgroup ? getSubgroupShortLabel(team.subgroup) : '-'}
                           </span>
                         </td>
                       )}
@@ -304,19 +337,24 @@ const Championships: React.FC = () => {
                       <td className="px-4 py-3 text-center text-gray-700 dark:text-gray-300">
                         {team.stats.goalsAgainst || 0}
                       </td>
-                      <td className={`px-4 py-3 text-center font-medium ${
-                        goalDifference > 0 ? 'text-green-600 dark:text-green-400' :
-                        goalDifference < 0 ? 'text-red-600 dark:text-red-400' :
-                        'text-gray-700 dark:text-gray-300'
-                      }`}>
-                        {goalDifference > 0 ? '+' : ''}{goalDifference}
+                      <td
+                        className={`px-4 py-3 text-center font-medium ${
+                          goalDifference > 0
+                            ? 'text-green-600 dark:text-green-400'
+                            : goalDifference < 0
+                            ? 'text-red-600 dark:text-red-400'
+                            : 'text-gray-700 dark:text-gray-300'
+                        }`}
+                      >
+                        {goalDifference > 0 ? '+' : ''}
+                        {goalDifference}
                       </td>
                       <td className="px-4 py-3 text-center">
-                        <span className={`px-2 py-1 rounded font-bold ${
-                          isEliminated 
-                            ? 'bg-red-500 text-white' 
-                            : 'bg-[#6B2FB5] text-white'
-                        }`}>
+                        <span
+                          className={`px-2 py-1 rounded font-bold ${
+                            isEliminated ? 'bg-red-500 text-white' : 'bg-[#6B2FB5] text-white'
+                          }`}
+                        >
                           {team.stats.points}
                         </span>
                       </td>
@@ -336,21 +374,35 @@ const Championships: React.FC = () => {
             {t('legend', { defaultValue: 'Legend' })}
           </h3>
           <div className="flex flex-wrap gap-4 text-xs text-gray-600 dark:text-gray-400">
-            <span><strong>{t('pld', { defaultValue: 'Pld' })}:</strong> {t('played', { defaultValue: 'Played' })}</span>
-            <span><strong>{t('w', { defaultValue: 'W' })}:</strong> {t('won', { defaultValue: 'Won' })}</span>
-            <span><strong>{t('d', { defaultValue: 'D' })}:</strong> {t('draw', { defaultValue: 'Draw' })}</span>
-            <span><strong>{t('l', { defaultValue: 'L' })}:</strong> {t('lost', { defaultValue: 'Lost' })}</span>
-            <span><strong>{t('gf', { defaultValue: 'GF' })}:</strong> {t('goalsFor', { defaultValue: 'Goals For' })}</span>
-            <span><strong>{t('ga', { defaultValue: 'GA' })}:</strong> {t('goalsAgainst', { defaultValue: 'Goals Against' })}</span>
-            <span><strong>{t('gd', { defaultValue: 'GD' })}:</strong> {t('goalDifference', { defaultValue: 'Goal Difference' })}</span>
-            <span><strong>{t('pts', { defaultValue: 'Pts' })}:</strong> {t('points', { defaultValue: 'Points' })}</span>
+            <span>
+              <strong>Pld</strong> – {t('played', { defaultValue: 'Played' })}
+            </span>
+            <span>
+              <strong>W</strong> – {t('won', { defaultValue: 'Won' })}
+            </span>
+            <span>
+              <strong>D</strong> – {t('draw', { defaultValue: 'Draw' })}
+            </span>
+            <span>
+              <strong>L</strong> – {t('lost', { defaultValue: 'Lost' })}
+            </span>
+            <span>
+              <strong>GF</strong> – {t('goalsFor', { defaultValue: 'Goals for' })}
+            </span>
+            <span>
+              <strong>GA</strong> – {t('goalsAgainst', { defaultValue: 'Goals against' })}
+            </span>
+            <span>
+              <strong>GD</strong> – {t('goalDifference', { defaultValue: 'Goal difference' })}
+            </span>
+            <span>
+              <strong>Pts</strong> – {t('points', { defaultValue: 'Points' })}
+            </span>
           </div>
           <div className="mt-2 pt-2 border-t border-slate-300 dark:border-gray-600 space-y-1">
             <div className="text-xs text-gray-600 dark:text-gray-400">
-              🟢 <strong>{t('top3', { defaultValue: 'Top 3' })}</strong> {t('highlightedInGreen', { defaultValue: 'highlighted in green' })}
-            </div>
-            <div className="text-xs text-gray-600 dark:text-gray-400">
-              🔴 <strong>{t('eliminated', { defaultValue: 'Eliminated' })}</strong> {t('highlightedInRed', { defaultValue: 'teams shown in red' })}
+              🔴 <strong>{t('eliminated', { defaultValue: 'Eliminated' })}</strong>{' '}
+              {t('highlightedInRed', { defaultValue: 'teams shown in red' })}
             </div>
           </div>
         </div>
@@ -367,7 +419,9 @@ const Championships: React.FC = () => {
         <div className="p-12 text-center">
           <Play size={48} className="mx-auto text-gray-400 mb-4" />
           <p className="text-gray-600 dark:text-gray-400">
-            {t('bracketComingSoon', { defaultValue: 'Knockout bracket will appear here when finals begin' })}
+            {t('bracketComingSoon', {
+              defaultValue: 'Knockout bracket will appear here when finals begin',
+            })}
           </p>
         </div>
       </div>
