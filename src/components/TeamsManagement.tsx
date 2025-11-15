@@ -55,6 +55,8 @@ const TeamsManagement: React.FC<TeamsManagementProps> = ({ adminEmail }) => {
   const handleAssignment = async (
     _teamName: string,
     _phoneNumber: string,
+    _teamLevel: string,
+    _preferredDay: string,
     championship?: ChampionshipType,
     subgroup?: SubgroupType
   ) => {
