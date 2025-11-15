@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Trophy, Check, X, Trash2, MoveHorizontal, RotateCcw, ChevronDown, Edit2, RotateCw } from 'lucide-react';
-import { Team, ChampionshipType } from '../types';
+import { Team, ChampionshipType, SubgroupType } from '../types';
 import { teamService } from '../services/firebaseService';
+import TeamModal from './TeamModal';
 
 interface TeamsManagementProps {
   adminEmail: string;
@@ -12,9 +13,13 @@ const TeamsManagement: React.FC<TeamsManagementProps> = ({ adminEmail }) => {
   const { t } = useTranslation();
   const [teams, setTeams] = useState<Team[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedChampionship, setSelectedChampionship] = useState<ChampionshipType | ''>('');
   const [editingTeamId, setEditingTeamId] = useState<string | null>(null);
   const [moveToChampionship, setMoveToChampionship] = useState<ChampionshipType | ''>('');
+  const [moveToSubgroup, setMoveToSubgroup] = useState<SubgroupType | undefined>(undefined);
+  
+  // Modal states
+  const [showAssignModal, setShowAssignModal] = useState(false);
+  const [teamToAssign, setTeamToAssign] = useState<Team | null>(null);
 
   // Fetch teams from Firebase
   useEffect(() => {
@@ -40,10 +45,26 @@ const TeamsManagement: React.FC<TeamsManagementProps> = ({ adminEmail }) => {
   const mslBTeams = teams.filter(t => t.status === 'approved' && t.championship === 'MSL B');
   const inactiveTeams = teams.filter(t => t.status === 'declined' || t.status === 'inactive');
 
-  const handleApprove = async (teamId: string, championship: ChampionshipType) => {
+  // Open modal for team assignment
+  const handleApproveClick = (team: Team) => {
+    setTeamToAssign(team);
+    setShowAssignModal(true);
+  };
+
+  // Handle assignment from modal
+  const handleAssignment = async (
+    teamName: string,
+    phoneNumber: string,
+    championship?: ChampionshipType,
+    subgroup?: SubgroupType
+  ) => {
+    if (!teamToAssign || !championship) return;
+
     try {
-      await teamService.approveTeam(teamId, championship, adminEmail);
+      await teamService.approveTeam(teamToAssign.id, championship, adminEmail, subgroup);
       alert('Team approved successfully!');
+      setShowAssignModal(false);
+      setTeamToAssign(null);
       await loadTeams();
     } catch (error: any) {
       console.error('Error approving team:', error);
@@ -63,13 +84,14 @@ const TeamsManagement: React.FC<TeamsManagementProps> = ({ adminEmail }) => {
     }
   };
 
-  const handleMoveTeam = async (teamId: string, newChampionship: ChampionshipType) => {
+  const handleMoveTeam = async (teamId: string, newChampionship: ChampionshipType, newSubgroup?: SubgroupType) => {
     if (!window.confirm('Moving this team will reset all their stats. Continue?')) return;
     try {
-      await teamService.moveTeam(teamId, newChampionship);
+      await teamService.moveTeam(teamId, newChampionship, newSubgroup);
       alert('Team moved successfully! Stats have been reset.');
       setEditingTeamId(null);
       setMoveToChampionship('');
+      setMoveToSubgroup(undefined);
       await loadTeams();
     } catch (error: any) {
       console.error('Error moving team:', error);
@@ -90,9 +112,9 @@ const TeamsManagement: React.FC<TeamsManagementProps> = ({ adminEmail }) => {
     }
   };
 
-  const handleReactivateTeam = async (teamId: string, championship: ChampionshipType) => {
+  const handleReactivateTeam = async (teamId: string, championship: ChampionshipType, subgroup?: SubgroupType) => {
     try {
-      await teamService.approveTeam(teamId, championship, adminEmail);
+      await teamService.approveTeam(teamId, championship, adminEmail, subgroup);
       alert('Team reactivated successfully!');
       await loadTeams();
     } catch (error: any) {
@@ -117,6 +139,16 @@ const TeamsManagement: React.FC<TeamsManagementProps> = ({ adminEmail }) => {
     }
   };
 
+  // Get available subgroups for a championship
+  const getSubgroupsForChampionship = (championship: ChampionshipType): SubgroupType[] => {
+    if (championship === 'MSL A') {
+      return ['ΟΜΙΛΟΣ ΔΕΥΤΕΡΑΣ', 'ΟΜΙΛΟΣ ΤΡΙΤΗΣ', 'ΟΜΙΛΟΣ ΤΕΤΑΡΤΗΣ'];
+    } else if (championship === 'MSL B') {
+      return ['ΟΜΙΛΟΣ ΔΕΥΤΕΡΑΣ', 'ΟΜΙΛΟΣ ΤΡΙΤΗΣ', 'ΟΜΙΛΟΣ ΠΕΜΠΤΗΣ'];
+    }
+    return [];
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -130,7 +162,7 @@ const TeamsManagement: React.FC<TeamsManagementProps> = ({ adminEmail }) => {
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-          {t('teamsManagement', { defaultValue: 'Teams Management' })}
+          {t('teamsManagement', { defaultValue: 'Teams management' })}
         </h1>
         <p className="text-gray-600 dark:text-gray-400">
           {t('teamsManagementDesc', { defaultValue: 'Review registrations, manage teams, and organize championships' })}
@@ -141,7 +173,7 @@ const TeamsManagement: React.FC<TeamsManagementProps> = ({ adminEmail }) => {
       <section>
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center space-x-2">
-            <span>{t('pendingRequests', { defaultValue: 'Pending Requests' })}</span>
+            <span>{t('pendingRequests', { defaultValue: 'Pending requests' })}</span>
             {pendingTeams.length > 0 && (
               <span className="px-3 py-1 bg-orange-500 text-white text-sm font-bold rounded-full">
                 {pendingTeams.length}
@@ -175,35 +207,21 @@ const TeamsManagement: React.FC<TeamsManagementProps> = ({ adminEmail }) => {
                     </div>
                   </div>
 
-                  <div className="flex flex-col space-y-2">
-                    <select
-                      value={selectedChampionship || ''}
-                      onChange={(e) => setSelectedChampionship(e.target.value as ChampionshipType)}
-                      className="px-4 py-2 bg-white dark:bg-dark border border-slate-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white"
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={() => handleApproveClick(team)}
+                      className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors font-medium flex items-center space-x-1"
                     >
-                      <option value="">{t('selectChampionship', { defaultValue: 'Select Championship' })}</option>
-                      <option value="MSL DREAM LEAGUE">MSL DREAM LEAGUE</option>
-                      <option value="MSL A">MSL A</option>
-                      <option value="MSL B">MSL B</option>
-                    </select>
-
-                    <div className="flex space-x-2">
-                      <button
-                        onClick={() => selectedChampionship && handleApprove(team.id, selectedChampionship as ChampionshipType)}
-                        disabled={!selectedChampionship}
-                        className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-1"
-                      >
-                        <Check size={18} />
-                        <span>{t('approve', { defaultValue: 'Approve' })}</span>
-                      </button>
-                      <button
-                        onClick={() => handleDecline(team.id)}
-                        className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors font-medium flex items-center justify-center space-x-1"
-                      >
-                        <X size={18} />
-                        <span>{t('decline', { defaultValue: 'Decline' })}</span>
-                      </button>
-                    </div>
+                      <Check size={18} />
+                      <span>{t('approve', { defaultValue: 'Approve' })}</span>
+                    </button>
+                    <button
+                      onClick={() => handleDecline(team.id)}
+                      className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors font-medium flex items-center space-x-1"
+                    >
+                      <X size={18} />
+                      <span>{t('decline', { defaultValue: 'Decline' })}</span>
+                    </button>
                   </div>
                 </div>
               </div>
@@ -221,9 +239,12 @@ const TeamsManagement: React.FC<TeamsManagementProps> = ({ adminEmail }) => {
         setEditingTeamId={setEditingTeamId}
         moveToChampionship={moveToChampionship}
         setMoveToChampionship={setMoveToChampionship}
+        moveToSubgroup={moveToSubgroup}
+        setMoveToSubgroup={setMoveToSubgroup}
         onMoveTeam={handleMoveTeam}
         onDeactivateTeam={handleDeactivateTeam}
         onResetChampionship={handleResetChampionship}
+        getSubgroupsForChampionship={getSubgroupsForChampionship}
       />
 
       {/* MSL A */}
@@ -234,9 +255,12 @@ const TeamsManagement: React.FC<TeamsManagementProps> = ({ adminEmail }) => {
         setEditingTeamId={setEditingTeamId}
         moveToChampionship={moveToChampionship}
         setMoveToChampionship={setMoveToChampionship}
+        moveToSubgroup={moveToSubgroup}
+        setMoveToSubgroup={setMoveToSubgroup}
         onMoveTeam={handleMoveTeam}
         onDeactivateTeam={handleDeactivateTeam}
         onResetChampionship={handleResetChampionship}
+        getSubgroupsForChampionship={getSubgroupsForChampionship}
       />
 
       {/* MSL B */}
@@ -247,16 +271,37 @@ const TeamsManagement: React.FC<TeamsManagementProps> = ({ adminEmail }) => {
         setEditingTeamId={setEditingTeamId}
         moveToChampionship={moveToChampionship}
         setMoveToChampionship={setMoveToChampionship}
+        moveToSubgroup={moveToSubgroup}
+        setMoveToSubgroup={setMoveToSubgroup}
         onMoveTeam={handleMoveTeam}
         onDeactivateTeam={handleDeactivateTeam}
         onResetChampionship={handleResetChampionship}
+        getSubgroupsForChampionship={getSubgroupsForChampionship}
       />
 
       {/* Inactive Teams Section */}
       <InactiveTeamsSection
         teams={inactiveTeams}
         onReactivate={handleReactivateTeam}
+        getSubgroupsForChampionship={getSubgroupsForChampionship}
       />
+
+      {/* Assignment Modal */}
+      {showAssignModal && teamToAssign && (
+        <TeamModal
+          onClose={() => {
+            setShowAssignModal(false);
+            setTeamToAssign(null);
+          }}
+          onSubmit={handleAssignment}
+          userEmail={teamToAssign.userEmail}
+          existingTeamName={teamToAssign.name}
+          existingPhone={teamToAssign.phoneNumber}
+          isAdminAssigning={true}
+          existingChampionship={teamToAssign.championship}
+          existingSubgroup={teamToAssign.subgroup}
+        />
+      )}
     </div>
   );
 };
@@ -264,15 +309,18 @@ const TeamsManagement: React.FC<TeamsManagementProps> = ({ adminEmail }) => {
 // Championship Section Component
 interface ChampionshipSectionProps {
   championship: ChampionshipType;
-  displayName?: string; // Optional display name (e.g., "MSL DL" for "MSL DREAM LEAGUE")
+  displayName?: string;
   teams: Team[];
   editingTeamId: string | null;
   setEditingTeamId: (id: string | null) => void;
   moveToChampionship: ChampionshipType | '';
   setMoveToChampionship: (championship: ChampionshipType | '') => void;
-  onMoveTeam: (teamId: string, newChampionship: ChampionshipType) => void;
+  moveToSubgroup: SubgroupType | undefined;
+  setMoveToSubgroup: (subgroup: SubgroupType | undefined) => void;
+  onMoveTeam: (teamId: string, newChampionship: ChampionshipType, newSubgroup?: SubgroupType) => void;
   onDeactivateTeam: (teamId: string) => void;
   onResetChampionship: (championship: ChampionshipType) => void;
+  getSubgroupsForChampionship: (championship: ChampionshipType) => SubgroupType[];
 }
 
 const ChampionshipSection: React.FC<ChampionshipSectionProps> = ({
@@ -283,9 +331,12 @@ const ChampionshipSection: React.FC<ChampionshipSectionProps> = ({
   setEditingTeamId,
   moveToChampionship,
   setMoveToChampionship,
+  moveToSubgroup,
+  setMoveToSubgroup,
   onMoveTeam,
   onDeactivateTeam,
   onResetChampionship,
+  getSubgroupsForChampionship,
 }) => {
   const { t } = useTranslation();
   const [expanded, setExpanded] = useState(true);
@@ -297,6 +348,8 @@ const ChampionshipSection: React.FC<ChampionshipSectionProps> = ({
   ].filter((c) => c !== championship) as ChampionshipType[];
 
   const displayTitle = displayName || championship;
+  const availableSubgroups = getSubgroupsForChampionship(moveToChampionship as ChampionshipType);
+  const requiresSubgroup = availableSubgroups.length > 0;
 
   return (
     <section>
@@ -349,6 +402,11 @@ const ChampionshipSection: React.FC<ChampionshipSectionProps> = ({
                       <div className="flex-1">
                         <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">
                           {team.name}
+                          {team.subgroup && (
+                            <span className="ml-2 px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 text-xs rounded">
+                              {team.subgroup.split(' ')[1]}
+                            </span>
+                          )}
                         </h3>
                         <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
                           <p>👤 {team.userEmail}</p>
@@ -386,7 +444,10 @@ const ChampionshipSection: React.FC<ChampionshipSectionProps> = ({
                           <>
                             <select
                               value={moveToChampionship}
-                              onChange={(e) => setMoveToChampionship(e.target.value as ChampionshipType)}
+                              onChange={(e) => {
+                                setMoveToChampionship(e.target.value as ChampionshipType);
+                                setMoveToSubgroup(undefined); // Reset subgroup when championship changes
+                              }}
                               className="px-3 py-2 bg-white dark:bg-dark border border-slate-300 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white"
                             >
                               <option value="">{t('moveTo', { defaultValue: 'Move to...' })}</option>
@@ -397,15 +458,30 @@ const ChampionshipSection: React.FC<ChampionshipSectionProps> = ({
                               ))}
                             </select>
 
-                            {moveToChampionship && (
+                            {requiresSubgroup && moveToChampionship && (
+                              <select
+                                value={moveToSubgroup || ''}
+                                onChange={(e) => setMoveToSubgroup(e.target.value as SubgroupType)}
+                                className="px-3 py-2 bg-white dark:bg-dark border border-slate-300 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white"
+                              >
+                                <option value="">{t('selectSubgroup', { defaultValue: 'Select subgroup...' })}</option>
+                                {availableSubgroups.map((sg) => (
+                                  <option key={sg} value={sg}>
+                                    {sg}
+                                  </option>
+                                ))}
+                              </select>
+                            )}
+
+                            {moveToChampionship && (!requiresSubgroup || moveToSubgroup) && (
                               <button
                                 onClick={() => {
-                                  onMoveTeam(team.id, moveToChampionship as ChampionshipType);
+                                  onMoveTeam(team.id, moveToChampionship as ChampionshipType, moveToSubgroup);
                                 }}
                                 className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors font-medium flex items-center justify-center space-x-2"
                               >
                                 <MoveHorizontal size={18} />
-                                <span>{t('moveTeam', { defaultValue: 'Move Team' })}</span>
+                                <span>{t('moveTeam', { defaultValue: 'Move team' })}</span>
                               </button>
                             )}
 
@@ -421,6 +497,7 @@ const ChampionshipSection: React.FC<ChampionshipSectionProps> = ({
                               onClick={() => {
                                 setEditingTeamId(null);
                                 setMoveToChampionship('');
+                                setMoveToSubgroup(undefined);
                               }}
                               className="px-4 py-2 border border-slate-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-slate-200 dark:hover:bg-dark transition-colors font-medium"
                             >
@@ -444,17 +521,23 @@ const ChampionshipSection: React.FC<ChampionshipSectionProps> = ({
 // Inactive Teams Section Component
 interface InactiveTeamsSectionProps {
   teams: Team[];
-  onReactivate: (teamId: string, championship: ChampionshipType) => void;
+  onReactivate: (teamId: string, championship: ChampionshipType, subgroup?: SubgroupType) => void;
+  getSubgroupsForChampionship: (championship: ChampionshipType) => SubgroupType[];
 }
 
 const InactiveTeamsSection: React.FC<InactiveTeamsSectionProps> = ({
   teams,
   onReactivate,
+  getSubgroupsForChampionship,
 }) => {
   const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
   const [reactivatingTeamId, setReactivatingTeamId] = useState<string | null>(null);
   const [selectedChampionship, setSelectedChampionship] = useState<ChampionshipType | ''>('');
+  const [selectedSubgroup, setSelectedSubgroup] = useState<SubgroupType | undefined>(undefined);
+
+  const availableSubgroups = selectedChampionship ? getSubgroupsForChampionship(selectedChampionship as ChampionshipType) : [];
+  const requiresSubgroup = availableSubgroups.length > 0;
 
   return (
     <section>
@@ -464,7 +547,7 @@ const InactiveTeamsSection: React.FC<InactiveTeamsSectionProps> = ({
           className="flex items-center space-x-2 text-2xl font-bold text-gray-900 dark:text-white hover:text-[#6B2FB5] dark:hover:text-primary transition-colors"
         >
           <Trash2 size={28} className="text-gray-500" />
-          <span>{t('inactiveTeams', { defaultValue: 'Inactive Teams' })}</span>
+          <span>{t('inactiveTeams', { defaultValue: 'Inactive teams' })}</span>
           <span className="text-sm font-normal text-gray-600 dark:text-gray-400">
             ({teams.length} teams)
           </span>
@@ -518,33 +601,53 @@ const InactiveTeamsSection: React.FC<InactiveTeamsSectionProps> = ({
                           <>
                             <select
                               value={selectedChampionship}
-                              onChange={(e) => setSelectedChampionship(e.target.value as ChampionshipType)}
+                              onChange={(e) => {
+                                setSelectedChampionship(e.target.value as ChampionshipType);
+                                setSelectedSubgroup(undefined);
+                              }}
                               className="px-4 py-2 bg-white dark:bg-dark border border-slate-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white"
                             >
-                              <option value="">{t('selectChampionship', { defaultValue: 'Select Championship' })}</option>
+                              <option value="">{t('selectChampionship', { defaultValue: 'Select championship' })}</option>
                               <option value="MSL DREAM LEAGUE">MSL DREAM LEAGUE</option>
                               <option value="MSL A">MSL A</option>
                               <option value="MSL B">MSL B</option>
                             </select>
 
+                            {requiresSubgroup && selectedChampionship && (
+                              <select
+                                value={selectedSubgroup || ''}
+                                onChange={(e) => setSelectedSubgroup(e.target.value as SubgroupType)}
+                                className="px-4 py-2 bg-white dark:bg-dark border border-slate-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white"
+                              >
+                                <option value="">{t('selectSubgroup', { defaultValue: 'Select subgroup...' })}</option>
+                                {availableSubgroups.map((sg) => (
+                                  <option key={sg} value={sg}>
+                                    {sg}
+                                  </option>
+                                ))}
+                              </select>
+                            )}
+
                             <button
                               onClick={() => {
-                                if (selectedChampionship) {
-                                  onReactivate(team.id, selectedChampionship as ChampionshipType);
+                                if (selectedChampionship && (!requiresSubgroup || selectedSubgroup)) {
+                                  onReactivate(team.id, selectedChampionship as ChampionshipType, selectedSubgroup);
                                   setReactivatingTeamId(null);
                                   setSelectedChampionship('');
+                                  setSelectedSubgroup(undefined);
                                 }
                               }}
-                              disabled={!selectedChampionship}
+                              disabled={!selectedChampionship || (requiresSubgroup && !selectedSubgroup)}
                               className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                              {t('confirmReactivate', { defaultValue: 'Confirm Reactivate' })}
+                              {t('confirmReactivate', { defaultValue: 'Confirm reactivate' })}
                             </button>
 
                             <button
                               onClick={() => {
                                 setReactivatingTeamId(null);
                                 setSelectedChampionship('');
+                                setSelectedSubgroup(undefined);
                               }}
                               className="px-4 py-2 border border-slate-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-slate-200 dark:hover:bg-dark transition-colors font-medium"
                             >
