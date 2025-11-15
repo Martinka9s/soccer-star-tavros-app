@@ -5,7 +5,6 @@ import { format, addDays, subDays, startOfDay, isBefore, parseISO } from 'date-f
 import { el } from 'date-fns/locale';
 import { Booking, PitchType, User } from '../types';
 import { bookingService, notificationService } from '../services/firebaseService';
-import { bracketService } from '../services/bracketService';
 import BookingModal from './BookingModal';
 
 interface CalendarProps {
@@ -38,7 +37,7 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
   };
 
   useEffect(() => {
-    loadBookings();
+    void loadBookings();
   }, [dateString]);
 
   const loadBookings = async () => {
@@ -152,9 +151,11 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
     if (!selectedSlot) return;
 
     try {
+      // Delete booking
       if (bookingData.delete && selectedBooking) {
         await bookingService.deleteBooking(selectedBooking.id);
 
+        // Notify single-user owner if exists
         if (selectedBooking.userId && user?.role === 'admin') {
           await notificationService.createNotification(
             selectedBooking.userId,
@@ -171,6 +172,7 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
           );
         }
 
+        // Notify match teams if it was a match booking
         if (selectedBooking.homeTeam && selectedBooking.awayTeam) {
           if (selectedBooking.homeTeamUserId) {
             await notificationService.createNotification(
@@ -195,28 +197,21 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
             );
           }
         }
-     } else if (selectedBooking) {
-    await bookingService.updateBooking(selectedBooking.id, bookingData);
+      }
+      // Update existing booking
+      else if (selectedBooking) {
+        await bookingService.updateBooking(selectedBooking.id, bookingData);
+      }
+      // Create new booking
+      else {
+        const bookingId = await bookingService.createBooking({
+          ...bookingData,
+          pitchType: selectedSlot.pitch,
+          date: selectedSlot.date,
+          startTime: selectedSlot.time,
+        });
 
-    // 🔥 After updating, if this is a finals match with scores,
-    // push the result into the bracket and auto-advance the winner
-    const updatedBooking: Booking = {
-      ...selectedBooking,
-      ...bookingData,
-    };
-
-    await bracketService.applyMatchResultFromBooking(updatedBooking);
-  } else {
-    const bookingId = await bookingService.createBooking({
-      ...bookingData,
-      pitchType: selectedSlot.pitch,
-      date: selectedSlot.date,
-      startTime: selectedSlot.time,
-    });
-    ...
-  }
-
-
+        // Match booking → notify both teams
         if (bookingData.homeTeam && bookingData.awayTeam) {
           if (bookingData.homeTeamUserId) {
             await notificationService.createMatchNotification(
@@ -242,7 +237,9 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
               false
             );
           }
-        } else if (bookingData.userId && bookingData.userId !== user?.id) {
+        }
+        // Admin booked a training for a team (single-team mode)
+        else if (bookingData.userId && bookingData.userId !== user?.id) {
           await notificationService.createNotification(
             bookingData.userId,
             'approved',
@@ -295,8 +292,9 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
 
   return (
     <div className="space-y-6">
+      {/* Title + subtitle */}
       <div className="text-center">
-        <h1 className="text-4xl font-extrabold text-gray-900 dark:text:white">
+        <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white">
           {t('livePitchAvailability')}
         </h1>
         <p className="mt-2 text-base text-gray-700 dark:text-gray-300">
@@ -304,6 +302,7 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
         </p>
       </div>
 
+      {/* Legend */}
       <div className="flex flex-wrap justify-center items-center gap-5 mt-1 text-sm">
         <LegendDot label={t('available')} colorClass="bg-green-400 dark:bg-[#3a4057]" />
         <LegendDot label={t('pending')} colorClass="bg-amber-500" />
@@ -311,8 +310,9 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
         <LegendDot label={t('blocked')} colorClass="bg-slate-600" />
       </div>
 
+      {/* Date & pitch selector */}
       <div className="bg-slate-50 dark:bg-dark-lighter border border-slate-200 dark:border-transparent rounded-xl px-4 py-3 shadow-sm dark:shadow-none">
-        {/* Mobile */}
+        {/* Mobile header */}
         <div className="sm:hidden">
           <div className="grid grid-cols-[auto,1fr,auto] items-center">
             <button
@@ -354,7 +354,7 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
               className={`h-9 px-5 w-full rounded-lg text-sm font-medium transition-colors border ${
                 activePitch === 'Pitch B'
                   ? 'bg-[#6B2FB5] text-white border-transparent'
-                  : 'bg-slate-50 dark:bg-dark text-gray-700 dark:text-gray-200 border-slate-300 dark:border-gray-700 hover:text-gray-900 dark:hover:text:white hover:bg-slate-100 dark:hover:bg-gray-800'
+                  : 'bg-slate-50 dark:bg-dark text-gray-700 dark:text-gray-200 border-slate-300 dark:border-gray-700 hover:text-gray-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-gray-800'
               }`}
             >
               {t('pitchB')}
@@ -362,7 +362,7 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
           </div>
         </div>
 
-        {/* Desktop */}
+        {/* Desktop header */}
         <div className="hidden sm:flex items-center justify-between">
           <div className="flex items-center gap-4">
             <button
@@ -407,7 +407,7 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
               className={`h-9 px-5 rounded-lg text-sm font-medium transition-colors border ${
                 activePitch === 'Pitch B'
                   ? 'bg-[#6B2FB5] text-white border-transparent'
-                  : 'bg-slate-50 dark:bg-dark text-gray-700 dark:text-gray-200 border-slate-300 dark:border-gray-700 hover:text-gray-900 dark:hover:text:white hover:bg-slate-100 dark:hover:bg-gray-800'
+                  : 'bg-slate-50 dark:bg-dark text-gray-700 dark:text-gray-200 border-slate-300 dark:border-gray-700 hover:text-gray-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-gray-800'
               }`}
             >
               {t('pitchB')}
@@ -416,6 +416,7 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
         </div>
       </div>
 
+      {/* Slots grid */}
       {loading ? (
         <div className="text-center py-12 text-gray-600 dark:text-gray-400">Loading...</div>
       ) : (
