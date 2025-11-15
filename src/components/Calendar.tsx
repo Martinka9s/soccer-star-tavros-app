@@ -195,15 +195,27 @@ const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
             );
           }
         }
-      } else if (selectedBooking) {
-        await bookingService.updateBooking(selectedBooking.id, bookingData);
-      } else {
-        const bookingId = await bookingService.createBooking({
-          ...bookingData,
-          pitchType: selectedSlot.pitch,
-          date: selectedSlot.date,
-          startTime: selectedSlot.time,
-        });
+     } else if (selectedBooking) {
+    await bookingService.updateBooking(selectedBooking.id, bookingData);
+
+    // 🔥 After updating, if this is a finals match with scores,
+    // push the result into the bracket and auto-advance the winner
+    const updatedBooking: Booking = {
+      ...selectedBooking,
+      ...bookingData,
+    };
+
+    await bracketService.applyMatchResultFromBooking(updatedBooking);
+  } else {
+    const bookingId = await bookingService.createBooking({
+      ...bookingData,
+      pitchType: selectedSlot.pitch,
+      date: selectedSlot.date,
+      startTime: selectedSlot.time,
+    });
+    ...
+  }
+
 
         if (bookingData.homeTeam && bookingData.awayTeam) {
           if (bookingData.homeTeamUserId) {
