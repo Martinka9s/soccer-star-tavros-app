@@ -1,14 +1,23 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { X, Trophy } from 'lucide-react';
-import { ChampionshipType, SubgroupType } from '../types';
+import { ChampionshipType, SubgroupType, TeamLevel, PreferredDay } from '../types';
 
 interface TeamModalProps {
   onClose: () => void;
-  onSubmit: (teamName: string, phoneNumber: string, championship?: ChampionshipType, subgroup?: SubgroupType) => Promise<void>;
+  onSubmit: (
+    teamName: string, 
+    phoneNumber: string, 
+    teamLevel: TeamLevel, 
+    preferredDay: PreferredDay, 
+    championship?: ChampionshipType, 
+    subgroup?: SubgroupType
+  ) => Promise<void>;
   userEmail: string;
   existingTeamName?: string;
   existingPhone?: string;
+  existingTeamLevel?: TeamLevel;
+  existingPreferredDay?: PreferredDay;
   isAdminAssigning?: boolean; // NEW: Admin assigning team to championship
   existingChampionship?: ChampionshipType;
   existingSubgroup?: SubgroupType;
@@ -20,6 +29,8 @@ const TeamModal: React.FC<TeamModalProps> = ({
   userEmail,
   existingTeamName = '',
   existingPhone = '',
+  existingTeamLevel,
+  existingPreferredDay,
   isAdminAssigning = false,
   existingChampionship,
   existingSubgroup,
@@ -27,6 +38,8 @@ const TeamModal: React.FC<TeamModalProps> = ({
   const { t } = useTranslation();
   const [teamName, setTeamName] = useState(existingTeamName);
   const [phoneNumber, setPhoneNumber] = useState(existingPhone);
+  const [teamLevel, setTeamLevel] = useState<TeamLevel | ''>(existingTeamLevel || '');
+  const [preferredDay, setPreferredDay] = useState<PreferredDay | ''>(existingPreferredDay || '');
   const [selectedChampionship, setSelectedChampionship] = useState<ChampionshipType | undefined>(existingChampionship);
   const [selectedSubgroup, setSelectedSubgroup] = useState<SubgroupType | undefined>(existingSubgroup);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -81,6 +94,16 @@ const TeamModal: React.FC<TeamModalProps> = ({
       return;
     }
 
+    if (!teamLevel) {
+      setError('Team level is required');
+      return;
+    }
+
+    if (!preferredDay) {
+      setError('Preferred playing day is required');
+      return;
+    }
+
     // Admin assigning: require championship selection
     if (isAdminAssigning) {
       if (!selectedChampionship) {
@@ -98,6 +121,8 @@ const TeamModal: React.FC<TeamModalProps> = ({
       await onSubmit(
         teamName.trim(), 
         phoneNumber.trim(),
+        teamLevel as TeamLevel,
+        preferredDay as PreferredDay,
         selectedChampionship,
         selectedSubgroup
       );
@@ -271,8 +296,8 @@ const TeamModal: React.FC<TeamModalProps> = ({
               {isSubmitting 
                 ? t('submitting', { defaultValue: 'Submitting...' }) 
                 : isAdminAssigning
-                ? t('assignTeam', { defaultValue: 'Assign team' })
-                : t('submitRequest', { defaultValue: 'Submit request' })
+                ? t('assignTeam', { defaultValue: 'Assign Team' })
+                : t('submitRequest', { defaultValue: 'Submit Request' })
               }
             </button>
           </div>
