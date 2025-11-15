@@ -68,6 +68,9 @@ const TeamsManagement: React.FC<TeamsManagementProps> = ({ adminEmail }) => {
       setShowAssignModal(false);
       setTeamToAssign(null);
       await loadTeams();
+      
+      // Trigger sidebar refresh
+      window.dispatchEvent(new Event('refresh-teams'));
     } catch (error: any) {
       console.error('Error approving team:', error);
       alert(error.message || 'Failed to approve team');
