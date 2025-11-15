@@ -122,8 +122,10 @@ const resources = {
       // Dashboard
       nextGames: 'Next games',
       yesterdayResults: "Yesterday's results",
+      latestResults: 'Latest results',
       noUpcomingGames: 'No upcoming games scheduled',
       noResultsYesterday: 'No results from yesterday',
+      noLatestResults: 'No results yet',
       showAll: 'Show all',
       showLess: 'Show less',
       bookAPitch: 'Book a pitch',
@@ -406,6 +408,20 @@ const resources = {
       quarterfinals: 'Προημιτελικά',
       semifinals: 'Ημιτελικοί',
       final: 'Τελικός',
+      
+      // NEW: Team registration fields
+      teamLevel: 'Επίπεδο ομάδας',
+      selectTeamLevel: 'Επιλέξτε επίπεδο ομάδας...',
+      beginner: 'Αρχάριος',
+      intermediate: 'Μεσαίο',
+      advanced: 'Προχωρημένο',
+      preferredDay: 'Προτιμώμενη ημέρα αγώνων',
+      selectPreferredDay: 'Επιλέξτε προτιμώμενη ημέρα...',
+      monday: 'Δευτέρα',
+      tuesday: 'Τρίτη',
+      wednesday: 'Τετάρτη',
+      thursday: 'Πέμπτη',
+      friday: 'Παρασκευή',
     }
   }
 };
