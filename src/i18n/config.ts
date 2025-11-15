@@ -196,6 +196,20 @@ const resources = {
       quarterfinals: 'Quarterfinals',
       semifinals: 'Semifinals',
       final: 'Final',
+      
+      // NEW: Team registration fields
+      teamLevel: 'Team level',
+      selectTeamLevel: 'Select team level...',
+      beginner: 'Beginner',
+      intermediate: 'Intermediate',
+      advanced: 'Advanced',
+      preferredDay: 'Preferred playing day',
+      selectPreferredDay: 'Select preferred day...',
+      monday: 'Monday',
+      tuesday: 'Tuesday',
+      wednesday: 'Wednesday',
+      thursday: 'Thursday',
+      friday: 'Friday',
     }
   },
   gr: {
