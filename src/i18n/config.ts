@@ -9,7 +9,6 @@ const resources = {
       login: 'Login',
       logout: 'Logout',
       register: 'Register',
-
       // Navigation
       home: 'Home',
       calendar: 'Calendar',
@@ -18,24 +17,20 @@ const resources = {
       bookings: 'Bookings',
       pendingRequests: 'Pending requests',
       teams: 'Teams',
-
       // Calendar
       today: 'Today',
       previous: 'Previous',
       next: 'Next',
       pitchA: 'Pitch A',
       pitchB: 'Pitch B',
-
       // Title & Subtitle
       livePitchAvailability: 'Live pitch availability',
       selectDateAndPitch: 'Check available slots & book easily',
-
       // Booking Status
       available: 'Available',
       pending: 'Pending',
       booked: 'Booked',
       blocked: 'Blocked',
-
       // Booking Modal
       bookSlot: 'Book slot',
       createBooking: 'Create booking',
@@ -54,7 +49,6 @@ const resources = {
       approve: 'Approve',
       reject: 'Reject',
       close: 'Close',
-
       // Auth
       email: 'Email',
       password: 'Password',
@@ -65,7 +59,6 @@ const resources = {
       signUp: 'Sign up',
       signIn: 'Sign in',
       loginRequired: 'Please login to book a slot',
-
       // Auth error/help texts
       auth_email_in_use: 'Email already in use. Try logging in or reset your password.',
       auth_invalid_email: 'Invalid email address.',
@@ -73,23 +66,22 @@ const resources = {
         'Password must be at least 6 characters long and include one uppercase letter, one lowercase letter, and one number.',
       send_reset_link: 'Send reset link',
       reset_sent: 'Password reset email sent.',
-
       // My Bookings
       upcomingBookings: 'Upcoming bookings',
       pastBookings: 'Past bookings',
       noBookings: 'No bookings found',
-
       // Notifications
       notifications: 'Notifications',
       markAllRead: 'Mark all as read',
       noNotifications: 'No notifications',
       bookingApproved: 'Your booking for {{pitch}} on {{date}} at {{time}} has been approved.',
       bookingRejected: 'Your booking for {{pitch}} on {{date}} at {{time}} has been rejected.',
-      bookingCancelled: 'Your booking for {{pitch}} on {{date}} at {{time}} has been cancelled by admin.',
-      bookingApprovedMessage: "Your booking was approved! Check the date and time, and don't be late.",
+      bookingCancelled:
+        'Your booking for {{pitch}} on {{date}} at {{time}} has been cancelled by admin.',
+      bookingApprovedMessage:
+        "Your booking was approved! Check the date and time, and don't be late.",
       matchScheduledMessage:
         "You got a new booking for the championship. Check the date and time, and don't be late!",
-
       // Admin
       adminPanel: 'Admin panel',
       userEmail: 'User email',
@@ -100,12 +92,10 @@ const resources = {
       processing: 'Processing...',
       confirmReject: 'Are you sure you want to reject this booking?',
       loading: 'Loading...',
-
       // Footer
       contact: 'Contact',
       location: 'Location',
       followUs: 'Follow us',
-
       // Messages
       bookingSuccess: 'Booking request submitted successfully!',
       bookingError: 'Failed to create booking. Please try again.',
@@ -116,11 +106,9 @@ const resources = {
       conflictError: 'This time slot conflicts with an existing booking.',
       selectSlot: 'Please select an available time slot to book.',
       pastDateError: 'Cannot book slots in the past.',
-
       // Time
       am: 'AM',
       pm: 'PM',
-
       // Dashboard
       nextGames: 'Next games',
       yesterdayResults: "Yesterday's results",
@@ -137,7 +125,6 @@ const resources = {
       professionalFootballFacilities: 'Professional football facilities',
       stateOfTheArtPitches: 'State-of-the-art pitches for the best experience',
       learnMore: 'Learn more',
-
       // Championships & Subgroups
       championshipsDesc: 'View standings and match schedules',
       standings: 'Standings',
@@ -149,7 +136,6 @@ const resources = {
       mergedStandings: 'Combined standings',
       noTeamsInSubgroup: 'No teams in this subgroup yet',
       noTeamsInChampionship: 'No teams in this championship yet',
-
       // Table Headers & Legend
       pld: 'Pld',
       played: 'Played',
@@ -172,7 +158,6 @@ const resources = {
       highlightedInGreen: 'highlighted in green',
       eliminated: 'Eliminated',
       highlightedInRed: 'teams shown in red',
-
       // Team Modal
       joinChampionship: 'Join championship',
       joinChampionshipDesc:
@@ -190,11 +175,9 @@ const resources = {
       enterPhone: 'Enter your phone number',
       submitting: 'Submitting...',
       submitRequest: 'Submit request',
-
       // Knockout Bracket
       knockoutBracket: 'Knockout bracket',
       bracketComingSoon: 'Knockout bracket will appear here when finals begin',
-
       // Phases
       groupStage: 'Group stage',
       qualificationRound: 'Qualification round',
@@ -203,7 +186,6 @@ const resources = {
       quarterfinals: 'Quarterfinals',
       semifinals: 'Semifinals',
       final: 'Final',
-
       // Team registration fields
       teamLevel: 'Team level',
       selectTeamLevel: 'Select team level...',
@@ -217,7 +199,6 @@ const resources = {
       wednesday: 'Wednesday',
       thursday: 'Thursday',
       friday: 'Friday',
-
       // Teams Management
       teamsManagement: 'Teams management',
       teamsManagementDesc: 'Review registrations, manage teams, and organize championships',
@@ -243,7 +224,6 @@ const resources = {
       login: 'Σύνδεση',
       logout: 'Αποσύνδεση',
       register: 'Εγγραφή',
-
       // Navigation
       home: 'Αρχική',
       calendar: 'Ημερολόγιο',
@@ -252,7 +232,6 @@ const resources = {
       bookings: 'Κρατήσεις',
       pendingRequests: 'Αιτήματα σε εκκρεμότητα',
       teams: 'Ομάδες',
-
       // Calendar
       today: 'Σήμερα',
       previous: 'Προηγούμενη',
@@ -261,13 +240,11 @@ const resources = {
       pitchB: 'Γήπεδο B',
       livePitchAvailability: 'Live Διαθεσιμότητα Γηπέδων',
       selectDateAndPitch: 'Δες διαθέσιμες ώρες & κάνε κράτηση εύκολα',
-
       // Booking Status
       available: 'Διαθέσιμο',
       pending: 'Σε αναμονή',
       booked: 'Κρατημένο',
       blocked: 'Μπλοκαρισμένο',
-
       // Booking Modal
       bookSlot: 'Κράτηση ώρας',
       createBooking: 'Δημιουργία κράτησης',
@@ -286,7 +263,6 @@ const resources = {
       approve: 'Έγκριση',
       reject: 'Απόρριψη',
       close: 'Κλείσιμο',
-
       // Auth
       email: 'Email',
       password: 'Κωδικός',
@@ -297,7 +273,6 @@ const resources = {
       signUp: 'Εγγραφή',
       signIn: 'Σύνδεση',
       loginRequired: 'Παρακαλώ συνδεθείτε για να κάνετε κράτηση',
-
       // Auth error/help texts
       auth_email_in_use: 'Το email χρησιμοποιείται ήδη. Δοκιμάστε σύνδεση ή επαναφορά κωδικού.',
       auth_invalid_email: 'Μη έγκυρο email.',
@@ -305,27 +280,22 @@ const resources = {
         'Ο κωδικός πρέπει να έχει τουλάχιστον 6 χαρακτήρες, 1 κεφαλαίο, 1 πεζό γράμμα και 1 αριθμό.',
       send_reset_link: 'Αποστολή συνδέσμου επαναφοράς',
       reset_sent: 'Στάλθηκε email για επαναφορά κωδικού.',
-
       // My Bookings
       upcomingBookings: 'Επερχόμενες κρατήσεις',
       pastBookings: 'Προηγούμενες κρατήσεις',
       noBookings: 'Δεν βρέθηκαν κρατήσεις',
-
       // Notifications
       notifications: 'Ειδοποιήσεις',
       markAllRead: 'Σήμανση όλων ως αναγνωσμένα',
       noNotifications: 'Δεν υπάρχουν ειδοποιήσεις',
-      bookingApproved:
-        'Η κράτησή σας για το {{pitch}} στις {{date}} στις {{time}} εγκρίθηκε.',
-      bookingRejected:
-        'Η κράτησή σας για το {{pitch}} στις {{date}} στις {{time}} απορρίφθηκε.',
+      bookingApproved: 'Η κράτησή σας για το {{pitch}} στις {{date}} στις {{time}} εγκρίθηκε.',
+      bookingRejected: 'Η κράτησή σας για το {{pitch}} στις {{date}} στις {{time}} απορρίφθηκε.',
       bookingCancelled:
         'Η κράτησή σας για το {{pitch}} στις {{date}} στις {{time}} ακυρώθηκε από τον διαχειριστή.',
       bookingApprovedMessage:
         'Η κράτησή σας εγκρίθηκε! Ελέγξτε την ημερομηνία και την ώρα, και μην αργήσετε.',
       matchScheduledMessage:
         'Έχετε νέα κράτηση για το πρωτάθλημα. Ελέγξτε την ημερομηνία και την ώρα, και μην αργήσετε!',
-
       // Admin
       adminPanel: 'Πίνακας διαχειριστή',
       userEmail: 'Email χρήστη',
@@ -336,12 +306,10 @@ const resources = {
       processing: 'Επεξεργασία...',
       confirmReject: 'Είστε σίγουροι ότι θέλετε να απορρίψετε αυτή την κράτηση;',
       loading: 'Φόρτωση...',
-
       // Footer
       contact: 'Επικοινωνία',
       location: 'Τοποθεσία',
       followUs: 'Ακολουθήστε μας',
-
       // Messages
       bookingSuccess: 'Το αίτημα κράτησης υποβλήθηκε επιτυχώς!',
       bookingError: 'Αποτυχία δημιουργίας κράτησης. Παρακαλώ δοκιμάστε ξανά.',
@@ -352,11 +320,9 @@ const resources = {
       conflictError: 'Αυτή η ώρα συγκρούεται με μια υπάρχουσα κράτηση.',
       selectSlot: 'Παρακαλώ επιλέξτε μια διαθέσιμη ώρα για κράτηση.',
       pastDateError: 'Δεν μπορείτε να κάνετε κράτηση σε παρελθοντικές ώρες.',
-
       // Time
       am: 'ΠΜ',
       pm: 'ΜΜ',
-
       // Dashboard
       nextGames: 'Επόμενοι αγώνες',
       yesterdayResults: 'Χθεσινά αποτελέσματα',
@@ -373,7 +339,6 @@ const resources = {
       professionalFootballFacilities: 'Επαγγελματικές εγκαταστάσεις ποδοσφαίρου',
       stateOfTheArtPitches: 'Γήπεδα τελευταίας τεχνολογίας για την καλύτερη εμπειρία',
       learnMore: 'Μάθετε περισσότερα',
-
       // Championships & Subgroups
       championshipsDesc: 'Δείτε τη βαθμολογία και το πρόγραμμα αγώνων',
       standings: 'Βαθμολογία',
@@ -385,7 +350,6 @@ const resources = {
       mergedStandings: 'Συνολική βαθμολογία',
       noTeamsInSubgroup: 'Δεν υπάρχουν ομάδες σε αυτόν τον όμιλο ακόμα',
       noTeamsInChampionship: 'Δεν υπάρχουν ομάδες σε αυτό το πρωτάθλημα ακόμα',
-
       // Table Headers & Legend
       pld: 'PLD',
       played: 'Αγώνες',
@@ -408,7 +372,6 @@ const resources = {
       highlightedInGreen: 'επισημαίνονται με πράσινο',
       eliminated: 'Αποκλεισμένοι',
       highlightedInRed: 'ομάδες εμφανίζονται με κόκκινο',
-
       // Team Modal
       joinChampionship: 'Εγγραφή στο πρωτάθλημα',
       joinChampionshipDesc:
@@ -426,11 +389,9 @@ const resources = {
       enterPhone: 'Εισάγετε τον αριθμό τηλεφώνου σας',
       submitting: 'Υποβολή...',
       submitRequest: 'Υποβολή αιτήματος',
-
       // Knockout Bracket
       knockoutBracket: 'Πίνακας νοκ-άουτ',
       bracketComingSoon: 'Ο πίνακας νοκ-άουτ θα εμφανιστεί εδώ όταν ξεκινήσουν οι τελικοί',
-
       // Phases
       groupStage: 'Φάση ομίλων',
       qualificationRound: 'Γύρος προκριματικών',
@@ -439,7 +400,6 @@ const resources = {
       quarterfinals: 'Προημιτελικά',
       semifinals: 'Ημιτελικοί',
       final: 'Τελικός',
-
       // Team registration fields
       teamLevel: 'Επίπεδο ομάδας',
       selectTeamLevel: 'Επιλέξτε επίπεδο ομάδας...',
@@ -453,7 +413,6 @@ const resources = {
       wednesday: 'Τετάρτη',
       thursday: 'Πέμπτη',
       friday: 'Παρασκευή',
-
       // Teams Management
       teamsManagement: 'Διαχείριση ομάδων',
       teamsManagementDesc: 'Έλεγχος εγγραφών, διαχείριση ομάδων και οργάνωση πρωταθλημάτων',
@@ -474,10 +433,10 @@ const resources = {
   },
 };
 
-// Read saved language if present; otherwise default to Greek ('gr')
 const getInitialLang = (): 'gr' | 'en' => {
   try {
-    const saved = typeof window !== 'undefined' ? localStorage.getItem('i18nextLng') : null;
+    const saved =
+      typeof window !== 'undefined' ? localStorage.getItem('i18nextLng') : null;
     if (saved === 'gr' || saved === 'en') return saved;
   } catch {}
   return 'gr';
