@@ -1,506 +1,493 @@
-import React, { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { format, addDays, subDays, startOfDay, isBefore, parseISO } from 'date-fns';
-import { el } from 'date-fns/locale';
-import { Booking, PitchType, User } from '../types';
-import { bookingService, notificationService } from '../services/firebaseService';
-import BookingModal from './BookingModal';
+import i18n from 'i18next';
+import { initReactI18next } from 'react-i18next';
 
-interface CalendarProps {
-  user: User | null;
-  onLoginRequired: () => void;
-}
+const resources = {
+  en: {
+    translation: {
+      // Header
+      appName: 'Soccer Star Tavros',
+      login: 'Login',
+      logout: 'Logout',
+      register: 'Register',
 
-const Calendar: React.FC<CalendarProps> = ({ user, onLoginRequired }) => {
-  const { t, i18n } = useTranslation();
+      // Navigation
+      home: 'Home',
+      calendar: 'Calendar',
+      championships: 'Championships',
+      myBookings: 'My bookings',
+      bookings: 'Bookings',
+      pendingRequests: 'Pending requests',
+      teams: 'Teams',
 
-  const [currentDate, setCurrentDate] = useState(new Date());
-  const [bookings, setBookings] = useState<Booking[]>([]);
-  const [loading, setLoading] = useState(true);
+      // Calendar
+      today: 'Today',
+      previous: 'Previous',
+      next: 'Next',
+      pitchA: 'Pitch A',
+      pitchB: 'Pitch B',
 
-  const [selectedSlot, setSelectedSlot] = useState<{
-    pitch: PitchType;
-    date: string;
-    time: string;
-  } | null>(null);
+      // Title & Subtitle
+      livePitchAvailability: 'Live pitch availability',
+      selectDateAndPitch: 'Check available slots & book easily',
 
-  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
-  const [showModal, setShowModal] = useState(false);
+      // Booking Status
+      available: 'Available',
+      pending: 'Pending',
+      booked: 'Booked',
+      blocked: 'Blocked',
 
-  const [activePitch, setActivePitch] = useState<PitchType>('Pitch A');
+      // Booking Modal
+      bookSlot: 'Book slot',
+      createBooking: 'Create booking',
+      editBooking: 'Edit booking',
+      blockSlot: 'Block slot',
+      selectDuration: 'Select duration',
+      hours: 'hours',
+      hour: 'hour',
+      phoneNumber: 'Phone number',
+      teamName: 'Team name',
+      notes: 'Notes',
+      submit: 'Submit',
+      cancel: 'Cancel',
+      save: 'Save',
+      delete: 'Delete',
+      approve: 'Approve',
+      reject: 'Reject',
+      close: 'Close',
 
-  const dateString = format(currentDate, 'yyyy-MM-dd');
-  
-  const formatWithLocale = (date: Date, formatStr: string) => {
-    return format(date, formatStr, { locale: i18n.language === 'el' ? el : undefined });
-  };
+      // Auth
+      email: 'Email',
+      password: 'Password',
+      loginTitle: 'Login to your account',
+      registerTitle: 'Create an account',
+      noAccount: "Don't have an account?",
+      hasAccount: 'Already have an account?',
+      signUp: 'Sign up',
+      signIn: 'Sign in',
+      loginRequired: 'Please login to book a slot',
 
-  useEffect(() => {
-    loadBookings();
-  }, [dateString]);
+      // Auth error/help texts
+      auth_email_in_use: 'Email already in use. Try logging in or reset your password.',
+      auth_invalid_email: 'Invalid email address.',
+      auth_weak_password:
+        'Password must be at least 6 characters long and include one uppercase letter, one lowercase letter, and one number.',
+      send_reset_link: 'Send reset link',
+      reset_sent: 'Password reset email sent.',
 
-  const loadBookings = async () => {
-    setLoading(true);
-    try {
-      const data = await bookingService.getBookingsByDate(dateString);
-      setBookings(data);
-    } catch (error) {
-      console.error('Error loading bookings:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+      // My Bookings
+      upcomingBookings: 'Upcoming bookings',
+      pastBookings: 'Past bookings',
+      noBookings: 'No bookings found',
 
-  const timeSlots = Array.from({ length: 16 }, (_, i) => {
-    const startHour24 = 9 + i;
-    const endHour24 = (startHour24 + 1) % 24;
-    const start = `${(startHour24 % 24).toString().padStart(2, '0')}:00`;
-    const labelStart = start;
-    const labelEnd = `${endHour24.toString().padStart(2, '0')}:00`;
-    return {
-      time: start,
-      display: `${labelStart} - ${labelEnd}`,
-    };
-  });
+      // Notifications
+      notifications: 'Notifications',
+      markAllRead: 'Mark all as read',
+      noNotifications: 'No notifications',
+      bookingApproved: 'Your booking for {{pitch}} on {{date}} at {{time}} has been approved.',
+      bookingRejected: 'Your booking for {{pitch}} on {{date}} at {{time}} has been rejected.',
+      bookingCancelled: 'Your booking for {{pitch}} on {{date}} at {{time}} has been cancelled by admin.',
+      bookingApprovedMessage: "Your booking was approved! Check the date and time, and don't be late.",
+      matchScheduledMessage:
+        "You got a new booking for the championship. Check the date and time, and don't be late!",
 
-  const getSlotStatus = (
-    pitch: PitchType,
-    time: string
-  ): { status: 'available' | 'pending' | 'booked' | 'blocked'; booking?: Booking } => {
-    const [hours, minutes] = time.split(':').map(Number);
-    const slotStartMinutes = hours * 60 + minutes;
+      // Admin
+      adminPanel: 'Admin panel',
+      userEmail: 'User email',
+      status: 'Status',
+      actions: 'Actions',
+      noPendingRequests: 'No pending requests',
+      allRequestsProcessed: 'All booking requests have been processed',
+      processing: 'Processing...',
+      confirmReject: 'Are you sure you want to reject this booking?',
+      loading: 'Loading...',
 
-    for (const booking of bookings) {
-      if (booking.pitchType !== pitch || booking.status === 'available') continue;
+      // Footer
+      contact: 'Contact',
+      location: 'Location',
+      followUs: 'Follow us',
 
-      const [bookingHours, bookingMinutes] = booking.startTime.split(':').map(Number);
-      const bookingStartMinutes = bookingHours * 60 + bookingMinutes;
-      const bookingEndMinutes = bookingStartMinutes + booking.duration * 60;
+      // Messages
+      bookingSuccess: 'Booking request submitted successfully!',
+      bookingError: 'Failed to create booking. Please try again.',
+      loginSuccess: 'Logged in successfully!',
+      loginError: 'Failed to login. Please check your credentials.',
+      registerSuccess: 'Account created successfully!',
+      registerError: 'Failed to create account. Please try again.',
+      conflictError: 'This time slot conflicts with an existing booking.',
+      selectSlot: 'Please select an available time slot to book.',
+      pastDateError: 'Cannot book slots in the past.',
 
-      if (slotStartMinutes >= bookingStartMinutes && slotStartMinutes < bookingEndMinutes) {
-        return { status: booking.status, booking };
-      }
-    }
+      // Time
+      am: 'AM',
+      pm: 'PM',
 
-    return { status: 'available' };
-  };
+      // Dashboard
+      nextGames: 'Next games',
+      yesterdayResults: "Yesterday's results",
+      latestResults: 'Latest results',
+      noUpcomingGames: 'No upcoming games scheduled',
+      noResultsYesterday: 'No results from yesterday',
+      noLatestResults: 'No results yet',
+      showAll: 'Show all',
+      showLess: 'Show less',
+      bookAPitch: 'Book a pitch',
+      joinTheChampionship: 'Join the championship',
+      registerYourTeam: 'Register your team and compete for glory!',
+      joinNow: 'Join now',
+      professionalFootballFacilities: 'Professional football facilities',
+      stateOfTheArtPitches: 'State-of-the-art pitches for the best experience',
+      learnMore: 'Learn more',
 
-  const getCardClasses = (status: 'available' | 'pending' | 'booked' | 'blocked', isClickable: boolean): string => {
-    const baseClasses = isClickable ? 'cursor-pointer' : 'cursor-default';
-    
-    switch (status) {
-      case 'available':
-        return `${baseClasses} bg-green-100 dark:bg-[#2C3144] ${isClickable ? 'hover:bg-green-200 dark:hover:bg-[#343a52]' : ''} border-2 border-slate-200 dark:border-transparent shadow-sm`;
-      case 'pending':
-        return `${baseClasses} bg-amber-50 dark:bg-amber-600/30 ${isClickable ? 'hover:bg-amber-100 dark:hover:bg-amber-600/40' : ''} border-2 border-amber-200 dark:border-amber-500/40 shadow-md`;
-      case 'booked':
-        return `${baseClasses} bg-red-50 dark:bg-red-600/30 ${isClickable ? 'hover:bg-red-100 dark:hover:bg-red-600/40' : ''} border-2 border-red-200 dark:border-red-500/40 shadow-md`;
-      case 'blocked':
-        return `${baseClasses} bg-slate-100 dark:bg-slate-700/60 ${isClickable ? 'hover:bg-slate-200 dark:hover:bg-slate-700/70' : ''} border-2 border-slate-300 dark:border-transparent shadow-sm`;
-      default:
-        return `${baseClasses} bg-green-100 dark:bg-[#2C3144] ${isClickable ? 'hover:bg-green-200 dark:hover:bg-[#343a52]' : ''} border-2 border-slate-200 dark:border-transparent shadow-sm`;
-    }
-  };
+      // Championships & Subgroups
+      championshipsDesc: 'View standings and match schedules',
+      standings: 'Standings',
+      allGroups: 'All groups (merged)',
+      mondayGroup: 'Monday group',
+      tuesdayGroup: 'Tuesday group',
+      wednesdayGroup: 'Wednesday group',
+      thursdayGroup: 'Thursday group',
+      mergedStandings: 'Combined standings',
+      noTeamsInSubgroup: 'No teams in this subgroup yet',
+      noTeamsInChampionship: 'No teams in this championship yet',
 
-  const handleSlotClick = (pitch: PitchType, time: string) => {
-    const today = startOfDay(new Date());
-    const selectedDate = startOfDay(parseISO(dateString + 'T00:00:00'));
+      // Table Headers & Legend
+      pld: 'Pld',
+      played: 'Played',
+      w: 'W',
+      won: 'Won',
+      d: 'D',
+      draw: 'Draw',
+      l: 'L',
+      lost: 'Lost',
+      gf: 'GF',
+      goalsFor: 'Goals for',
+      ga: 'GA',
+      goalsAgainst: 'Goals against',
+      gd: 'GD',
+      goalDifference: 'Goal difference',
+      pts: 'Pts',
+      points: 'Points',
+      legend: 'Legend',
+      top3: 'Top 3',
+      highlightedInGreen: 'highlighted in green',
+      eliminated: 'Eliminated',
+      highlightedInRed: 'teams shown in red',
 
-    // ✅ FIX: Get status FIRST, before checking user
-    const { status, booking } = getSlotStatus(pitch, time);
+      // Team Modal
+      joinChampionship: 'Join championship',
+      joinChampionshipDesc:
+        'Register your team to compete in our championships. An admin will review your request and assign you to the appropriate league.',
+      assignTeam: 'Assign to championship',
+      championship: 'Championship',
+      selectChampionship: 'Select a championship...',
+      subgroup: 'Playing day group',
+      selectSubgroup: 'Select a subgroup...',
+      subgroupExplanation:
+        'Teams in each subgroup will compete against each other during the group stage.',
+      championshipReviewInfo:
+        'Your request will be reviewed by an admin who will assign you to one of our championships: MSL DREAM LEAGUE, MSL A, or MSL B.',
+      enterTeamName: 'Enter your team name',
+      enterPhone: 'Enter your phone number',
+      submitting: 'Submitting...',
+      submitRequest: 'Submit request',
 
-    // ✅ NON-LOGGED USERS: Can see bookings but only interact with available slots
-    if (!user) {
-      if (status === 'available') {
-        // Only prompt login for available slots
-        onLoginRequired();
-      }
-      // For booked/pending/blocked slots, do nothing (just display info)
-      return;
-    }
+      // Knockout Bracket
+      knockoutBracket: 'Knockout bracket',
+      bracketComingSoon: 'Knockout bracket will appear here when finals begin',
 
-    // Only block past dates for regular users
-    if (isBefore(selectedDate, today) && user?.role !== 'admin') {
-      alert(t('pastDateError'));
-      return;
-    }
+      // Phases
+      groupStage: 'Group stage',
+      qualificationRound: 'Qualification round',
+      finals: 'Finals',
+      roundOf16: 'Round of 16',
+      quarterfinals: 'Quarterfinals',
+      semifinals: 'Semifinals',
+      final: 'Final',
 
-    if (user.role === 'admin') {
-      setSelectedSlot({ pitch, date: dateString, time });
-      setSelectedBooking(booking || null);
-      setShowModal(true);
-    } else {
-      if (status === 'available') {
-        setSelectedSlot({ pitch, date: dateString, time });
-        setSelectedBooking(null);
-        setShowModal(true);
-      }
-    }
-  };
+      // Team registration fields
+      teamLevel: 'Team level',
+      selectTeamLevel: 'Select team level...',
+      beginner: 'Beginner',
+      intermediate: 'Intermediate',
+      advanced: 'Advanced',
+      preferredDay: 'Preferred playing day',
+      selectPreferredDay: 'Select preferred day...',
+      monday: 'Monday',
+      tuesday: 'Tuesday',
+      wednesday: 'Wednesday',
+      thursday: 'Thursday',
+      friday: 'Friday',
 
-  const handleBookingSubmit = async (bookingData: any) => {
-    if (!selectedSlot) return;
+      // Teams Management
+      teamsManagement: 'Teams management',
+      teamsManagementDesc: 'Review registrations, manage teams, and organize championships',
+      requested: 'Requested',
+      decline: 'Decline',
+      resetSeason: 'Reset season',
+      edit: 'Edit',
+      moveTo: 'Move to...',
+      moveTeam: 'Move team',
+      deactivate: 'Deactivate',
+      inactiveTeams: 'Inactive teams',
+      noInactiveTeams: 'No inactive teams',
+      declined: 'Declined',
+      inactive: 'Inactive',
+      reactivate: 'Reactivate',
+      confirmReactivate: 'Confirm reactivate',
+    },
+  },
+  gr: {
+    translation: {
+      // Header
+      appName: 'Soccer Star Tavros',
+      login: 'Σύνδεση',
+      logout: 'Αποσύνδεση',
+      register: 'Εγγραφή',
 
-    try {
-      if (bookingData.delete && selectedBooking) {
-        await bookingService.deleteBooking(selectedBooking.id);
+      // Navigation
+      home: 'Αρχική',
+      calendar: 'Ημερολόγιο',
+      championships: 'Πρωταθλήματα',
+      myBookings: 'Οι κρατήσεις μου',
+      bookings: 'Κρατήσεις',
+      pendingRequests: 'Αιτήματα σε εκκρεμότητα',
+      teams: 'Ομάδες',
 
-        if (selectedBooking.userId && user?.role === 'admin') {
-          await notificationService.createNotification(
-            selectedBooking.userId,
-            'cancelled',
-            selectedBooking.id,
-            selectedBooking.pitchType,
-            selectedBooking.date,
-            selectedBooking.startTime,
-            t('bookingCancelled', {
-              pitch: selectedBooking.pitchType,
-              date: selectedBooking.date,
-              time: selectedBooking.startTime,
-            })
-          );
-        }
+      // Calendar
+      today: 'Σήμερα',
+      previous: 'Προηγούμενη',
+      next: 'Επόμενη',
+      pitchA: 'Γήπεδο A',
+      pitchB: 'Γήπεδο B',
+      livePitchAvailability: 'Live Διαθεσιμότητα Γηπέδων',
+      selectDateAndPitch: 'Δες διαθέσιμες ώρες & κάνε κράτηση εύκολα',
 
-        if (selectedBooking.homeTeam && selectedBooking.awayTeam) {
-          if (selectedBooking.homeTeamUserId) {
-            await notificationService.createNotification(
-              selectedBooking.homeTeamUserId,
-              'cancelled',
-              selectedBooking.id,
-              selectedBooking.pitchType,
-              selectedBooking.date,
-              selectedBooking.startTime,
-              `Match cancelled: ${selectedBooking.homeTeam} vs ${selectedBooking.awayTeam}`
-            );
-          }
-          if (selectedBooking.awayTeamUserId) {
-            await notificationService.createNotification(
-              selectedBooking.awayTeamUserId,
-              'cancelled',
-              selectedBooking.id,
-              selectedBooking.pitchType,
-              selectedBooking.date,
-              selectedBooking.startTime,
-              `Match cancelled: ${selectedBooking.homeTeam} vs ${selectedBooking.awayTeam}`
-            );
-          }
-        }
-      } else if (selectedBooking) {
-        await bookingService.updateBooking(selectedBooking.id, bookingData);
-      } else {
-        const bookingId = await bookingService.createBooking({
-          ...bookingData,
-          pitchType: selectedSlot.pitch,
-          date: selectedSlot.date,
-          startTime: selectedSlot.time,
-        });
+      // Booking Status
+      available: 'Διαθέσιμο',
+      pending: 'Σε αναμονή',
+      booked: 'Κρατημένο',
+      blocked: 'Μπλοκαρισμένο',
 
-        if (bookingData.homeTeam && bookingData.awayTeam) {
-          if (bookingData.homeTeamUserId) {
-            await notificationService.createMatchNotification(
-              bookingData.homeTeamUserId,
-              bookingId,
-              selectedSlot.pitch,
-              selectedSlot.date,
-              selectedSlot.time,
-              bookingData.homeTeam,
-              bookingData.awayTeam,
-              true
-            );
-          }
-          if (bookingData.awayTeamUserId) {
-            await notificationService.createMatchNotification(
-              bookingData.awayTeamUserId,
-              bookingId,
-              selectedSlot.pitch,
-              selectedSlot.date,
-              selectedSlot.time,
-              bookingData.homeTeam,
-              bookingData.awayTeam,
-              false
-            );
-          }
-        } else if (bookingData.userId && bookingData.userId !== user?.id) {
-          await notificationService.createNotification(
-            bookingData.userId,
-            'approved',
-            bookingId,
-            selectedSlot.pitch,
-            selectedSlot.date,
-            selectedSlot.time,
-            `Booking confirmed for ${bookingData.teamName || 'your team'} on ${selectedSlot.date} at ${selectedSlot.time}`
-          );
-        }
-      }
+      // Booking Modal
+      bookSlot: 'Κράτηση ώρας',
+      createBooking: 'Δημιουργία κράτησης',
+      editBooking: 'Επεξεργασία κράτησης',
+      blockSlot: 'Μπλοκάρισμα ώρας',
+      selectDuration: 'Επιλογή διάρκειας',
+      hours: 'ώρες',
+      hour: 'ώρα',
+      phoneNumber: 'Τηλέφωνο',
+      teamName: 'Όνομα ομάδας',
+      notes: 'Σημειώσεις',
+      submit: 'Υποβολή',
+      cancel: 'Ακύρωση',
+      save: 'Αποθήκευση',
+      delete: 'Διαγραφή',
+      approve: 'Έγκριση',
+      reject: 'Απόρριψη',
+      close: 'Κλείσιμο',
 
-      await loadBookings();
-      setShowModal(false);
-      setSelectedSlot(null);
-      setSelectedBooking(null);
-    } catch (error) {
-      console.error('Error submitting booking:', error);
-      throw error;
-    }
-  };
+      // Auth
+      email: 'Email',
+      password: 'Κωδικός',
+      loginTitle: 'Σύνδεση στο λογαριασμό σας',
+      registerTitle: 'Δημιουργία λογαριασμού',
+      noAccount: 'Δεν έχετε λογαριασμό;',
+      hasAccount: 'Έχετε ήδη λογαριασμό;',
+      signUp: 'Εγγραφή',
+      signIn: 'Σύνδεση',
+      loginRequired: 'Παρακαλώ συνδεθείτε για να κάνετε κράτηση',
 
-  const goToPrevious = () => setCurrentDate(subDays(currentDate, 1));
-  const goToNext = () => setCurrentDate(addDays(currentDate, 1));
+      // Auth error/help texts
+      auth_email_in_use: 'Το email χρησιμοποιείται ήδη. Δοκιμάστε σύνδεση ή επαναφορά κωδικού.',
+      auth_invalid_email: 'Μη έγκυρο email.',
+      auth_weak_password:
+        'Ο κωδικός πρέπει να έχει τουλάχιστον 6 χαρακτήρες, 1 κεφαλαίο, 1 πεζό γράμμα και 1 αριθμό.',
+      send_reset_link: 'Αποστολή συνδέσμου επαναφοράς',
+      reset_sent: 'Στάλθηκε email για επαναφορά κωδικού.',
 
-  // Visibility helpers
-  const canSeePrivateDetails = (booking: Booking, viewer: User | null) => {
-    const isFriendlyNoTeam = !booking.homeTeam && !booking.awayTeam && !booking.teamName;
-    if (!isFriendlyNoTeam) return true;
-    if (!viewer) return false;
-    if (viewer.role === 'admin') return true;
-    return booking.userId === viewer.id;
-  };
+      // My Bookings
+      upcomingBookings: 'Επερχόμενες κρατήσεις',
+      pastBookings: 'Προηγούμενες κρατήσεις',
+      noBookings: 'Δεν βρέθηκαν κρατήσεις',
 
-  const maskEmail = (email: string) => {
-    if (!email) return '';
-    const [local, domain = ''] = email.split('@');
-    const domainFirst = domain[0] || '';
-    return `${local}@${domainFirst}…`;
-  };
+      // Notifications
+      notifications: 'Ειδοποιήσεις',
+      markAllRead: 'Σήμανση όλων ως αναγνωσμένα',
+      noNotifications: 'Δεν υπάρχουν ειδοποιήσεις',
+      bookingApproved:
+        'Η κράτησή σας για το {{pitch}} στις {{date}} στις {{time}} εγκρίθηκε.',
+      bookingRejected:
+        'Η κράτησή σας για το {{pitch}} στις {{date}} στις {{time}} απορρίφθηκε.',
+      bookingCancelled:
+        'Η κράτησή σας για το {{pitch}} στις {{date}} στις {{time}} ακυρώθηκε από τον διαχειριστή.',
+      bookingApprovedMessage:
+        'Η κράτησή σας εγκρίθηκε! Ελέγξτε την ημερομηνία και την ώρα, και μην αργήσετε.',
+      matchScheduledMessage:
+        'Έχετε νέα κράτηση για το πρωτάθλημα. Ελέγξτε την ημερομηνία και την ώρα, και μην αργήσετε!',
 
-  const canSeeContactInfo = (booking: Booking, viewer: User | null) => {
-    if (!viewer) return false;
-    if (viewer.role === 'admin') return true;
-    if (booking.userId && booking.userId === viewer.id) return true;
-    if (booking.teamName && viewer.teamName && booking.teamName === viewer.teamName) return true;
-    return false;
-  };
+      // Admin
+      adminPanel: 'Πίνακας διαχειριστή',
+      userEmail: 'Email χρήστη',
+      status: 'Κατάσταση',
+      actions: 'Ενέργειες',
+      noPendingRequests: 'Δεν υπάρχουν αιτήματα σε εκκρεμότητα',
+      allRequestsProcessed: 'Όλα τα αιτήματα κράτησης έχουν διεκπεραιωθεί',
+      processing: 'Επεξεργασία...',
+      confirmReject: 'Είστε σίγουροι ότι θέλετε να απορρίψετε αυτή την κράτηση;',
+      loading: 'Φόρτωση...',
 
-  return (
-    <div className="space-y-6">
-      <div className="text-center">
-        <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white">{t('livePitchAvailability')}</h1>
-        <p className="mt-2 text-base text-gray-700 dark:text-gray-300">{t('selectDateAndPitch')}</p>
-      </div>
+      // Footer
+      contact: 'Επικοινωνία',
+      location: 'Τοποθεσία',
+      followUs: 'Ακολουθήστε μας',
 
-      <div className="flex flex-wrap justify-center items-center gap-5 mt-1 text-sm">
-        <LegendDot label={t('available')} colorClass="bg-green-400 dark:bg-[#3a4057]" />
-        <LegendDot label={t('pending')} colorClass="bg-amber-500" />
-        <LegendDot label={t('booked')} colorClass="bg-red-600" />
-        <LegendDot label={t('blocked')} colorClass="bg-slate-600" />
-      </div>
+      // Messages
+      bookingSuccess: 'Το αίτημα κράτησης υποβλήθηκε επιτυχώς!',
+      bookingError: 'Αποτυχία δημιουργίας κράτησης. Παρακαλώ δοκιμάστε ξανά.',
+      loginSuccess: 'Επιτυχής σύνδεση!',
+      loginError: 'Αποτυχία σύνδεσης. Ελέγξτε τα στοιχεία σας.',
+      registerSuccess: 'Ο λογαριασμός δημιουργήθηκε επιτυχώς!',
+      registerError: 'Αποτυχία δημιουργίας λογαριασμού. Παρακαλώ δοκιμάστε ξανά.',
+      conflictError: 'Αυτή η ώρα συγκρούεται με μια υπάρχουσα κράτηση.',
+      selectSlot: 'Παρακαλώ επιλέξτε μια διαθέσιμη ώρα για κράτηση.',
+      pastDateError: 'Δεν μπορείτε να κάνετε κράτηση σε παρελθοντικές ώρες.',
 
-      <div className="bg-slate-50 dark:bg-dark-lighter border border-slate-200 dark:border-transparent rounded-xl px-4 py-3 shadow-sm dark:shadow-none">
-        <div className="sm:hidden">
-          <div className="grid grid-cols-[auto,1fr,auto] items-center">
-            <button
-              onClick={goToPrevious}
-              className="h-9 w-9 flex items-center justify-center rounded-lg bg-slate-100 dark:bg-dark text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white justify-self-start"
-              aria-label="Previous day"
-            >
-              <ChevronLeft size={18} />
-            </button>
+      // Time
+      am: 'ΠΜ',
+      pm: 'ΜΜ',
 
-            <div className="text-center">
-              <div className="text-xl font-semibold text-gray-900 dark:text-white">
-                {formatWithLocale(currentDate, 'EEEE, MMM d')}
-              </div>
-            </div>
+      // Dashboard
+      nextGames: 'Επόμενοι αγώνες',
+      yesterdayResults: 'Χθεσινά αποτελέσματα',
+      latestResults: 'Τελευταία αποτελέσματα',
+      noUpcomingGames: 'Δεν υπάρχουν προγραμματισμένα παιχνίδια',
+      noResultsYesterday: 'Δεν υπάρχουν χθεσινά αποτελέσματα',
+      noLatestResults: 'Δεν υπάρχουν αποτελέσματα ακόμα',
+      showAll: 'Δείτε όλα',
+      showLess: 'Δείτε λιγότερα',
+      bookAPitch: 'Κάντε κράτηση γηπέδου',
+      joinTheChampionship: 'Εγγραφείτε στο πρωτάθλημα',
+      registerYourTeam: 'Εγγράψτε την ομάδα σας και διαγωνιστείτε για τη δόξα!',
+      joinNow: 'Εγγραφή τώρα',
+      professionalFootballFacilities: 'Επαγγελματικές εγκαταστάσεις ποδοσφαίρου',
+      stateOfTheArtPitches: 'Γήπεδα τελευταίας τεχνολογίας για την καλύτερη εμπειρία',
+      learnMore: 'Μάθετε περισσότερα',
 
-            <button
-              onClick={goToNext}
-              className="h-9 w-9 flex items-center justify-center rounded-lg bg-slate-100 dark:bg-dark text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white justify-self-end"
-              aria-label="Next day"
-            >
-              <ChevronRight size={18} />
-            </button>
-          </div>
+      // Championships & Subgroups
+      championshipsDesc: 'Δείτε τη βαθμολογία και το πρόγραμμα αγώνων',
+      standings: 'Βαθμολογία',
+      allGroups: 'Όλοι οι όμιλοι (συγχωνευμένοι)',
+      mondayGroup: 'Όμιλος Δευτέρας',
+      tuesdayGroup: 'Όμιλος Τρίτης',
+      wednesdayGroup: 'Όμιλος Τετάρτης',
+      thursdayGroup: 'Όμιλος Πέμπτης',
+      mergedStandings: 'Συνολική βαθμολογία',
+      noTeamsInSubgroup: 'Δεν υπάρχουν ομάδες σε αυτόν τον όμιλο ακόμα',
+      noTeamsInChampionship: 'Δεν υπάρχουν ομάδες σε αυτό το πρωτάθλημα ακόμα',
 
-          <div className="mt-3 grid grid-cols-2 gap-2">
-            <button
-              onClick={() => setActivePitch('Pitch A')}
-              className={`h-9 px-5 w-full rounded-lg text-sm font-medium transition-colors border ${
-                activePitch === 'Pitch A'
-                  ? 'bg-[#6B2FB5] text-white border-transparent'
-                  : 'bg-slate-50 dark:bg-dark text-gray-700 dark:text-gray-200 border-slate-300 dark:border-gray-700 hover:text-gray-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-gray-800'
-              }`}
-            >
-              {t('pitchA')}
-            </button>
-            <button
-              onClick={() => setActivePitch('Pitch B')}
-              className={`h-9 px-5 w-full rounded-lg text-sm font-medium transition-colors border ${
-                activePitch === 'Pitch B'
-                  ? 'bg-[#6B2FB5] text-white border-transparent'
-                  : 'bg-slate-50 dark:bg-dark text-gray-700 dark:text-gray-200 border-slate-300 dark:border-gray-700 hover:text-gray-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-gray-800'
-              }`}
-            >
-              {t('pitchB')}
-            </button>
-          </div>
-        </div>
+      // Table Headers & Legend
+      pld: 'PLD',
+      played: 'Αγώνες',
+      w: 'W',
+      won: 'Νίκες',
+      d: 'D',
+      draw: 'Ισοπαλίες',
+      l: 'L',
+      lost: 'Ήττες',
+      gf: 'GF',
+      goalsFor: 'Γκολ υπέρ',
+      ga: 'GA',
+      goalsAgainst: 'Γκολ κατά',
+      gd: 'GD',
+      goalDifference: 'Διαφορά γκολ',
+      pts: 'PTS',
+      points: 'Βαθμοί',
+      legend: 'Υπόμνημα',
+      top3: 'Top 3',
+      highlightedInGreen: 'επισημαίνονται με πράσινο',
+      eliminated: 'Αποκλεισμένοι',
+      highlightedInRed: 'ομάδες εμφανίζονται με κόκκινο',
 
-        <div className="hidden sm:flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={goToPrevious}
-              className="h-9 w-9 flex items-center justify-center rounded-lg bg-slate-100 dark:bg-dark text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
-              aria-label="Previous day"
-            >
-              <ChevronLeft size={18} />
-            </button>
+      // Team Modal
+      joinChampionship: 'Εγγραφή στο πρωτάθλημα',
+      joinChampionshipDesc:
+        'Εγγράψτε την ομάδα σας για να αγωνιστείτε στα πρωταθλήματά μας. Ένας διαχειριστής θα αναθεωρήσει το αίτημά σας και θα σας αναθέσει στο κατάλληλο πρωτάθλημα.',
+      assignTeam: 'Ανάθεση σε πρωτάθλημα',
+      championship: 'Πρωτάθλημα',
+      selectChampionship: 'Επιλέξτε πρωτάθλημα...',
+      subgroup: 'Όμιλος αγώνων',
+      selectSubgroup: 'Επιλέξτε όμιλο...',
+      subgroupExplanation:
+        'Οι ομάδες κάθε ομίλου θα αγωνιστούν μεταξύ τους κατά τη διάρκεια της φάσης των ομίλων.',
+      championshipReviewInfo:
+        'Το αίτημά σας θα αναθεωρηθεί από έναν διαχειριστή που θα σας αναθέσει σε ένα από τα πρωταθλήματά μας: MSL DREAM LEAGUE, MSL A ή MSL B.',
+      enterTeamName: 'Εισάγετε το όνομα της ομάδας σας',
+      enterPhone: 'Εισάγετε τον αριθμό τηλεφώνου σας',
+      submitting: 'Υποβολή...',
+      submitRequest: 'Υποβολή αιτήματος',
 
-            <div className="leading-tight">
-              <div className="text-xl font-semibold text-gray-900 dark:text-white">
-                {formatWithLocale(currentDate, 'EEEE')}
-              </div>
-              <div className="text-sm text-gray-700 dark:text-gray-300">
-                {formatWithLocale(currentDate, 'MMMM d')}
-              </div>
-            </div>
+      // Knockout Bracket
+      knockoutBracket: 'Πίνακας νοκ-άουτ',
+      bracketComingSoon: 'Ο πίνακας νοκ-άουτ θα εμφανιστεί εδώ όταν ξεκινήσουν οι τελικοί',
 
-            <button
-              onClick={goToNext}
-              className="h-9 w-9 flex items-center justify-center rounded-lg bg-slate-100 dark:bg-dark text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
-              aria-label="Next day"
-            >
-              <ChevronRight size={18} />
-            </button>
-          </div>
+      // Phases
+      groupStage: 'Φάση ομίλων',
+      qualificationRound: 'Γύρος προκριματικών',
+      finals: 'Τελικοί',
+      roundOf16: 'Φάση των 16',
+      quarterfinals: 'Προημιτελικά',
+      semifinals: 'Ημιτελικοί',
+      final: 'Τελικός',
 
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setActivePitch('Pitch A')}
-              className={`h-9 px-5 rounded-lg text-sm font-medium transition-colors border ${
-                activePitch === 'Pitch A'
-                  ? 'bg-[#6B2FB5] text-white border-transparent'
-                  : 'bg-slate-50 dark:bg-dark text-gray-700 dark:text-gray-200 border-slate-300 dark:border-gray-700 hover:text-gray-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-gray-800'
-              }`}
-            >
-              {t('pitchA')}
-            </button>
-            <button
-              onClick={() => setActivePitch('Pitch B')}
-              className={`h-9 px-5 rounded-lg text-sm font-medium transition-colors border ${
-                activePitch === 'Pitch B'
-                  ? 'bg-[#6B2FB5] text-white border-transparent'
-                  : 'bg-slate-50 dark:bg-dark text-gray-700 dark:text-gray-200 border-slate-300 dark:border-gray-700 hover:text-gray-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-gray-800'
-              }`}
-            >
-              {t('pitchB')}
-            </button>
-          </div>
-        </div>
-      </div>
+      // Team registration fields
+      teamLevel: 'Επίπεδο ομάδας',
+      selectTeamLevel: 'Επιλέξτε επίπεδο ομάδας...',
+      beginner: 'Αρχάριος',
+      intermediate: 'Μεσαίο',
+      advanced: 'Προχωρημένο',
+      preferredDay: 'Προτιμώμενη ημέρα αγώνων',
+      selectPreferredDay: 'Επιλέξτε προτιμώμενη ημέρα...',
+      monday: 'Δευτέρα',
+      tuesday: 'Τρίτη',
+      wednesday: 'Τετάρτη',
+      thursday: 'Πέμπτη',
+      friday: 'Παρασκευή',
 
-      {loading ? (
-        <div className="text-center py-12 text-gray-600 dark:text-gray-400">Loading...</div>
-      ) : (
-        <>
-          <div className="grid grid-cols-2 md:grid-cols-2 xl:grid-cols-4 gap-4">
-            {timeSlots.map((slot) => {
-              const { status, booking } = getSlotStatus(activePitch, slot.time);
-
-              // ✅ Determine if slot is clickable
-              const isClickable = user ? (user.role === 'admin' || status === 'available') : status === 'available';
-
-              let primaryLabel = '';
-              let secondaryLabel = '';
-
-              if (booking) {
-                if (booking.homeTeam && booking.awayTeam) {
-                  // ✅ Everyone sees match team names
-                  primaryLabel = `${booking.homeTeam} vs ${booking.awayTeam}`;
-                  secondaryLabel = '';
-                } else if (booking.teamName && booking.teamName.trim()) {
-                  // ✅ Everyone sees team name
-                  primaryLabel = booking.teamName;
-                  // ✅ Only authorized users see contact info
-                  if (canSeeContactInfo(booking, user)) {
-                    secondaryLabel = booking.phoneNumber || (booking.userEmail ? maskEmail(booking.userEmail) : '');
-                  } else {
-                    secondaryLabel = '';
-                  }
-                } else {
-                  // ✅ Guest booking - only owner/admin sees details
-                  if (canSeePrivateDetails(booking, user)) {
-                    primaryLabel = booking.userEmail ? maskEmail(booking.userEmail) : (booking.phoneNumber || '');
-                    secondaryLabel = booking.phoneNumber && booking.userEmail ? booking.phoneNumber : '';
-                  } else {
-                    primaryLabel = '';
-                    secondaryLabel = '';
-                  }
-                }
-              }
-
-              const statusBadgeColor =
-                status === 'booked' ? 'bg-red-600' :
-                status === 'pending' ? 'bg-amber-500' :
-                status === 'blocked' ? 'bg-slate-600' :
-                'bg-gray-400 dark:bg-[#3a4057]';
-
-              const showPrimary = status !== 'available' && !!primaryLabel;
-              const showSecondary = status !== 'available' && !!secondaryLabel;
-
-              return (
-                <button
-                  key={`${activePitch}-${slot.time}`}
-                  onClick={() => handleSlotClick(activePitch, slot.time)}
-                  className={`relative text-left rounded-xl p-3 transition-colors ${getCardClasses(status, isClickable)} h-24`}
-                  title={`${activePitch} - ${slot.display} - ${t(status)}`}
-                  disabled={!isClickable}
-                >
-                  <span
-                    className={`absolute right-2 top-2 inline-block w-2.5 h-2.5 rounded-full ${statusBadgeColor}`}
-                    aria-label={t(status)}
-                    title={t(status)}
-                  />
-
-                  <div className="h-full grid grid-rows-[auto,auto,auto] gap-1.5">
-                    <div className="text-sm font-semibold text-gray-900 dark:text-white truncate leading-5" title={slot.display}>
-                      {slot.display}
-                    </div>
-
-                    <div
-                      className="text-sm text-gray-800 dark:text-white whitespace-nowrap overflow-hidden text-ellipsis leading-5"
-                      title={showPrimary ? primaryLabel : ''}
-                    >
-                      {showPrimary ? primaryLabel : '\u00A0'}
-                    </div>
-
-                    <div
-                      className="text-xs text-gray-600 dark:text-gray-300 whitespace-nowrap overflow-hidden text-ellipsis leading-5"
-                      title={showSecondary ? secondaryLabel : ''}
-                    >
-                      {showSecondary ? secondaryLabel : '\u00A0'}
-                    </div>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </>
-      )}
-
-      {showModal && user && selectedSlot && (
-        <BookingModal
-          isOpen={showModal}
-          onClose={() => {
-            setShowModal(false);
-            setSelectedSlot(null);
-            setSelectedBooking(null);
-          }}
-          onSubmit={handleBookingSubmit}
-          selectedSlot={selectedSlot}
-          existingBooking={selectedBooking}
-          user={user}
-          existingBookings={bookings}
-        />
-      )}
-    </div>
-  );
+      // Teams Management
+      teamsManagement: 'Διαχείριση ομάδων',
+      teamsManagementDesc: 'Έλεγχος εγγραφών, διαχείριση ομάδων και οργάνωση πρωταθλημάτων',
+      requested: 'Αίτημα',
+      decline: 'Απόρριψη',
+      resetSeason: 'Επαναφορά σεζόν',
+      edit: 'Επεξεργασία',
+      moveTo: 'Μετακίνηση σε...',
+      moveTeam: 'Μετακίνηση ομάδας',
+      deactivate: 'Απενεργοποίηση',
+      inactiveTeams: 'Ανενεργές ομάδες',
+      noInactiveTeams: 'Δεν υπάρχουν ανενεργές ομάδες',
+      declined: 'Απορριφθείσα',
+      inactive: 'Ανενεργή',
+      reactivate: 'Επανενεργοποίηση',
+      confirmReactivate: 'Επιβεβαίωση επανενεργοποίησης',
+    },
+  },
 };
 
-const LegendDot: React.FC<{ label: string; colorClass: string }> = ({ label, colorClass }) => (
-  <div className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200">
-    <span className={`inline-block w-3 h-3 rounded-full ${colorClass}`} />
-    <span>{label}</span>
-  </div>
-);
+// Read saved language if present; otherwise default to Greek ('gr')
+const getInitialLang = (): 'gr' | 'en' => {
+  try {
+    const saved = typeof window !== 'undefined' ? localStorage.getItem('i18nextLng') : null;
+    if (saved === 'gr' || saved === 'en') return saved;
+  } catch {}
+  return 'gr';
+};
 
-export default Calendar;
+i18n.use(initReactI18next).init({
+  resources,
+  lng: getInitialLang(),
+  fallbackLng: 'gr',
+  interpolation: { escapeValue: false },
+});
+
+export default i18n;
