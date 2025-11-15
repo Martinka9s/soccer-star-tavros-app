@@ -37,7 +37,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
   const [status, setStatus] = useState<'pending' | 'booked' | 'blocked'>('pending');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  
+
   const [editableDate, setEditableDate] = useState('');
   const [editableTime, setEditableTime] = useState('');
 
@@ -46,6 +46,11 @@ const BookingModal: React.FC<BookingModalProps> = ({
   const [homeTeam, setHomeTeam] = useState('');
   const [awayTeam, setAwayTeam] = useState('');
   const [selectedTeam, setSelectedTeam] = useState('');
+
+  // NEW: match result state
+  const [homeTeamScore, setHomeTeamScore] = useState<string>('');
+  const [awayTeamScore, setAwayTeamScore] = useState<string>('');
+  const [matchCompleted, setMatchCompleted] = useState<boolean>(false);
 
   const isAdmin = user.role === 'admin';
   const isEditMode = !!existingBooking;
@@ -71,7 +76,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
       setEditableDate(selectedSlot.date);
       setEditableTime(selectedSlot.time);
     }
-    
+
     if (existingBooking) {
       setDuration(existingBooking.duration);
       setPhoneNumber(existingBooking.phoneNumber || '');
@@ -91,10 +96,24 @@ const BookingModal: React.FC<BookingModalProps> = ({
       } else {
         setBookingMode('guest');
       }
+
+      // NEW: preload scores
+      if (typeof existingBooking.homeTeamScore === 'number') {
+        setHomeTeamScore(String(existingBooking.homeTeamScore));
+      } else {
+        setHomeTeamScore('');
+      }
+
+      if (typeof existingBooking.awayTeamScore === 'number') {
+        setAwayTeamScore(String(existingBooking.awayTeamScore));
+      } else {
+        setAwayTeamScore('');
+      }
+
+      setMatchCompleted(!!existingBooking.matchCompleted);
     } else {
       setDuration(1);
       setPhoneNumber(user.phoneNumber || '');
-      // ✅ PRE-SELECT USER'S TEAM NAME
       setTeamName(user.teamName || '');
       setNotes('');
       setStatus('pending');
@@ -102,6 +121,9 @@ const BookingModal: React.FC<BookingModalProps> = ({
       setHomeTeam('');
       setAwayTeam('');
       setSelectedTeam('');
+      setHomeTeamScore('');
+      setAwayTeamScore('');
+      setMatchCompleted(false);
     }
     setError('');
   }, [existingBooking, user, isOpen, availableTeams, selectedSlot]);
@@ -183,6 +205,33 @@ const BookingModal: React.FC<BookingModalProps> = ({
       return;
     }
 
+    // NEW: Validate scores if present / completed
+    let parsedHomeScore: number | undefined;
+    let parsedAwayScore: number | undefined;
+
+    if (homeTeamScore.trim() !== '') {
+      const n = Number(homeTeamScore);
+      if (Number.isNaN(n) || n < 0) {
+        setError('Scores must be zero or positive numbers');
+        return;
+      }
+      parsedHomeScore = n;
+    }
+
+    if (awayTeamScore.trim() !== '') {
+      const n = Number(awayTeamScore);
+      if (Number.isNaN(n) || n < 0) {
+        setError('Scores must be zero or positive numbers');
+        return;
+      }
+      parsedAwayScore = n;
+    }
+
+    if (matchCompleted && (parsedHomeScore == null || parsedAwayScore == null)) {
+      setError('Please enter both scores to mark the match as completed');
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -198,13 +247,12 @@ const BookingModal: React.FC<BookingModalProps> = ({
       if (isAdmin && bookingMode === 'match') {
         bookingData.homeTeam = homeTeam;
         bookingData.awayTeam = awayTeam;
-        
+
         const homeTeamUser = availableTeams.find(t => t.teamName === homeTeam);
         const awayTeamUser = availableTeams.find(t => t.teamName === awayTeam);
-        
+
         if (homeTeamUser) bookingData.homeTeamUserId = homeTeamUser.userId;
         if (awayTeamUser) bookingData.awayTeamUserId = awayTeamUser.userId;
-        
       } else if (isAdmin && bookingMode === 'single-team') {
         const teamUser = availableTeams.find(t => t.teamName === selectedTeam);
         if (teamUser) {
@@ -219,6 +267,21 @@ const BookingModal: React.FC<BookingModalProps> = ({
         bookingData.teamName = teamName.trim();
       }
 
+      // NEW: Attach scores only for match bookings / existing matches
+      const isMatchBooking =
+        bookingMode === 'match' ||
+        (!!existingBooking && existingBooking.homeTeam && existingBooking.awayTeam);
+
+      if (isMatchBooking) {
+        if (parsedHomeScore !== undefined) {
+          bookingData.homeTeamScore = parsedHomeScore;
+        }
+        if (parsedAwayScore !== undefined) {
+          bookingData.awayTeamScore = parsedAwayScore;
+        }
+        bookingData.matchCompleted = matchCompleted;
+      }
+
       await onSubmit(bookingData);
       onClose();
     } catch (err: any) {
@@ -230,7 +293,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
 
   const handleDelete = async () => {
     if (!window.confirm('Are you sure you want to delete this booking?')) return;
-    
+
     setLoading(true);
     try {
       await onSubmit({ delete: true });
@@ -241,6 +304,12 @@ const BookingModal: React.FC<BookingModalProps> = ({
       setLoading(false);
     }
   };
+
+  // Show match result section?
+  const showMatchResultSection =
+    isAdmin &&
+    (bookingMode === 'match' ||
+      (isEditMode && existingBooking?.homeTeam && existingBooking?.awayTeam));
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
@@ -275,7 +344,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
               <span className="text-gray-700 dark:text-gray-400">Pitch:</span>
               <span className="ml-2 text-gray-900 dark:text-white">{selectedSlot.pitch}</span>
             </div>
-            
+
             <div>
               <span className="text-gray-700 dark:text-gray-400">Date:</span>
               {isAdmin && isEditMode ? (
@@ -289,7 +358,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
                 <span className="ml-2 text-gray-900 dark:text-white">{editableDate}</span>
               )}
             </div>
-            
+
             <div className="col-span-2">
               <span className="text-gray-700 dark:text-gray-400">Time:</span>
               {isAdmin && isEditMode ? (
@@ -458,10 +527,58 @@ const BookingModal: React.FC<BookingModalProps> = ({
                       value={teamName}
                       onChange={(e) => setTeamName(e.target.value)}
                       className="w-full px-4 py-2 bg-white dark:bg-dark border border-slate-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-[#6B2FB5] dark:focus:border-primary"
-                      placeholder={user.teamName ? "Edit team name or leave as is" : "Team name (optional)"}
+                      placeholder={user.teamName ? 'Edit team name or leave as is' : 'Team name (optional)'}
                     />
                   </div>
                 </>
+              )}
+
+              {/* NEW: Match result section for admin */}
+              {showMatchResultSection && (
+                <div className="border border-slate-300 dark:border-gray-700 rounded-lg p-3 space-y-3">
+                  <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
+                    {t('matchResult', { defaultValue: 'Match result (optional)' })}
+                  </p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        {t('homeScore', { defaultValue: 'Home score' })}
+                      </label>
+                      <input
+                        type="number"
+                        min={0}
+                        value={homeTeamScore}
+                        onChange={(e) => setHomeTeamScore(e.target.value)}
+                        className="w-full px-3 py-2 bg-white dark:bg-dark border border-slate-300 dark:border-gray-600 rounded text-gray-900 dark:text-white text-sm focus:outline-none focus:border-[#6B2FB5] dark:focus:border-primary"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        {t('awayScore', { defaultValue: 'Away score' })}
+                      </label>
+                      <input
+                        type="number"
+                        min={0}
+                        value={awayTeamScore}
+                        onChange={(e) => setAwayTeamScore(e.target.value)}
+                        className="w-full px-3 py-2 bg-white dark:bg-dark border border-slate-300 dark:border-gray-600 rounded text-gray-900 dark:text-white text-sm focus:outline-none focus:border-[#6B2FB5] dark:focus:border-primary"
+                      />
+                    </div>
+                  </div>
+                  <label className="flex items-center space-x-2 text-xs text-gray-700 dark:text-gray-300 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={matchCompleted}
+                      onChange={() => setMatchCompleted((prev) => !prev)}
+                      className="text-[#6B2FB5] dark:text-primary focus:ring-[#6B2FB5] dark:focus:ring-primary"
+                    />
+                    <span>
+                      {t('matchCompletedLabel', {
+                        defaultValue: 'Mark match as completed (result final)',
+                      })}
+                    </span>
+                  </label>
+                </div>
               )}
 
               <div>
