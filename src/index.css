@@ -104,6 +104,20 @@ body {
   transition-timing-function: ease;
 }
 
+/* Remove arrows (spinner) from ALL number inputs */
+
+/* Chrome, Safari, Edge */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Firefox */
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
 /* Don't transition transforms and opacity */
 *:not(input):not(textarea):not(select) {
   transition-property: background-color, border-color, color;
