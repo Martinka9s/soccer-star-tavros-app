@@ -135,6 +135,7 @@ const resources = {
       professionalFootballFacilities: 'Professional football facilities',
       stateOfTheArtPitches: 'State-of-the-art pitches for the best experience',
       learnMore: 'Learn more',
+      
 
       // NEW: Championships & Subgroups
       championshipsDesc: 'View standings and match schedules',
@@ -237,6 +238,9 @@ const resources = {
       next: 'Επόμενη',
       pitchA: 'Γήπεδο A',
       pitchB: 'Γήπεδο B',
+      livePitchAvailability: 'Live Διαθεσιμότητα Γηπέδων',
+      selectDateAndPitch: 'Έλεξε διαθέσιμες ώρες & κάνε εύκολα κράτηση'
+
 
       // Τίτλος & Υπότιτλος
       livePitchAvailability: 'Live διαθεσιμότητα γηπέδων',
@@ -333,7 +337,8 @@ const resources = {
 
       // Dashboard
       nextGames: 'Επόμενα παιχνίδια',
-      yesterdayResults: 'Χθεσινά αποτελέσματα',
+      latestResults: 'Τελευταία αποτελέσματα',
+      nextGames: 'Επόμενοι αγώνες',
       noUpcomingGames: 'Δεν υπάρχουν προγραμματισμένα παιχνίδια',
       noResultsYesterday: 'Δεν υπάρχουν χθεσινά αποτελέσματα',
       showAll: 'Δείτε όλα',
@@ -422,6 +427,7 @@ const resources = {
       wednesday: 'Τετάρτη',
       thursday: 'Πέμπτη',
       friday: 'Παρασκευή',
+  
     }
   }
 };
