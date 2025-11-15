@@ -5,7 +5,7 @@ import { authService } from '../services/firebaseService';
 
 // 👑 Put your admin login email here (the one you use to log into the app)
 const ADMIN_EMAILS = [
-  'YOUR_ADMIN_EMAIL_HERE@example.com', // <-- CHANGE THIS to your real email
+  'soccerstartavros@gmail.com',
 ];
 
 export const useAuth = () => {
