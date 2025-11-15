@@ -30,7 +30,6 @@ const BookingModal: React.FC<BookingModalProps> = ({
   existingBookings,
 }) => {
   const { t } = useTranslation();
-
   const [duration, setDuration] = useState(1);
   const [phoneNumber, setPhoneNumber] = useState('');
   const [teamName, setTeamName] = useState('');
@@ -50,7 +49,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
   const [awayTeam, setAwayTeam] = useState('');
   const [selectedTeam, setSelectedTeam] = useState('');
 
-  // Match result state
+  // NEW: match result state
   const [homeTeamScore, setHomeTeamScore] = useState<string>('');
   const [awayTeamScore, setAwayTeamScore] = useState<string>('');
   const [matchCompleted, setMatchCompleted] = useState<boolean>(false);
@@ -59,26 +58,28 @@ const BookingModal: React.FC<BookingModalProps> = ({
   const isEditMode = !!existingBooking;
   const isBlocked = existingBooking?.status === 'blocked';
 
-  // Load teams once modal opens for admin
   useEffect(() => {
-    const loadTeams = async () => {
-      if (!isAdmin || !isOpen) return;
-      try {
-        const teams = await userService.getAllTeams();
-        setAvailableTeams(teams);
-      } catch (error) {
-        console.error('Error loading teams:', error);
-      }
-    };
-    void loadTeams();
+    if (isAdmin && isOpen) {
+      void loadTeams();
+    }
   }, [isAdmin, isOpen]);
 
-  // Reset fields when modal opens / booking changes
+  const loadTeams = async () => {
+    try {
+      const teams = await userService.getAllTeams();
+      setAvailableTeams(teams);
+    } catch (error) {
+      console.error('Error loading teams:', error);
+    }
+  };
+
   useEffect(() => {
-    if (!isOpen || !selectedSlot) return;
+    if (selectedSlot) {
+      setEditableDate(selectedSlot.date);
+      setEditableTime(selectedSlot.time);
+    }
 
     if (existingBooking) {
-      // EDIT MODE
       setDuration(existingBooking.duration);
       setPhoneNumber(existingBooking.phoneNumber || '');
       setTeamName(existingBooking.teamName || '');
@@ -91,43 +92,36 @@ const BookingModal: React.FC<BookingModalProps> = ({
         setBookingMode('match');
         setHomeTeam(existingBooking.homeTeam);
         setAwayTeam(existingBooking.awayTeam);
-        setSelectedTeam('');
       } else if (
         existingBooking.teamName &&
         availableTeams.some((t) => t.teamName === existingBooking.teamName)
       ) {
         setBookingMode('single-team');
         setSelectedTeam(existingBooking.teamName);
-        setHomeTeam('');
-        setAwayTeam('');
       } else {
         setBookingMode('guest');
-        setHomeTeam('');
-        setAwayTeam('');
-        setSelectedTeam('');
       }
 
+      // NEW: preload scores
       if (typeof existingBooking.homeTeamScore === 'number') {
         setHomeTeamScore(String(existingBooking.homeTeamScore));
       } else {
         setHomeTeamScore('');
       }
+
       if (typeof existingBooking.awayTeamScore === 'number') {
         setAwayTeamScore(String(existingBooking.awayTeamScore));
       } else {
         setAwayTeamScore('');
       }
+
       setMatchCompleted(!!existingBooking.matchCompleted);
     } else {
-      // CREATE MODE
       setDuration(1);
       setPhoneNumber(user.phoneNumber || '');
       setTeamName(user.teamName || '');
       setNotes('');
       setStatus('pending');
-      setEditableDate(selectedSlot.date);
-      setEditableTime(selectedSlot.time);
-
       setBookingMode('guest');
       setHomeTeam('');
       setAwayTeam('');
@@ -136,9 +130,9 @@ const BookingModal: React.FC<BookingModalProps> = ({
       setAwayTeamScore('');
       setMatchCompleted(false);
     }
-
     setError('');
-  }, [existingBooking, isOpen, selectedSlot, user, availableTeams, isAdmin]);
+    // IMPORTANT: do NOT include availableTeams here, to avoid resetting mode when they load
+  }, [existingBooking, user, isOpen, selectedSlot]);
 
   if (!isOpen || !selectedSlot) return null;
 
@@ -176,11 +170,13 @@ const BookingModal: React.FC<BookingModalProps> = ({
 
   const availableDurations = getAvailableDurations();
 
-  useEffect(() => {
-    if (!isEditMode && availableDurations.length > 0 && !availableDurations.includes(duration)) {
-      setDuration(availableDurations[0]);
-    }
-  }, [availableDurations, duration, isEditMode]);
+  useEffect(() => (
+    // If new durations come in and current duration is not allowed, snap to first option
+    !isEditMode &&
+    availableDurations.length > 0 &&
+    !availableDurations.includes(duration) &&
+    setDuration(availableDurations[0])
+  ), [availableDurations, duration, isEditMode]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -217,7 +213,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
       return;
     }
 
-    // Validate scores
+    // NEW: Validate scores if present / completed
     let parsedHomeScore: number | undefined;
     let parsedAwayScore: number | undefined;
 
@@ -279,6 +275,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
         bookingData.teamName = teamName.trim();
       }
 
+      // NEW: Attach scores only for match bookings / existing matches
       const isMatchBooking =
         bookingMode === 'match' ||
         (!!existingBooking && existingBooking.homeTeam && existingBooking.awayTeam);
@@ -316,6 +313,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
     }
   };
 
+  // Show match result section?
   const showMatchResultSection =
     isAdmin &&
     (bookingMode === 'match' ||
@@ -349,7 +347,6 @@ const BookingModal: React.FC<BookingModalProps> = ({
             </div>
           )}
 
-          {/* Pitch / Date / Time */}
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
               <span className="text-gray-700 dark:text-gray-400">Pitch:</span>
@@ -385,8 +382,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
             </div>
           </div>
 
-          {/* Booking type for admin */}
-          {isAdmin && !isBlocked && (
+          {isAdmin && !isBlocked && !isEditMode && (
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Booking Type
@@ -428,7 +424,29 @@ const BookingModal: React.FC<BookingModalProps> = ({
 
           {!isBlocked && (
             <>
-              {/* Admin-specific fields depending on mode */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  {t('selectDuration')}
+                </label>
+                <select
+                  value={duration}
+                  onChange={(e) => setDuration(Number(e.target.value))}
+                  className="w-full px-4 py-2 bg-white dark:bg-dark border border-slate-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-[#6B2FB5] dark:focus:border-primary"
+                  disabled={isEditMode && isAdmin === false}
+                >
+                  {availableDurations.map((d) => (
+                    <option key={d} value={d}>
+                      {d} {d === 1 ? t('hour') : t('hours')}
+                    </option>
+                  ))}
+                </select>
+                {!isEditMode && availableDurations.length < durationOptions.length && (
+                  <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">
+                    Some durations are unavailable due to conflicts
+                  </p>
+                )}
+              </div>
+
               {isAdmin && bookingMode === 'match' && (
                 <>
                   <div>
@@ -527,31 +545,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
                 </>
               )}
 
-              {/* Duration */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  {t('selectDuration')}
-                </label>
-                <select
-                  value={duration}
-                  onChange={(e) => setDuration(Number(e.target.value))}
-                  className="w-full px-4 py-2 bg-white dark:bg-dark border border-slate-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-[#6B2FB5] dark:focus:border-primary"
-                  disabled={isEditMode && isAdmin === false}
-                >
-                  {availableDurations.map((d) => (
-                    <option key={d} value={d}>
-                      {d} {d === 1 ? t('hour') : t('hours')}
-                    </option>
-                  ))}
-                </select>
-                {!isEditMode && availableDurations.length < durationOptions.length && (
-                  <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">
-                    Some durations are unavailable due to conflicts
-                  </p>
-                )}
-              </div>
-
-              {/* Match result section */}
+              {/* NEW: Match result section for admin */}
               {showMatchResultSection && (
                 <div className="border border-slate-300 dark:border-gray-700 rounded-lg p-3 space-y-3">
                   <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
@@ -599,7 +593,6 @@ const BookingModal: React.FC<BookingModalProps> = ({
                 </div>
               )}
 
-              {/* Notes */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   {t('notes')}
@@ -613,7 +606,6 @@ const BookingModal: React.FC<BookingModalProps> = ({
                 />
               </div>
 
-              {/* Status for admin */}
               {isAdmin && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -633,7 +625,6 @@ const BookingModal: React.FC<BookingModalProps> = ({
             </>
           )}
 
-          {/* Buttons */}
           <div className="flex space-x-3 pt-4">
             <button
               type="submit"
