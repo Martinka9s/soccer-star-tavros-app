@@ -5,6 +5,7 @@ import { format, addDays, subDays, startOfDay, isBefore, parseISO } from 'date-f
 import { el } from 'date-fns/locale';
 import { Booking, PitchType, User } from '../types';
 import { bookingService, notificationService } from '../services/firebaseService';
+import { bracketService } from '../services/bracketService';
 import BookingModal from './BookingModal';
 
 interface CalendarProps {
