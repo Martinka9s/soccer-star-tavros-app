@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { X, Calendar, Trophy, Bell, ClipboardList, Users, LogOut, Home } from 'lucide-react';
 import { User } from '../types';
 import { googleCalendarService } from '../services/googleCalendarService';
+import { teamService, notificationService } from '../services/firebaseService';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -79,6 +80,47 @@ const Sidebar: React.FC<SidebarProps> = ({
   pendingCount = 0,
 }) => {
   const { t } = useTranslation();
+  const [pendingTeamsCount, setPendingTeamsCount] = useState(0);
+  const [unreadNotificationsCount, setUnreadNotificationsCount] = useState(0);
+
+  // Fetch pending teams count for admin
+  useEffect(() => {
+    if (user?.role === 'admin') {
+      const fetchPendingTeams = async () => {
+        try {
+          const pending = await teamService.getPendingTeams();
+          setPendingTeamsCount(pending.length);
+        } catch (error) {
+          console.error('Error fetching pending teams:', error);
+        }
+      };
+      fetchPendingTeams();
+      const interval = setInterval(fetchPendingTeams, 30000); // Poll every 30 seconds
+      return () => clearInterval(interval);
+    } else {
+      setPendingTeamsCount(0);
+    }
+  }, [user]);
+
+  // Fetch unread notifications count
+  useEffect(() => {
+    if (user) {
+      const fetchUnreadCount = async () => {
+        try {
+          const notifications = await notificationService.getNotificationsByUser(user.id);
+          const unread = notifications.filter(n => !n.read).length;
+          setUnreadNotificationsCount(unread);
+        } catch (error) {
+          console.error('Error fetching notifications:', error);
+        }
+      };
+      fetchUnreadCount();
+      const interval = setInterval(fetchUnreadCount, 30000); // Poll every 30 seconds
+      return () => clearInterval(interval);
+    } else {
+      setUnreadNotificationsCount(0);
+    }
+  }, [user]);
 
   const handleNavigation = (tab: string, requiresAuth: boolean) => {
     if (requiresAuth && !user) {
@@ -125,7 +167,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       icon: Users,
       requiresAuth: true,
       show: user?.role === 'admin',
-      hasDot: pendingCount > 0, // ✅ Changed from badge to dot
+      hasDot: pendingCount > 0,
     },
     {
       id: 'teams',
@@ -133,6 +175,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       icon: Trophy,
       requiresAuth: true,
       show: user?.role === 'admin',
+      hasDot: pendingTeamsCount > 0, // NEW: Show red dot for pending teams
     },
     {
       id: 'notifications',
@@ -140,6 +183,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       icon: Bell,
       requiresAuth: true,
       show: true,
+      hasDot: unreadNotificationsCount > 0, // NEW: Show red dot for unread notifications
     },
   ];
 
