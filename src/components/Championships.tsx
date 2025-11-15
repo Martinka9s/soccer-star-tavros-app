@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Trophy, Award, Users, Play, Edit3 } from 'lucide-react';
+import { Trophy, Award, Users, Play } from 'lucide-react';
 import { Team, ChampionshipType, SubgroupType } from '../types';
 import { teamService } from '../services/firebaseService';
+import { bracketService } from '../services/bracketService'; // ✅ NEW
 import { useAuth } from '../hooks/useAuth';
 
 const Championships: React.FC = () => {
@@ -15,8 +16,6 @@ const Championships: React.FC = () => {
   const [selectedChampionship, setSelectedChampionship] =
     useState<ChampionshipType>('MSL DREAM LEAGUE');
   const [selectedSubgroup, setSelectedSubgroup] = useState<SubgroupType | 'ALL'>('ALL');
-  const [editMode, setEditMode] = useState(false);
-  const [updatingTeamId, setUpdatingTeamId] = useState<string | null>(null);
 
   useEffect(() => {
     void loadTeams();
@@ -34,21 +33,6 @@ const Championships: React.FC = () => {
     }
   };
 
-  // Helper: sort teams for standings (points → GD → GF)
-  const sortTeamsForStandings = (list: Team[]) => {
-    return [...list].sort((a, b) => {
-      if (b.stats.points !== a.stats.points) {
-        return b.stats.points - a.stats.points;
-      }
-      const gdA = (a.stats.goalsFor || 0) - (a.stats.goalsAgainst || 0);
-      const gdB = (b.stats.goalsFor || 0) - (b.stats.goalsAgainst || 0);
-      if (gdB !== gdA) {
-        return gdB - gdA;
-      }
-      return (b.stats.goalsFor || 0) - (a.stats.goalsFor || 0);
-    });
-  };
-
   // Get subgroups for selected championship (DB values stay in Greek)
   const getSubgroupsForChampionship = (championship: ChampionshipType): SubgroupType[] => {
     if (championship === 'MSL A') {
@@ -59,7 +43,7 @@ const Championships: React.FC = () => {
     return [];
   };
 
-  // Filter teams by championship and optionally by subgroup (for table)
+  // Filter teams by championship and optionally by subgroup
   const getFilteredTeams = () => {
     let filtered = teams.filter((t) => t.championship === selectedChampionship);
 
@@ -70,8 +54,18 @@ const Championships: React.FC = () => {
     return filtered;
   };
 
-  // Sorted list for the currently visible table
-  const sortedTeams = sortTeamsForStandings(getFilteredTeams());
+  // Sort teams by standings (points, GD, GF)
+  const sortedTeams = [...getFilteredTeams()].sort((a, b) => {
+    if (b.stats.points !== a.stats.points) {
+      return b.stats.points - a.stats.points;
+    }
+    const gdA = (a.stats.goalsFor || 0) - (a.stats.goalsAgainst || 0);
+    const gdB = (b.stats.goalsFor || 0) - (b.stats.goalsAgainst || 0);
+    if (gdB !== gdA) {
+      return gdB - gdA;
+    }
+    return (b.stats.goalsFor || 0) - (a.stats.goalsFor || 0);
+  });
 
   // Localized labels for subgroups (UI shows Greek or English, DB stays Greek)
   const getSubgroupLabel = (subgroup: SubgroupType): string => {
@@ -84,14 +78,18 @@ const Championships: React.FC = () => {
     return labels[subgroup] || subgroup;
   };
 
-  // Handle championship change - reset subgroup + edit mode off
+  // Handle championship change - reset subgroup
   const handleChampionshipChange = (championship: ChampionshipType) => {
     setSelectedChampionship(championship);
     setSelectedSubgroup('ALL');
-    setEditMode(false);
   };
 
-  // Kick off finals: mark top 8/16 as qualified and the rest as eliminated
+  /**
+   * Kick off finals:
+   * 1) Marks top 8/16 as qualified (teamService.kickoffFinals)
+   * 2) Builds full bracket tree (bracketService.initializeBracket)
+   * 3) Reloads teams
+   */
   const handleKickoffFinals = async () => {
     if (!isAdmin) {
       alert('Only admin can start finals.');
@@ -99,7 +97,7 @@ const Championships: React.FC = () => {
     }
 
     const qualifiersCount = selectedChampionship === 'MSL DREAM LEAGUE' ? 8 : 16;
-    const confirmText = `Kick off finals for ${selectedChampionship}? Top ${qualifiersCount} teams will qualify and the rest will be marked as eliminated (light red).`;
+    const confirmText = `Kick off finals for ${selectedChampionship}? Top ${qualifiersCount} teams will qualify and the rest will be marked as eliminated (light red in merged view).`;
 
     if (!window.confirm(confirmText)) {
       return;
@@ -107,11 +105,18 @@ const Championships: React.FC = () => {
 
     try {
       setLoading(true);
+
+      // 1️⃣ Mark top 8/16 as qualified in standings
       await teamService.kickoffFinals(selectedChampionship);
+
+      // 2️⃣ Build/reset bracket for this championship
+      await bracketService.initializeBracket(selectedChampionship);
+
+      // 3️⃣ Reload teams to refresh eliminated flags
       await loadTeams();
-      setEditMode(false);
+
       alert(
-        'Finals phase started. Qualified teams remain normal, others are marked as eliminated (light red).'
+        'Finals phase started. Qualified teams remain normal, others are marked as eliminated (light red in merged standings).'
       );
     } catch (error: any) {
       console.error('Error kicking off finals:', error);
@@ -123,72 +128,7 @@ const Championships: React.FC = () => {
 
   const subgroups = getSubgroupsForChampionship(selectedChampionship);
   const hasSubgroups = subgroups.length > 0;
-
-  // ✅ Only show eliminated styling in:
-  // - DREAM LEAGUE (no subgroups)
-  // - MSL A/B when "All groups (merged)" is selected
-  const showEliminatedStyling = !hasSubgroups || selectedSubgroup === 'ALL';
-
-  // ---------------------- FINALS / BRACKET LOGIC -------------------------
-
-  // All teams for current championship (full set, not filtered by subgroup)
-  const championshipTeams = teams.filter(
-    (t) => t.championship === selectedChampionship && t.status === 'approved'
-  );
-  const sortedChampionshipTeams = sortTeamsForStandings(championshipTeams);
-
-  // Finals considered "started" when at least one team is marked eliminated
-  const finalsStarted = championshipTeams.some((t) => t.eliminated === true);
-
-  const finalistsCount = selectedChampionship === 'MSL DREAM LEAGUE' ? 8 : 16;
-  const qualifiedTeams = finalsStarted
-    ? sortedChampionshipTeams.filter((t) => !t.eliminated).slice(0, finalistsCount)
-    : [];
-
-  // Helper: build simple seeded pairs for bracket (1 vs last, 2 vs last-1, etc.)
-  const buildPairs = (list: Team[]) => {
-    const pairs: { home?: Team; away?: Team }[] = [];
-    const n = list.length;
-    for (let i = 0; i < n / 2; i++) {
-      const home = list[i];
-      const away = list[n - 1 - i];
-      pairs.push({ home, away });
-    }
-    return pairs;
-  };
-
-  const isDreamLeague = selectedChampionship === 'MSL DREAM LEAGUE';
-  const roundOf16Pairs =
-    finalsStarted && !isDreamLeague && qualifiedTeams.length === 16
-      ? buildPairs(qualifiedTeams)
-      : [];
-  const quarterfinalPairs =
-    finalsStarted && isDreamLeague && qualifiedTeams.length === 8
-      ? buildPairs(qualifiedTeams)
-      : finalsStarted && !isDreamLeague && qualifiedTeams.length === 16
-      ? new Array(8).fill(null) // for MSL A/B: QFs will be "Winner R16-X"
-      : [];
-
-  // ---------------------- EDIT QUALIFIERS (ADMIN) -----------------------
-
-  const handleToggleEliminated = async (team: Team) => {
-    if (!isAdmin) return;
-    if (!showEliminatedStyling) return; // only in merged view / DL
-    try {
-      setUpdatingTeamId(team.id);
-      if (team.eliminated) {
-        await teamService.restoreEliminatedTeam(team.id);
-      } else {
-        await teamService.markTeamEliminated(team.id);
-      }
-      await loadTeams();
-    } catch (error) {
-      console.error('Error updating eliminated flag:', error);
-      alert('Failed to update team status');
-    } finally {
-      setUpdatingTeamId(null);
-    }
-  };
+  const isMergedView = hasSubgroups && selectedSubgroup === 'ALL';
 
   if (loading) {
     return (
@@ -253,56 +193,37 @@ const Championships: React.FC = () => {
 
       {/* Subgroup Tabs (for MSL A and MSL B only) */}
       {hasSubgroups && (
-        <div className="flex items-center justify-between border-t border-slate-200 dark:border-gray-700 pt-4">
-          <div className="flex space-x-2 overflow-x-auto pb-2">
+        <div className="flex space-x-2 overflow-x-auto pb-2 border-t border-slate-200 dark:border-gray-700 pt-4">
+          <button
+            onClick={() => setSelectedSubgroup('ALL')}
+            className={`px-4 py-2 rounded-lg font-medium whitespace-nowrap transition-all ${
+              selectedSubgroup === 'ALL'
+                ? 'bg-green-600 text-white shadow-lg'
+                : 'bg-slate-200 dark:bg-dark-lighter text-gray-700 dark:text-gray-300 hover:bg-slate-300 dark:hover:bg-dark'
+            }`}
+          >
+            <Users size={18} className="inline mr-2" />
+            {t('allGroups', { defaultValue: 'All groups (merged)' })}
+          </button>
+          {subgroups.map((subgroup) => (
             <button
-              onClick={() => setSelectedSubgroup('ALL')}
+              key={subgroup}
+              onClick={() => setSelectedSubgroup(subgroup)}
               className={`px-4 py-2 rounded-lg font-medium whitespace-nowrap transition-all ${
-                selectedSubgroup === 'ALL'
-                  ? 'bg-green-600 text-white shadow-lg'
+                selectedSubgroup === subgroup
+                  ? 'bg-blue-600 text-white shadow-lg'
                   : 'bg-slate-200 dark:bg-dark-lighter text-gray-700 dark:text-gray-300 hover:bg-slate-300 dark:hover:bg-dark'
               }`}
             >
-              <Users size={18} className="inline mr-2" />
-              {t('allGroups', { defaultValue: 'All groups (merged)' })}
+              {getSubgroupLabel(subgroup)}
             </button>
-            {subgroups.map((subgroup) => (
-              <button
-                key={subgroup}
-                onClick={() => setSelectedSubgroup(subgroup)}
-                className={`px-4 py-2 rounded-lg font-medium whitespace-nowrap transition-all ${
-                  selectedSubgroup === subgroup
-                    ? 'bg-blue-600 text-white shadow-lg'
-                    : 'bg-slate-200 dark:bg-dark-lighter text-gray-700 dark:text-gray-300 hover:bg-slate-300 dark:hover:bg-dark'
-                }`}
-              >
-                {getSubgroupLabel(subgroup)}
-              </button>
-            ))}
-          </div>
-
-          {/* Admin edit button only when merged view / DL */}
-          {isAdmin && showEliminatedStyling && sortedTeams.length > 0 && (
-            <button
-              onClick={() => setEditMode((prev) => !prev)}
-              className={`ml-4 px-3 py-2 rounded-lg text-xs font-semibold flex items-center gap-1 shadow-sm ${
-                editMode
-                  ? 'bg-amber-500 hover:bg-amber-600 text-white'
-                  : 'bg-slate-200 dark:bg-dark-lighter text-gray-800 dark:text-gray-100 hover:bg-slate-300 dark:hover:bg-dark'
-              }`}
-            >
-              <Edit3 size={14} />
-              {editMode
-                ? t('exitEditMode', { defaultValue: 'Exit edit mode' })
-                : t('editQualifiers', { defaultValue: 'Edit qualifiers' })}
-            </button>
-          )}
+          ))}
         </div>
       )}
 
       {/* Kickoff Finals Button (Admin only) */}
       {isAdmin && sortedTeams.length > 0 && (
-        <div className="flex justify-end gap-2">
+        <div className="flex justify-end">
           <button
             onClick={handleKickoffFinals}
             className="mb-2 px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-semibold shadow-sm transition-colors"
@@ -315,28 +236,17 @@ const Championships: React.FC = () => {
       {/* Standings Table */}
       <div className="bg-white dark:bg-dark-lighter rounded-lg shadow-lg overflow-hidden">
         <div className="px-6 py-4 bg-[#6B2FB5] border-b border-purple-600">
-          <h2 className="text-xl font-bold text-white flex items-center justify-between">
-            <span className="flex items-center">
-              <Award size={24} className="mr-2" />
-              {t('standings', { defaultValue: 'Standings' })}
-              {hasSubgroups && selectedSubgroup !== 'ALL' && (
-                <span className="ml-3 text-sm font-normal opacity-90">
-                  - {getSubgroupLabel(selectedSubgroup as SubgroupType)}
-                </span>
-              )}
-              {hasSubgroups && selectedSubgroup === 'ALL' && (
-                <span className="ml-3 text-sm font-normal opacity-90">
-                  - {t('mergedStandings', { defaultValue: 'Combined standings' })}
-                </span>
-              )}
-            </span>
-            {isAdmin && showEliminatedStyling && sortedTeams.length > 0 && (
-              <span className="text-xs text-white/80">
-                {editMode
-                  ? t('editModeHint', {
-                      defaultValue: 'Click buttons on rows to mark eliminated / restore',
-                    })
-                  : ''}
+          <h2 className="text-xl font-bold text-white flex items-center">
+            <Award size={24} className="mr-2" />
+            {t('standings', { defaultValue: 'Standings' })}
+            {hasSubgroups && selectedSubgroup !== 'ALL' && (
+              <span className="ml-3 text-sm font-normal opacity-90">
+                - {getSubgroupLabel(selectedSubgroup as SubgroupType)}
+              </span>
+            )}
+            {hasSubgroups && selectedSubgroup === 'ALL' && (
+              <span className="ml-3 text-sm font-normal opacity-90">
+                - {t('mergedStandings', { defaultValue: 'Combined standings' })}
               </span>
             )}
           </h2>
@@ -391,19 +301,21 @@ const Championships: React.FC = () => {
                   <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
                     Pts
                   </th>
-                  {isAdmin && showEliminatedStyling && (
-                    <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                      {editMode ? 'Edit' : ''}
-                    </th>
-                  )}
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200 dark:divide-gray-700">
                 {sortedTeams.map((team, index) => {
                   const goalDifference =
                     (team.stats.goalsFor || 0) - (team.stats.goalsAgainst || 0);
+
+                  // 🟢 Only show red (eliminated) in:
+                  // - merged view for MSL A/B
+                  // - OR Dream League (no subgroups)
+                  const isEliminated =
+                    team.eliminated === true &&
+                    (!hasSubgroups || isMergedView);
+
                   const isTopThree = index < 3;
-                  const isEliminated = showEliminatedStyling && team.eliminated === true;
 
                   return (
                     <tr
@@ -492,27 +404,6 @@ const Championships: React.FC = () => {
                           {team.stats.points}
                         </span>
                       </td>
-                      {isAdmin && showEliminatedStyling && (
-                        <td className="px-4 py-3 text-center">
-                          {editMode ? (
-                            <button
-                              onClick={() => handleToggleEliminated(team)}
-                              disabled={updatingTeamId === team.id}
-                              className={`px-2 py-1 text-xs rounded-md font-semibold ${
-                                team.eliminated
-                                  ? 'bg-green-500 hover:bg-green-600 text-white'
-                                  : 'bg-red-500 hover:bg-red-600 text-white'
-                              } ${updatingTeamId === team.id ? 'opacity-70 cursor-wait' : ''}`}
-                            >
-                              {updatingTeamId === team.id
-                                ? '...'
-                                : team.eliminated
-                                ? t('restore', { defaultValue: 'Restore' })
-                                : t('markEliminated', { defaultValue: 'Mark eliminated' })}
-                            </button>
-                          ) : null}
-                        </td>
-                      )}
                     </tr>
                   );
                 })}
@@ -566,164 +457,22 @@ const Championships: React.FC = () => {
         </div>
       )}
 
-      {/* Knockout Bracket */}
+      {/* Placeholder for Knockout Bracket UI */}
       <div className="bg-white dark:bg-dark-lighter rounded-lg shadow-lg overflow-hidden">
-        <div className="px-6 py-4 bg-[#6B2FB5] border-b border-purple-600 flex items-center justify-between">
+        <div className="px-6 py-4 bg-[#6B2FB5] border-b border-purple-600">
           <h2 className="text-xl font-bold text-white flex items-center">
             <Play size={24} className="mr-2" />
             {t('knockoutBracket', { defaultValue: 'Knockout bracket' })}
           </h2>
-          {finalsStarted && qualifiedTeams.length > 0 && (
-            <span className="text-xs text-white/80">
-              {isDreamLeague
-                ? `${qualifiedTeams.length} teams (Quarterfinals)`
-                : `${qualifiedTeams.length} teams (Round of 16)`}
-            </span>
-          )}
         </div>
-
-        {!finalsStarted || qualifiedTeams.length === 0 ? (
-          <div className="p-12 text-center">
-            <Play size={48} className="mx-auto text-gray-400 mb-4" />
-            <p className="text-gray-600 dark:text-gray-400">
-              {t('bracketComingSoon', {
-                defaultValue:
-                  'Kick off finals to lock the top teams and generate the knockout bracket.',
-              })}
-            </p>
-          </div>
-        ) : (
-          <div className="p-6 overflow-x-auto">
-            {/* DREAM LEAGUE: 8 teams → QF / SF / Final */}
-            {isDreamLeague ? (
-              <div className="flex gap-6 min-w-[700px]">
-                {/* Quarterfinals */}
-                <div className="flex-1">
-                  <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
-                    Quarterfinals
-                  </h3>
-                  <div className="space-y-3">
-                    {quarterfinalPairs.map((pair, idx) => (
-                      <div
-                        key={idx}
-                        className="border border-slate-200 dark:border-gray-700 rounded-lg p-3 bg-slate-50 dark:bg-dark"
-                      >
-                        <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">
-                          QF {idx + 1}
-                        </div>
-                        <div className="text-sm text-gray-900 dark:text-white">
-                          {pair?.home ? pair.home.name : 'TBD'} vs{' '}
-                          {pair?.away ? pair.away.name : 'TBD'}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Semifinals */}
-                <div className="flex-1">
-                  <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
-                    Semifinals
-                  </h3>
-                  <div className="space-y-3">
-                    <div className="border border-slate-200 dark:border-gray-700 rounded-lg p-3 bg-slate-50 dark:bg-dark text-sm text-gray-900 dark:text-white">
-                      SF 1: Winner QF 1 vs Winner QF 2
-                    </div>
-                    <div className="border border-slate-200 dark:border-gray-700 rounded-lg p-3 bg-slate-50 dark:bg-dark text-sm text-gray-900 dark:text-white">
-                      SF 2: Winner QF 3 vs Winner QF 4
-                    </div>
-                  </div>
-                </div>
-
-                {/* Final */}
-                <div className="flex-1">
-                  <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
-                    Final
-                  </h3>
-                  <div className="space-y-3">
-                    <div className="border border-yellow-400/70 dark:border-yellow-500 rounded-lg p-3 bg-yellow-50 dark:bg-yellow-900/20 text-sm text-gray-900 dark:text-white font-semibold">
-                      Final: Winner SF 1 vs Winner SF 2
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              // MSL A / B: 16 teams → R16 / QF / SF / Final
-              <div className="flex gap-6 min-w-[1000px]">
-                {/* Round of 16 */}
-                <div className="flex-1">
-                  <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
-                    Round of 16
-                  </h3>
-                  <div className="space-y-3">
-                    {roundOf16Pairs.map((pair, idx) => (
-                      <div
-                        key={idx}
-                        className="border border-slate-200 dark:border-gray-700 rounded-lg p-3 bg-slate-50 dark:bg-dark"
-                      >
-                        <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">
-                          R16 {idx + 1}
-                        </div>
-                        <div className="text-sm text-gray-900 dark:text-white">
-                          {pair.home ? pair.home.name : 'TBD'} vs{' '}
-                          {pair.away ? pair.away.name : 'TBD'}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Quarterfinals */}
-                <div className="flex-1">
-                  <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
-                    Quarterfinals
-                  </h3>
-                  <div className="space-y-3 text-sm text-gray-900 dark:text-white">
-                    <div className="border border-slate-200 dark:border-gray-700 rounded-lg p-3 bg-slate-50 dark:bg-dark">
-                      QF 1: Winner R16 1 vs Winner R16 8
-                    </div>
-                    <div className="border border-slate-200 dark:border-gray-700 rounded-lg p-3 bg-slate-50 dark:bg-dark">
-                      QF 2: Winner R16 2 vs Winner R16 7
-                    </div>
-                    <div className="border border-slate-200 dark:border-gray-700 rounded-lg p-3 bg-slate-50 dark:bg-dark">
-                      QF 3: Winner R16 3 vs Winner R16 6
-                    </div>
-                    <div className="border border-slate-200 dark:border-gray-700 rounded-lg p-3 bg-slate-50 dark:bg-dark">
-                      QF 4: Winner R16 4 vs Winner R16 5
-                    </div>
-                  </div>
-                </div>
-
-                {/* Semifinals */}
-                <div className="flex-1">
-                  <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
-                    Semifinals
-                  </h3>
-                  <div className="space-y-3 text-sm text-gray-900 dark:text-white">
-                    <div className="border border-slate-200 dark:border-gray-700 rounded-lg p-3 bg-slate-50 dark:bg-dark">
-                      SF 1: Winner QF 1 vs Winner QF 2
-                    </div>
-                    <div className="border border-slate-200 dark:border-gray-700 rounded-lg p-3 bg-slate-50 dark:bg-dark">
-                      SF 2: Winner QF 3 vs Winner QF 4
-                    </div>
-                  </div>
-                </div>
-
-                {/* Final */}
-                <div className="flex-1">
-                  <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
-                    Final
-                  </h3>
-                  <div className="space-y-3">
-                    <div className="border border-yellow-400/70 dark:border-yellow-500 rounded-lg p-3 bg-yellow-50 dark:bg-yellow-900/20 text-sm text-gray-900 dark:text-white font-semibold">
-                      Final: Winner SF 1 vs Winner SF 2
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
+        <div className="p-12 text-center">
+          <Play size={48} className="mx-auto text-gray-400 mb-4" />
+          <p className="text-gray-600 dark:text-gray-400">
+            {t('bracketComingSoon', {
+              defaultValue: 'Knockout bracket will appear here when finals begin',
+            })}
+          </p>
+        </div>
       </div>
     </div>
   );
