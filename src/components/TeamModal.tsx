@@ -55,6 +55,16 @@ const TeamModal: React.FC<TeamModalProps> = ({
     return [];
   };
 
+  // Get available subgroups based on selected championship
+  const getSubgroupsForChampionship = (championship?: ChampionshipType): SubgroupType[] => {
+    if (championship === 'MSL A') {
+      return ['ΟΜΙΛΟΣ ΔΕΥΤΕΡΑΣ', 'ΟΜΙΛΟΣ ΤΡΙΤΗΣ', 'ΟΜΙΛΟΣ ΤΕΤΑΡΤΗΣ'];
+    } else if (championship === 'MSL B') {
+      return ['ΟΜΙΛΟΣ ΔΕΥΤΕΡΑΣ', 'ΟΜΙΛΟΣ ΤΡΙΤΗΣ', 'ΟΜΙΛΟΣ ΠΕΜΠΤΗΣ'];
+    }
+    return [];
+  };
+
   // Get English label for subgroup
   const getSubgroupLabel = (subgroup: SubgroupType): string => {
     const labels = {
